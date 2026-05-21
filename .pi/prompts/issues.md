@@ -15,6 +15,7 @@ Tentukan dulu apakah proyek memang siap masuk Phase 5. Jika belum siap, jelaskan
 
 Jika sudah siap:
 - baca dan gunakan template dari `.pi/skills/issues-me/assets/issues-template.md`
+- cek dulu `## Handoff to Issues` di `docs/prd.md`; jika readiness masih `no`, jangan lanjut ke planning dan arahkan kembali ke blocker atau fase sebelumnya yang paling tepat
 - identifikasi dulu user-visible flows, acceptance criteria, scope boundaries, dependencies, constraints, dan unresolved questions yang memengaruhi planning
 - buat atau perbarui `docs/issues.md`
 - pecah PRD menjadi vertical slices, bukan horizontal technical layers

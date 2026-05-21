@@ -23,6 +23,13 @@ Jika ide atau proposal sudah cukup konkret, tutup dengan:
 - need prototype?
 - recommended next step
 
+Jika `docs/idea.md` dipakai sebagai artifact sesi, sebelum menutup sesi wajib perbarui `## Handoff to PRD` dengan:
+- checklist handoff yang relevan
+- `Ready for next phase: yes/no`
+- `Primary blocker` jika readiness adalah `no`
+
+Jangan rekomendasikan fase PRD jika `## Handoff to PRD` belum siap. Jika readiness masih `no`, arahkan kembali ke blocker, pertanyaan, atau fase sebelumnya yang paling tepat alih-alih memaksa handoff ke PRD.
+
 Jangan mengimplementasikan perubahan selama sesi grilling aktif. Jika ternyata kebutuhan utamanya bukan idea refinement, arahkan ke fase yang lebih tepat.
 
 Fokus atau ide awal tambahan bila ada: $@

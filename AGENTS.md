@@ -37,6 +37,7 @@ When the user wants to refine an idea before research, prototyping, or implement
 - Use the project-local `grill-me` skill.
 - Maintain `docs/idea.md` as the running artifact when requested, or when it is the obvious destination.
 - Keep the artifact concise and decision-oriented.
+- Before recommending Phase 4 PRD, update `## Handoff to PRD` in `docs/idea.md` with checklist status, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
 Preferred `docs/idea.md` structure:
 - `# Idea`
@@ -54,6 +55,7 @@ Preferred `docs/idea.md` structure:
 - `## Need prototype?`
 - `## Biggest risk`
 - `## Recommended next step`
+- `## Handoff to PRD`
 
 Prompt template:
 - Use `/idea [fokus-atau-ide-awal]` to trigger the Phase 1 idea-refinement workflow via `.pi/prompts/idea.md`.
@@ -114,6 +116,7 @@ When the user wants to define the destination clearly before planning or impleme
 - Focus on user-visible behavior and requirements, not implementation details.
 - Use the skill asset `assets/prd-template.md` as the default PRD structure.
 - Do not start the PRD while multiple prototype directions are still active; first choose one winner or explicitly decide that no prototype is needed.
+- Before recommending Phase 5 planning, update `## Handoff to Issues` in `docs/prd.md` with checklist status, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
 Prompt template:
 - Use `/prd [fokus-atau-klarifikasi-prd]` to trigger the Phase 4 PRD workflow via `.pi/prompts/prd.md`.
@@ -166,7 +169,11 @@ Prompt template:
 - Do not jump to implementation when the user is clearly in Phase 1, Phase 2, or Phase 3.
 - Do not write a PRD from multiple competing prototype directions.
 - If prototyping is used, exactly one prototype winner must feed the PRD.
+- Do not advance from Idea to PRD unless `docs/idea.md` says `Ready for next phase: yes` in `## Handoff to PRD`.
+- If `## Handoff to PRD` says `Ready for next phase: no`, it must name a `Primary blocker`.
 - `docs/prd.md` is the requirements source of truth.
+- Do not advance from PRD to Issues unless `docs/prd.md` says `Ready for next phase: yes` in `## Handoff to Issues`.
+- If `## Handoff to Issues` says `Ready for next phase: no`, it must name a `Primary blocker`.
 - `docs/issues.md` is the execution source of truth.
 - Phase 6 follows a Ralph-style pattern: one run, one ready `AFK` ticket, one validation cycle.
 - Do not overwrite useful existing docs without preserving important decisions already made.
