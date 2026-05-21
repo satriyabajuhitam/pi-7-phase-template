@@ -19,6 +19,10 @@ description: Create and compare multiple prototype variations for the current pr
 - The main blocker is missing external knowledge and Phase 2 research should happen first
 - The solution is already obvious and does not benefit from multiple variations
 - The user wants direct production implementation instead of exploratory work
+- The main need is to pressure-test or sharpen the idea before exploring concrete variants; use `grill-me`
+- The main blocker is still external evidence gathering rather than exploratory comparison; use `research-me`
+- The direction is already clear enough that the next step is to formalize the destination in `docs/prd.md`; use `prd-me`
+- The user wants to execute a ready implementation ticket rather than explore throwaway alternatives; use `execute-me`
 
 ---
 
@@ -75,6 +79,8 @@ If the request is vague, narrow it before building variations.
 ### 4. Produce multiple variations by default
 
 Unless the user explicitly wants only one, create **2-3 distinct variations**.
+
+If the user explicitly wants only one option, treat it as a targeted prototype spike rather than a full comparison exercise, and say so clearly.
 
 Possible prototype surfaces:
 - UI layout, interaction, and behavior
@@ -148,6 +154,8 @@ Close by stating which next step is best:
 
 Only recommend PRD when there is exactly one prototype winner or when prototyping was not needed.
 
+Prefer PRD via `prd-me` as the default handoff after a useful prototype pass, because the winning direction should normally be formalized before planning or implementation. Recommend direct implementation only when requirements are already formalized elsewhere or the user explicitly wants that path.
+
 Be specific about why.
 
 ---
@@ -180,6 +188,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:prototype-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -194,6 +209,32 @@ A good run of this skill produces:
 **Closing:**
 > States what should move forward into PRD or implementation and what should remain throwaway.
 
+### Trigger validation
+
+**Should trigger:**
+- "Prototype three variations for the onboarding flow and compare them in `docs/prototype/`."
+- "Explore two architecture options for this feature boundary and summarize the tradeoffs."
+- "Create prototype options for this integration flow before we write the PRD."
+
+**Should not trigger:**
+- "Grill me on this idea before we decide whether to prototype anything." → use `grill-me`
+- "Research the provider constraints before we try any integration prototypes." → use `research-me`
+- "Turn this chosen direction into `docs/prd.md`." → use `prd-me`
+- "Implement the next ready ticket from `docs/issues.md`." → use `execute-me`
+
+**Borderline:**
+- "Build one quick spike for this UX idea so we can see if it feels right." → use `prototype-me` if the work is explicitly exploratory and throwaway rather than intended as production implementation
+
+### Artifact verification
+
+If the session writes artifacts:
+- verify files are written under `docs/prototype/`
+- verify per-variation files describe meaningful differences rather than cosmetic rewrites
+- verify `docs/prototype/comparison.md` includes decision criteria, tradeoffs, and exactly one winning option when prototyping is used
+- verify the winning option clearly states what should be promoted to the PRD and what remains throwaway
+- verify no unrelated production implementation files were edited unless the user explicitly wanted runnable exploratory code
+- verify the closing recommendation points to the correct next phase such as more prototyping, research, PRD, or validation, with direct implementation recommended only when requirements are already clear enough outside this prototype pass
+
 ### Smoke test
 
 1. `/reload`
@@ -202,7 +243,7 @@ A good run of this skill produces:
 4. Verify that the agent:
    - checks local context first
    - defines a concrete prototype objective
-   - creates multiple distinct variations
+   - creates multiple distinct variations, or explicitly frames a single requested option as a targeted spike
    - writes or updates `docs/prototype/` artifacts
    - identifies exactly one winner or explicitly states that prototyping was unnecessary
    - does not recommend PRD while multiple competing directions remain active

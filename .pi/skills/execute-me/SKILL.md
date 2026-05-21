@@ -18,6 +18,11 @@ description: Execute exactly one ready AFK ticket from docs/issues.md, validate 
 - No AFK ticket is ready because all remaining tickets are blocked or HITL
 - The project still needs Phase 4 PRD refinement or Phase 5 planning work
 - The user wants a broad implementation sweep across multiple tickets in one run
+- The main need is to route a vague request to the right phase or artifact before execution begins; use `triage-me`
+- The requirements are still too unclear to execute safely; use `prd-me`
+- The implementation plan still needs ticket breakdown or dependency cleanup; use `issues-me`
+- The selected work is really a diagnosis problem that still needs reproduction or isolation first; use `diagnose-me`
+- The user wants structured verification planning or QA findings capture rather than a one-ticket execution loop; use `qa-me`
 
 ---
 
@@ -142,6 +147,8 @@ Close with one of these outcomes:
 - all ready AFK tickets complete
 - execution should return to planning or PRD refinement
 
+If the repo now needs broader release-style verification, recommend `qa-me` explicitly rather than treating that as part of the same execution run.
+
 Be specific about what happened and what should happen next.
 
 ---
@@ -190,6 +197,13 @@ If `docs/issues.md` is inconsistent or unclear about dependencies, stop and surf
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:execute-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -202,7 +216,35 @@ A good run of this skill produces:
 > `docs/issues.md` reflects `in-progress`, then either `done` or `blocked`, with concise notes if needed.
 
 **Closing:**
-> States whether the loop can continue with another AFK ticket or whether HITL, blockers, or planning work are now required.
+> States whether the loop can continue with another AFK ticket or whether HITL, blockers, planning work, or QA are now required.
+
+### Trigger validation
+
+**Should trigger:**
+- "Execute the next ready AFK ticket from `docs/issues.md`."
+- "Implement one ticket from `docs/issues.md` and update its status."
+- "Run one Ralph-style execution step for this repo."
+
+**Should not trigger:**
+- "Route this vague request to the right phase and artifact." → use `triage-me`
+- "Refine `docs/prd.md`; the requirements are still too unclear to execute." → use `prd-me`
+- "Break this PRD into tickets in `docs/issues.md`." → use `issues-me`
+- "Help me reproduce and isolate this flaky failure before we fix it." → use `diagnose-me`
+- "Create a QA plan from the PRD and current implementation state." → use `qa-me`
+
+**Borderline:**
+- "Implement this bug fix from `docs/issues.md`, but I'm not sure the root cause is actually understood yet." → use `execute-me` only if the ticket is truly execution-ready; otherwise stop and recommend `diagnose-me`
+
+### Artifact verification
+
+If the session updates execution tracking:
+- verify the file path is exactly `docs/issues.md`
+- verify exactly one selected ticket changed status through a valid flow such as `todo` → `in-progress` → `done` or `blocked`
+- verify no second ticket was silently picked up in the same run
+- verify `Notes / risks` were updated only when useful and kept concise
+- verify unrelated tickets were not rewritten except for honest dependency-state maintenance
+- verify validation evidence exists before marking the ticket `done`
+- verify the closing recommendation points to the correct next step such as another AFK execution run, `diagnose-me`, planning refinement, or `qa-me`
 
 ### Smoke test
 

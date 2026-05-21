@@ -3,7 +3,7 @@ name: issues-me
 description: Break docs/prd.md into a local kanban-style implementation plan in docs/issues.md with vertical slices, dependencies, and parallelization guidance. Use when the PRD is ready and the next step is execution planning.
 ---
 
-# Issue Me
+# Issues Me
 
 ## When to use
 
@@ -18,6 +18,10 @@ description: Break docs/prd.md into a local kanban-style implementation plan in 
 - The project still needs Phase 3 prototyping or Phase 4 PRD refinement
 - The user wants direct implementation rather than planning
 - The work is so small and obvious that ticket breakdown adds no value
+- The main need is to route a vague request to the right phase or artifact before planning begins; use `triage-me`
+- The PRD still needs refinement before tickets can be planned confidently; use `prd-me`
+- The user wants to execute a ready ticket rather than create or refine the plan; use `execute-me`
+- The user wants a QA plan or wants to capture verification findings rather than implementation slices; use `qa-me`
 
 ---
 
@@ -154,6 +158,8 @@ Close by stating which next step is best:
 - more prototyping
 - stakeholder review
 
+Prefer execution via `execute-me` as the default handoff after a solid plan, specifically by selecting one ready `AFK` ticket.
+
 Be specific about why.
 
 ---
@@ -185,6 +191,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:issues-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -198,6 +211,34 @@ A good run of this skill produces:
 
 **Closing:**
 > Recommends whether the project should move to execution or return to an earlier phase.
+
+### Trigger validation
+
+**Should trigger:**
+- "Break `docs/prd.md` into `docs/issues.md` for execution planning."
+- "Create a local ticket breakdown from the PRD with blockers and parallel lanes."
+- "Refine `docs/issues.md` so the slices are smaller and more parallelizable."
+
+**Should not trigger:**
+- "Route this vague request to the right phase and artifact." → use `triage-me`
+- "Refine `docs/prd.md`; the requirements are still too fuzzy to plan." → use `prd-me`
+- "Execute the next ready ticket from `docs/issues.md`." → use `execute-me`
+- "Create a QA plan from the PRD and current implementation state." → use `qa-me`
+
+**Borderline:**
+- "The PRD is mostly ready, but one dependency is still a little fuzzy; can you plan the tickets anyway?" → use `issues-me` only if the ambiguity is non-blocking and can be called out clearly in planning assumptions or blocked tickets
+
+### Artifact verification
+
+If the session writes or refines the plan:
+- verify the file path is exactly `docs/issues.md`
+- verify the structure follows `assets/issues-template.md` unless a small justified adjustment was made
+- verify tickets are vertical slices rather than horizontal technical layers
+- verify each ticket uses only allowed values for `Status`, `Type`, `Depends on`, `Blocks`, and `Parallelizable`
+- verify dependencies, blockers, and parallel lanes are explicit
+- verify acceptance criteria are present for each ticket
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to the correct next phase, usually `execute-me` for one ready `AFK` ticket when planning is solid
 
 ### Smoke test
 

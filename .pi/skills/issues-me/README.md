@@ -6,6 +6,13 @@ Project-local Pi skill for Phase 5 implementation planning.
 
 Use this skill when `docs/prd.md` is ready and the next step is to turn it into a local kanban-style execution plan in `docs/issues.md`. The skill breaks the PRD into vertical slices, marks dependencies and blockers, identifies parallel work, and distinguishes AFK from HITL tickets.
 
+## Use a different skill when
+
+- you mainly need to route a vague request to the right phase or artifact before planning begins → `triage-me`
+- the PRD still needs refinement before tickets can be planned confidently → `prd-me`
+- you want to execute a ready ticket rather than create or refine the plan → `execute-me`
+- you want a QA plan or need to capture verification findings rather than implementation slices → `qa-me`
+
 ## Usage
 
 ```bash
@@ -39,10 +46,28 @@ Example prompts:
 /skill:issues-me
 ```
 
-Then provide a prompt with an existing PRD and verify that the agent:
+Then verify behavior with these prompts:
+
+**Should trigger**
+- `Break docs/prd.md into docs/issues.md for execution planning`
+- `Create a local ticket breakdown from the PRD with blockers and parallel lanes`
+- `Refine docs/issues.md so the slices are smaller and more parallelizable`
+
+**Should not trigger**
+- `Route this vague request to the right phase and artifact.`
+- `Refine docs/prd.md; the requirements are still too fuzzy to plan.`
+- `Execute the next ready ticket from docs/issues.md.`
+- `Create a QA plan from the PRD and current implementation state.`
+
+**Borderline**
+- `The PRD is mostly ready, but one dependency is still a little fuzzy; can you plan the tickets anyway?`
+
+For a successful run, verify that the agent:
 1. checks readiness first
 2. inspects local context before asking questions
 3. uses `assets/issues-template.md`
 4. writes vertical-slice tickets with acceptance criteria
-5. makes blockers and parallel lanes explicit
-6. recommends the next phase clearly
+5. marks `AFK` vs `HITL` where relevant
+6. makes blockers and parallel lanes explicit
+7. keeps the plan in `docs/issues.md` rather than editing unrelated implementation files
+8. recommends the next phase clearly, usually execution via `execute-me` for one ready `AFK` ticket

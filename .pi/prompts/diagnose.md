@@ -14,13 +14,15 @@ Gunakan artifact proyek berikut sebagai sumber konteks utama bila relevan:
 
 Tujuan Anda:
 - pahami expected behavior vs observed behavior
+- jika area belum familiar, zoom out dulu untuk memetakan module, entry point, dan caller utama yang relevan
 - bangun feedback loop terkecil yang bisa dipercaya sebelum berteori terlalu jauh
 - coba repro failure dan laporkan statusnya dengan jelas
 - buat 3–5 hipotesis berurutan yang bisa diuji
 - lakukan probe kecil yang membedakan hipotesis-hipotesis itu
-- tentukan apakah hasil diagnosis berujung ke `needs-info`, `needs-research`, `ready-for-execution`, `hitl`, atau `not reproduced`
-- jika perlu mencatat hasilnya, update artifact yang paling tepat dan paling kecil, biasanya `docs/issues.md` atau `docs/qa.md`
+- gunakan hasil diagnosis untuk menentukan apakah outcome-nya `needs-info`, `needs-research`, `ready-for-execution`, `hitl`, atau `not reproduced`
+- jika perlu mencatat hasilnya, update hanya artifact yang paling tepat dan paling kecil, biasanya `docs/issues.md` atau `docs/qa.md`, dan `docs/research.md` hanya bila blocker utamanya benar-benar fakta eksternal
 - jangan langsung mengimplementasikan fix
+- jika outcome sudah `ready-for-execution`, handoff yang disarankan biasanya ke `execute-me`
 
 Tutup dengan ringkasan singkat berisi:
 - `Issue summary`

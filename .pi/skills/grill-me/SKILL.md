@@ -19,6 +19,9 @@ description: Refine an idea, feature, bug fix, refactor, plan, architecture, mig
 - User wants direct implementation without a discovery phase
 - The task is already obvious and low-ambiguity, with no meaningful decision to refine
 - The user only wants factual lookup or broad brainstorming rather than narrowing decisions
+- The main need is to route a new work item to the right phase or artifact rather than pressure-test the idea itself; use `triage-me`
+- A bug, regression, or flaky issue still needs reproduction, isolation, or hypothesis testing before decisions can be challenged; use `diagnose-me`
+- The requirements are already clear enough that the next step is to formalize the destination in `docs/prd.md`; use `prd-me`
 
 ---
 
@@ -35,7 +38,7 @@ While this skill is active:
 - Do not run generators or scaffolding
 - Do not switch into extension-building, coding, or execution mode
 - You may create or update `docs/idea.md` as the grilling-session artifact when the user asks for written output or when that file already exists as the obvious destination
-- Stay in questioning mode until the user explicitly asks to stop grilling and move to implementation
+- Stay in questioning mode until the user explicitly asks to stop grilling, or until you reach the exit condition and hand off to the correct next phase instead of implementing
 
 ### 1. Identify what's being examined
 
@@ -219,6 +222,13 @@ If the user wants a faster session ("just give me the top questions" or "I only 
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:grill-me
+```
+
 A good run of this skill produces:
 
 **Opening message:**
@@ -238,6 +248,30 @@ A good run of this skill produces:
 > Confirmed decisions, unresolved questions, major risks, whether research is needed, whether prototyping is needed, and the specific next step.
 >
 > If `docs/idea.md` is in use, ensure the final distilled summary is written there.
+
+### Trigger validation
+
+**Should trigger:**
+- "Grill me on this app idea before I write a PRD."
+- "Poke holes in this refactor plan and ask me the hard questions."
+- "Stress-test this rollout proposal before we start implementing."
+
+**Should not trigger:**
+- "Route this vague request to the right phase and artifact." → use `triage-me`
+- "Help me reproduce and isolate this flaky test failure." → use `diagnose-me`
+- "Turn this finalized idea into `docs/prd.md`." → use `prd-me`
+
+**Borderline:**
+- "I have a bug-fix idea; challenge the approach before we touch the code." → use `grill-me` only if the main need is pressure-testing the approach rather than reproducing the bug first
+
+### Artifact verification
+
+If the session writes notes:
+- verify the file path is exactly `docs/idea.md`
+- verify the structure matches the repo convention for idea artifacts
+- verify only distilled decisions, questions, and next steps were recorded rather than a raw transcript dump
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to the correct next phase such as research, prototype, PRD, or execution
 
 ### Example cycle
 

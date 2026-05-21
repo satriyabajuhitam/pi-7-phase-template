@@ -18,6 +18,9 @@ description: Research external dependencies or hard-to-explore topics for the cu
 - The user wants broad brainstorming rather than targeted evidence gathering
 - The topic is already well understood and no reusable research artifact is needed
 - The user wants direct implementation and the missing information is not material
+- The main need is to route a vague request to the right phase or artifact rather than gather evidence; use `triage-me`
+- The main need is to pressure-test or sharpen the idea before deciding what to research; use `grill-me`
+- The user explicitly wants to operate Firecrawl tooling directly for search, crawl, scrape, parse, or agent extraction rather than run a project research workflow; use `firecrawl-cli`
 
 ---
 
@@ -165,6 +168,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:research-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -178,6 +188,32 @@ A good run of this skill produces:
 
 **Closing:**
 > States whether the project should move to prototype, PRD, implementation, or more research.
+
+### Trigger validation
+
+**Should trigger:**
+- "Research Stripe webhook signature verification for this project and write `docs/research.md`."
+- "Investigate the auth requirements for the Xero API and summarize the constraints for this repo."
+- "Find the SDK limits for this provider and capture the findings in `docs/research.md`."
+
+**Should not trigger:**
+- "Route this half-specified feature request to the right phase and artifact." → use `triage-me`
+- "Grill me on this product idea before we decide what to research." → use `grill-me`
+- "Use Firecrawl to crawl these docs URLs and save the raw output under `.firecrawl/`." → use `firecrawl-cli`
+
+**Borderline:**
+- "I think we need outside research for this integration, but the problem statement is still fuzzy." → use `research-me` only if the research objective can already be made concrete; otherwise use `grill-me` first
+
+### Artifact verification
+
+If the session writes notes:
+- verify the file path is exactly `docs/research.md`
+- verify the structure matches the repo convention for research artifacts
+- verify sources are identified clearly with links or source identifiers
+- verify findings are distilled rather than copied as raw documentation dumps
+- verify a freshness note with date and staleness warning is present
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to the correct next phase such as more research, prototype, PRD, implementation, or validation
 
 ### Smoke test
 

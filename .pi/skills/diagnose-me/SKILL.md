@@ -19,6 +19,11 @@ description: Diagnose a bug, regression, flaky failure, or performance issue unt
 - The bug is already small, clear, and ready for a normal execution pass
 - The main uncertainty is product scope or requirements rather than technical diagnosis
 - The user wants a full implementation pass and the bug is already well specified
+- The main need is to route a vague report to the right phase or artifact before diagnosis begins; use `triage-me`
+- The bug is already isolated well enough that the next step is a normal one-ticket execution pass; use `execute-me`
+- The main need is a structured QA plan or broader verification artifact rather than bug isolation; use `qa-me`
+- The real blocker is external dependency behavior or vendor facts that need research more than technical isolation; use `research-me`
+- The expected behavior is still too unclear because the requirement itself needs refinement; use `prd-me` or `grill-me`
 
 ---
 
@@ -152,7 +157,7 @@ End with a concise summary containing:
 - `Recommended next step`
 
 The next step should be concrete, such as:
-- run `execute-me` on a clarified bug ticket
+- run `execute-me` on a clarified bug ticket when the outcome is `ready-for-execution`
 - return to `triage-me` for routing
 - gather more info from the reporter
 - perform targeted research
@@ -188,6 +193,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:diagnose-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -201,6 +213,33 @@ A good run of this skill produces:
 
 **Closing:**
 > Gives a concise diagnosis summary and a clear handoff such as `ready-for-execution`, `needs-info`, or `hitl`.
+
+### Trigger validation
+
+**Should trigger:**
+- "Diagnose this bug report before we decide whether it is ready for execution."
+- "Diagnose this QA finding and tell me whether it needs more info or can become a bug-fix ticket."
+- "Diagnose this flaky test failure and propose the next step."
+
+**Should not trigger:**
+- "Route this vague report to the right phase and artifact." → use `triage-me`
+- "Execute the next ready bug-fix ticket from `docs/issues.md`." → use `execute-me`
+- "Create a QA plan from the PRD and current implementation state." → use `qa-me`
+- "Research the provider behavior that might explain this integration failure." → use `research-me`
+- "Refine the requirement because we still do not agree on expected behavior." → use `prd-me` or `grill-me`
+
+**Borderline:**
+- "This bug seems almost clear, but I still want confidence before we start fixing it." → use `diagnose-me` only if reproduction or isolation still materially reduces execution risk; otherwise hand off to `execute-me`
+
+### Artifact verification
+
+If the session records a diagnosis outcome:
+- verify updates go only to the smallest useful existing artifact such as `docs/issues.md`, `docs/qa.md`, or `docs/research.md`
+- verify the diagnosis records expected behavior, observed behavior, feedback loop, reproduction status, and recommended next step
+- verify ranked hypotheses were generated rather than a single unsupported guess
+- verify no unrelated implementation files were edited as part of diagnosis
+- verify temporary debug instrumentation is not left behind
+- verify the closing recommendation points to one clear handoff such as `execute-me`, `triage-me`, `research-me`, HITL, or more info gathering
 
 ### Smoke test
 

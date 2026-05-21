@@ -18,6 +18,11 @@ description: Create or update a QA plan in docs/qa.md from the PRD, issues, and 
 - The project still needs Phase 4 PRD refinement or Phase 5 planning before QA is worthwhile
 - The user wants direct implementation rather than verification
 - The current need is broad product ideation rather than validation
+- The main need is to route a vague request to the right phase or artifact before QA begins; use `triage-me`
+- The expected behavior is still too unclear to verify responsibly; use `prd-me`
+- The work still needs implementation planning rather than verification; use `issues-me`
+- The user wants to execute a ready ticket rather than run structured verification; use `execute-me`
+- A failure still needs reproduction, isolation, or root-cause diagnosis before follow-up work can be planned clearly; use `diagnose-me`
 
 ---
 
@@ -133,6 +138,8 @@ Close by stating which next step is best:
 - more research
 - HITL review
 
+Prefer `execute-me` when QA reveals clear AFK follow-up work, `diagnose-me` when a failure is still ambiguous, and explicit HITL review when human judgment or approval is the real blocker.
+
 Be specific about why.
 
 ---
@@ -163,6 +170,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:qa-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -176,6 +190,35 @@ A good run of this skill produces:
 
 **Closing:**
 > Recommends whether the project should return to execution, add follow-up issues, seek HITL review, or proceed toward release.
+
+### Trigger validation
+
+**Should trigger:**
+- "Create `docs/qa.md` from the PRD, completed issues, and current implementation state."
+- "Build a QA checklist for the implemented flows and identify likely follow-up issues."
+- "Update `docs/qa.md` with findings and recommend whether to return to execution."
+
+**Should not trigger:**
+- "Route this vague request to the right phase and artifact." → use `triage-me`
+- "Refine `docs/prd.md`; expected behavior is still too fuzzy to verify." → use `prd-me`
+- "Break this PRD into tickets in `docs/issues.md`." → use `issues-me`
+- "Execute the next ready AFK ticket from `docs/issues.md`." → use `execute-me`
+- "Help me reproduce and isolate this regression before we decide what follow-up work to create." → use `diagnose-me`
+
+**Borderline:**
+- "We found a failure during QA, but it's not clear whether this is a real bug or a bad test setup." → use `qa-me` only to capture the finding and route follow-up; use `diagnose-me` if reproduction or isolation is still needed before creating confident execution work
+
+### Artifact verification
+
+If the session writes or refines QA artifacts:
+- verify the file path is exactly `docs/qa.md`
+- verify the structure follows `assets/qa-template.md` unless a small justified adjustment was made
+- verify automated checks and human review items are clearly separated
+- verify findings are recorded only when actual evidence exists; otherwise keep them framed as pending verification
+- verify follow-up work is explicit and routed clearly as AFK, HITL, reopened issue, new issue, `execute-me`, or `diagnose-me`
+- verify `docs/issues.md` is updated only when the follow-up is clear enough to record responsibly
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to the correct next step such as `execute-me`, `diagnose-me`, HITL review, or release/sign-off
 
 ### Smoke test
 

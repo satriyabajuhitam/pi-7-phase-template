@@ -19,6 +19,11 @@ description: Triage an incoming bug report, feature request, refactor idea, QA f
 - `docs/prd.md` is already clear and the user wants a full ticket breakdown; use `issues-me`
 - `docs/issues.md` already has a ready AFK ticket and the user wants implementation; use `execute-me`
 - The task is a full research pass, prototype exploration, PRD draft, or QA plan rather than intake routing
+- The main need is to pressure-test or sharpen an idea before deciding its phase; use `grill-me`
+- The main need is a real research pass on external dependencies or difficult documentation; use `research-me`
+- The main need is exploratory comparison of multiple concrete directions; use `prototype-me`
+- The main need is to write or refine `docs/prd.md` rather than route the request; use `prd-me`
+- The main need is a structured QA plan or findings capture rather than intake routing; use `qa-me`
 
 ---
 
@@ -86,9 +91,11 @@ Then report one of:
 - `not reproduced`
 - `cannot reproduce from current information`
 
+Interpret `needs-repro` narrowly: use it when the bug is plausibly real but the current information is not yet sufficient for confident routing into planning or execution.
+
 Routing guidance:
 - confirmed repro with clear scope often means `needs-planning` or `ready-for-execution`
-- unclear or missing repro details usually means `needs-info` or a recommendation to use `diagnose-me`
+- unclear or missing repro details usually means `needs-repro` or `needs-info`
 - suspected external dependency uncertainty may mean `needs-research`
 - if lightweight repro is not enough and the bug still needs a disciplined loop, recommend `diagnose-me`
 
@@ -170,6 +177,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:triage-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -183,6 +197,33 @@ A good run of this skill produces:
 
 **Closing:**
 > Gives a concise triage summary with the destination artifact and specific next step.
+
+### Trigger validation
+
+**Should trigger:**
+- "Triage this bug report and decide whether it needs info, planning, or execution."
+- "Triage this feature request and route it to the right local artifact."
+- "Triage this QA finding and decide whether to reopen an existing ticket or add a new one."
+
+**Should not trigger:**
+- "Grill me on this idea before we decide what phase it belongs to." → use `grill-me`
+- "Research the provider constraints for this integration and summarize them in `docs/research.md`." → use `research-me`
+- "Prototype three variations for this onboarding flow before we commit." → use `prototype-me`
+- "Write `docs/prd.md` from the existing idea and research artifacts." → use `prd-me`
+- "Create a QA plan from the PRD and current implementation state." → use `qa-me`
+
+**Borderline:**
+- "This bug might be real, but the report is thin and I mainly need to know what should happen next." → use `triage-me` if the goal is routing; recommend `diagnose-me` if the next step clearly depends on disciplined reproduction and isolation
+
+### Artifact verification
+
+If the session writes a triage outcome:
+- verify the destination artifact is exactly one of `docs/idea.md`, `docs/research.md`, `docs/prd.md`, `docs/issues.md`, or `docs/prototype/`
+- verify exactly one local triage state is recommended
+- verify the update is limited to the smallest correct artifact rather than spread across multiple files without need
+- verify bug triage records whether the issue was reproduced, not reproduced, or could not be reproduced from current information
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to one clear next phase or handoff such as `diagnose-me`, planning, execution, or HITL
 
 ### Smoke test
 

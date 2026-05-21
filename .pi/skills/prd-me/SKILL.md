@@ -18,6 +18,11 @@ description: Write or refine docs/prd.md from project artifacts such as docs/ide
 - Critical external unknowns still require Phase 2 research
 - Multiple major design directions still need Phase 3 prototyping
 - The user actually wants implementation planning, issue breakdown, or direct coding rather than a PRD
+- The main need is to sharpen or pressure-test the idea before requirements can be written; use `grill-me`
+- The main blocker is missing external evidence or dependency knowledge; use `research-me`
+- Multiple concrete directions still need exploratory comparison or a winning option; use `prototype-me`
+- The PRD is already ready and the next step is ticket breakdown in `docs/issues.md`; use `issues-me`
+- The user wants to execute implementation work rather than define requirements; use `execute-me`
 
 ---
 
@@ -127,6 +132,8 @@ Close by stating which next step is best:
 - more prototyping
 - validation or stakeholder review
 
+Prefer issue or kanban breakdown via `issues-me` as the default handoff after a solid PRD unless the user explicitly wants a different path.
+
 Be specific about why.
 
 ---
@@ -159,6 +166,13 @@ Use this order as a starting point:
 
 ## Verification
 
+Minimum smoke test:
+
+```bash
+/reload
+/skill:prd-me
+```
+
 A good run of this skill produces:
 
 **Opening:**
@@ -172,6 +186,34 @@ A good run of this skill produces:
 
 **Closing:**
 > Recommends whether the project should move to planning, implementation, more research, or more prototyping.
+
+### Trigger validation
+
+**Should trigger:**
+- "Write `docs/prd.md` from `docs/idea.md`, `docs/research.md`, and `docs/prototype/comparison.md`."
+- "Draft a PRD for this feature based on the existing idea and prototype artifacts."
+- "Refine `docs/prd.md` and close the most important requirement gaps only."
+
+**Should not trigger:**
+- "Grill me on this idea before we decide what the requirements should be." → use `grill-me`
+- "Research the provider constraints before we write the PRD." → use `research-me`
+- "Prototype two flows before we commit to a direction." → use `prototype-me`
+- "Break this PRD into tickets in `docs/issues.md`." → use `issues-me`
+- "Implement the next ready ticket." → use `execute-me`
+
+**Borderline:**
+- "The idea is mostly clear, but one edge case still feels fuzzy; can you draft the PRD?" → use `prd-me` if the ambiguity is non-blocking or can be called out explicitly in `Open questions`; otherwise return to the earlier phase that resolves it
+
+### Artifact verification
+
+If the session writes or refines the PRD:
+- verify the file path is exactly `docs/prd.md`
+- verify the structure follows `assets/prd-template.md` unless a small justified adjustment was made
+- verify the document focuses on user-visible behavior, scope, non-goals, requirements, edge cases, and acceptance criteria rather than implementation tasks
+- verify only zero or one prototype winner is promoted into the PRD
+- verify relevant research findings are distilled rather than copied as raw notes
+- verify no unrelated implementation files were edited
+- verify the closing recommendation points to the correct next phase, usually `issues-me` for planning when the PRD is solid
 
 ### Smoke test
 
