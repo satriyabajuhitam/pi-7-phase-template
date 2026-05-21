@@ -143,6 +143,7 @@ Lalu pastikan prompt template ini tersedia:
 Catatan:
 - file di `docs/` memang boleh kosong saat mulai
 - agent akan mengisinya selama proses berjalan
+- artifact kosong ini tetap valid sebagai clean template state dan akan di-skip oleh readiness validator
 - jika suatu saat Anda ingin copy lokal manual, lihat `MASTER_TEMPLATE.md`; namun alur utama yang direkomendasikan adalah **GitHub template repository**
 
 ---
@@ -178,6 +179,14 @@ Pada akhir fase ini, `docs/idea.md` biasanya sudah jelas tentang:
 - fitur minimal v1
 - apa yang sengaja tidak dibuat dulu
 - apakah perlu research/prototype
+- apakah ide sudah benar-benar siap handoff ke PRD
+
+Sebelum lanjut ke `/prd`, pastikan `docs/idea.md` juga punya `## Handoff to PRD` yang memuat:
+- checklist handoff yang relevan
+- `Ready for next phase: yes/no`
+- `Primary blocker` jika readiness masih `no`
+
+Jangan lanjut ke PRD jika handoff ini belum siap.
 
 ---
 
@@ -277,7 +286,28 @@ PRD yang baik biasanya menjelaskan:
 - `docs/prd.md`
 
 ### Kapan lanjut?
-Lanjut jika PRD sudah cukup jelas untuk dipecah jadi ticket.
+Lanjut ke `/issues` hanya jika `docs/prd.md` juga sudah punya `## Handoff to Issues` yang memuat:
+- checklist handoff yang relevan
+- `Ready for next phase: yes/no`
+- `Primary blocker` jika readiness masih `no`
+
+Jangan lanjut ke planning jika handoff ini belum siap.
+
+### Guardrail tambahan: readiness validator
+
+Setelah Anda mulai mengisi `docs/idea.md` atau `docs/prd.md`, Anda bisa menjalankan validator lokal untuk mengecek handoff yang sudah di-hardening sekarang:
+
+```bash
+node scripts/validate-readiness-gates.mjs
+```
+
+Perilakunya:
+- hanya memeriksa `docs/idea.md` dan `docs/prd.md`
+- artifact kosong di-skip agar template tetap bersih
+- hasil lokal bersifat **advisory**
+- CI akan menjalankan validator yang sama sebagai **blocking check**
+
+Validator ini sengaja sempit scope-nya pada minor release ini. Ia belum memvalidasi handoff berikutnya seperti `issues -> execute` atau `execute -> QA`.
 
 ---
 
@@ -317,7 +347,13 @@ Hindari ticket seperti:
 - `docs/issues.md`
 
 ### Kapan lanjut?
-Lanjut jika ada minimal satu ticket `AFK` yang ready.
+Lanjut jika `docs/prd.md` handoff memang sudah siap dan hasil planning menghasilkan minimal satu ticket `AFK` yang ready.
+
+Jika ingin cek ulang guardrail sebelum merge atau sebelum menyerahkan pekerjaan ke orang lain, jalankan lagi:
+
+```bash
+node scripts/validate-readiness-gates.mjs
+```
 
 ---
 

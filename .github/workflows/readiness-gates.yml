@@ -1,0 +1,24 @@
+name: Readiness Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-readiness-gates:
+    name: Validate readiness gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run readiness gate validator (blocking)
+        run: node scripts/validate-readiness-gates.mjs --ci

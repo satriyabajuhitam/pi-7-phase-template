@@ -33,6 +33,7 @@ Example prompts:
 - reads `assets/prd-template.md` before drafting
 - asks only high-leverage clarification questions when needed
 - writes or refines `docs/prd.md`
+- updates `## Handoff to Issues` before recommending planning when `docs/prd.md` is the active artifact
 - focuses on user-visible behavior, scope, non-goals, requirements, edge cases, and acceptance criteria
 - avoids turning the PRD into an implementation plan
 - recommends the next phase clearly
@@ -72,6 +73,8 @@ For a successful run, verify that the agent:
 4. refuses to proceed when multiple prototype directions are still active
 5. writes a PRD centered on end-state behavior
 6. captures edge cases and acceptance criteria
-7. keeps the PRD focused on requirements rather than implementation planning
-8. writes only to `docs/prd.md` for the PRD artifact
-9. recommends the next phase clearly, usually planning via `issues-me`
+7. includes `## Handoff to Issues` with explicit readiness when `docs/prd.md` is the active artifact
+8. keeps the PRD focused on requirements rather than implementation planning
+9. writes only to `docs/prd.md` for the PRD artifact
+10. does not recommend planning when the handoff still says it is not ready
+11. recommends the next phase clearly, usually planning via `issues-me`

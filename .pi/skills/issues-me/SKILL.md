@@ -41,9 +41,13 @@ Before drafting `docs/issues.md`, check whether Phase 5 is justified.
 
 Implementation planning is justified when most of these are true:
 - `docs/prd.md` exists and is concrete enough to plan from
+- `## Handoff to Issues` exists in `docs/prd.md`
+- `docs/prd.md` says `Ready for next phase: yes` in that handoff section
 - scope and non-goals are stable enough for ticket breakdown
 - major open questions no longer block planning
 - if prototyping was used, the PRD already reflects exactly one winning direction
+
+If the PRD handoff says `Ready for next phase: no`, stop and recommend returning to the named blocker or the earlier phase that best resolves it.
 
 If the project is not ready, say so clearly and recommend returning to the earlier phase that needs work.
 
@@ -233,6 +237,7 @@ A good run of this skill produces:
 If the session writes or refines the plan:
 - verify the file path is exactly `docs/issues.md`
 - verify the structure follows `assets/issues-template.md` unless a small justified adjustment was made
+- verify planning did not proceed when `docs/prd.md` handoff still said `Ready for next phase: no`
 - verify tickets are vertical slices rather than horizontal technical layers
 - verify each ticket uses only allowed values for `Status`, `Type`, `Depends on`, `Blocks`, and `Parallelizable`
 - verify dependencies, blockers, and parallel lanes are explicit
@@ -247,6 +252,7 @@ If the session writes or refines the plan:
 3. Give a prompt such as: `Break docs/prd.md into docs/issues.md for execution planning`
 4. Verify that the agent:
    - checks readiness first
+   - checks `## Handoff to Issues` in `docs/prd.md` before planning
    - inspects local artifacts before asking questions
    - uses `assets/issues-template.md`
    - writes vertical-slice tickets instead of layer tickets

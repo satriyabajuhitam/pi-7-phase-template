@@ -27,6 +27,7 @@ Example prompts:
 ## Expected behavior
 
 - checks whether the project is ready for Phase 5
+- checks `## Handoff to Issues` in `docs/prd.md` before planning
 - inspects local artifacts first
 - reads `assets/issues-template.md` before drafting
 - writes or refines `docs/issues.md`
@@ -64,10 +65,12 @@ Then verify behavior with these prompts:
 
 For a successful run, verify that the agent:
 1. checks readiness first
-2. inspects local context before asking questions
-3. uses `assets/issues-template.md`
-4. writes vertical-slice tickets with acceptance criteria
-5. marks `AFK` vs `HITL` where relevant
-6. makes blockers and parallel lanes explicit
-7. keeps the plan in `docs/issues.md` rather than editing unrelated implementation files
-8. recommends the next phase clearly, usually execution via `execute-me` for one ready `AFK` ticket
+2. checks `## Handoff to Issues` in `docs/prd.md` before planning
+3. inspects local context before asking questions
+4. uses `assets/issues-template.md`
+5. writes vertical-slice tickets with acceptance criteria
+6. marks `AFK` vs `HITL` where relevant
+7. makes blockers and parallel lanes explicit
+8. keeps the plan in `docs/issues.md` rather than editing unrelated implementation files
+9. does not plan from a PRD whose handoff still says it is not ready
+10. recommends the next phase clearly, usually execution via `execute-me` for one ready `AFK` ticket

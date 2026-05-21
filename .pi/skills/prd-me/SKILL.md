@@ -132,6 +132,13 @@ Close by stating which next step is best:
 - more prototyping
 - validation or stakeholder review
 
+Before recommending planning, update `## Handoff to Issues` in `docs/prd.md` with:
+- a concise handoff checklist
+- `Ready for next phase: yes/no`
+- `Primary blocker` whenever readiness is `no`
+
+Do not recommend planning or `issues-me` when `## Handoff to Issues` is missing or still says `Ready for next phase: no`. In that case, route the user back to the blocker, the remaining gap, or the earlier phase that best resolves it.
+
 Prefer issue or kanban breakdown via `issues-me` as the default handoff after a solid PRD unless the user explicitly wants a different path.
 
 Be specific about why.
@@ -182,7 +189,7 @@ A good run of this skill produces:
 > Uses `assets/prd-template.md`, focuses on end-state behavior, and asks only high-leverage clarification questions when needed.
 
 **Artifact:**
-> `docs/prd.md` captures scope, non-goals, behavior, requirements, edge cases, acceptance criteria, dependencies, and the recommended next step, based on zero or one prototype winner.
+> `docs/prd.md` captures scope, non-goals, behavior, requirements, edge cases, acceptance criteria, dependencies, the recommended next step, and `## Handoff to Issues`, based on zero or one prototype winner.
 
 **Closing:**
 > Recommends whether the project should move to planning, implementation, more research, or more prototyping.
@@ -210,6 +217,9 @@ If the session writes or refines the PRD:
 - verify the file path is exactly `docs/prd.md`
 - verify the structure follows `assets/prd-template.md` unless a small justified adjustment was made
 - verify the document focuses on user-visible behavior, scope, non-goals, requirements, edge cases, and acceptance criteria rather than implementation tasks
+- verify `## Handoff to Issues` is present when `docs/prd.md` is the active artifact
+- verify `Ready for next phase: yes/no` is explicit in that handoff section
+- verify `Primary blocker` is present whenever readiness is `no`
 - verify only zero or one prototype winner is promoted into the PRD
 - verify relevant research findings are distilled rather than copied as raw notes
 - verify no unrelated implementation files were edited
