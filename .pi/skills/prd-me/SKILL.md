@@ -1,0 +1,188 @@
+---
+name: prd-me
+description: Write or refine docs/prd.md from project artifacts such as docs/idea.md, docs/research.md, and docs/prototype/. Use when the end state is clear enough to define product requirements before planning or implementation.
+---
+
+# PRD Me
+
+## When to use
+
+- The idea is already concrete enough to describe the destination clearly
+- Research and prototyping are complete, or have been judged unnecessary
+- The next need is a product requirements document in `docs/prd.md`
+- The user wants the end state, user-visible behavior, scope, and acceptance criteria written down before planning or implementation
+
+## Do not use when
+
+- The idea is still vague and needs Phase 1 refinement first
+- Critical external unknowns still require Phase 2 research
+- Multiple major design directions still need Phase 3 prototyping
+- The user actually wants implementation planning, issue breakdown, or direct coding rather than a PRD
+
+---
+
+## Workflow
+
+### 0. Stay in PRD mode
+
+While this skill is active:
+- Do not implement product code unless the user explicitly asks to switch modes
+- You may create or update `docs/prd.md`
+- Focus on the end state, not the implementation journey
+- Prefer user-visible behavior, requirements, edge cases, and acceptance criteria over internal technical details
+
+### 1. Validate readiness
+
+Before drafting the PRD, check whether Phase 4 is justified.
+
+A PRD is justified when most of these are true:
+- the problem and desired outcome are already understandable
+- scope boundaries are mostly known
+- major research unknowns are resolved or clearly non-blocking
+- exactly one prototype winner exists when prototyping was used
+- or prototyping was explicitly judged unnecessary
+
+If multiple prototype directions are still active, the project is not ready for a PRD. Say so clearly and recommend returning to Phase 3.
+
+If the project is not ready, say so clearly and recommend the earlier phase to revisit.
+
+### 2. Inspect local artifacts first
+
+Before asking the user anything, inspect relevant local artifacts if they exist:
+- `docs/idea.md`
+- `docs/research.md`
+- `docs/prototype/comparison.md`
+- other files under `docs/prototype/` when needed
+- existing `docs/prd.md`
+
+Use them to extract:
+- problem statement
+- desired outcome
+- scope and non-goals
+- user-visible behaviors
+- relevant research findings
+- whether prototyping was unnecessary or which single prototype direction won
+- known risks and open questions
+
+Do not ask the user for information that already exists in the repo.
+
+### 3. Read the PRD template asset
+
+Read `assets/prd-template.md` before writing or restructuring `docs/prd.md`.
+
+Use it as the default shape for the document unless the repo context strongly justifies a small adjustment.
+
+### 4. Build a PRD decision map
+
+Before drafting in full, identify the decisions that must be clear in the PRD:
+- users and actors
+- core flows and expected behavior
+- scope boundaries
+- non-goals
+- functional requirements
+- edge cases
+- acceptance criteria
+- constraints and dependencies
+
+If major ambiguity remains, do not bluff. Surface the uncertainty explicitly.
+
+### 5. Ask only high-leverage clarifying questions when needed
+
+If the artifacts are not enough for a good PRD, ask targeted clarification questions.
+
+Question rules:
+- ask only what materially improves the PRD
+- prefer one question at a time
+- focus on blockers, edge cases, scope boundaries, or acceptance criteria
+- do not drift into implementation design unless it directly changes the requirement
+
+If the available context is already sufficient, draft immediately instead of interviewing unnecessarily.
+
+### 6. Write or refine `docs/prd.md`
+
+Write the PRD using `assets/prd-template.md` as the base structure.
+
+Writing rules:
+- describe the destination, not the journey
+- focus on what users will see and how the system will behave
+- write observable requirements, not implementation tasks
+- keep implementation details out unless they are essential to clarify behavior or constraints
+- keep the document concise but complete enough for planning
+- preserve still-correct prior content when refining an existing PRD instead of blindly overwriting
+
+### 7. Distill prototype and research outputs appropriately
+
+When using earlier artifacts:
+- promote only one winning prototype direction into the PRD
+- if no prototype was needed, say that explicitly instead of inventing one
+- include only research findings that materially affect requirements or constraints
+- do not dump raw research notes or all prototype variants into the PRD
+
+### 8. Recommend the next phase
+
+Close by stating which next step is best:
+- issue or kanban breakdown
+- implementation
+- more research
+- more prototyping
+- validation or stakeholder review
+
+Be specific about why.
+
+---
+
+## Default questioning order
+
+Use this order as a starting point:
+
+1. What user or business problem must this PRD solve?
+2. What should users see and experience when this is done well?
+3. What is in scope for this phase, and what is explicitly out?
+4. Which edge cases or business rules must be captured now?
+5. What acceptance criteria would prove the outcome is correct?
+6. What is the best next phase once the PRD is written?
+
+---
+
+## Gotchas
+
+- Do not turn the PRD into an implementation plan.
+- Do not anchor the document around modules, file paths, or code snippets.
+- Do not skip readiness checks and force a PRD too early.
+- Do not write a PRD from multiple competing prototype directions.
+- Do not ignore unresolved edge cases that materially change behavior.
+- Do not copy raw research or prototype notes into the PRD.
+- Do not leave scope and non-goals implicit.
+- If key ambiguity remains, either ask or mark it clearly in `Open questions`.
+
+---
+
+## Verification
+
+A good run of this skill produces:
+
+**Opening:**
+> States whether the project is ready for Phase 4 and identifies the source artifacts being used.
+
+**During drafting:**
+> Uses `assets/prd-template.md`, focuses on end-state behavior, and asks only high-leverage clarification questions when needed.
+
+**Artifact:**
+> `docs/prd.md` captures scope, non-goals, behavior, requirements, edge cases, acceptance criteria, dependencies, and the recommended next step, based on zero or one prototype winner.
+
+**Closing:**
+> Recommends whether the project should move to planning, implementation, more research, or more prototyping.
+
+### Smoke test
+
+1. `/reload`
+2. `/skill:prd-me`
+3. Give a prompt such as: `Write docs/prd.md from docs/idea.md, docs/research.md, and docs/prototype/comparison.md`
+4. Verify that the agent:
+   - checks readiness first
+   - inspects local artifacts before asking questions
+   - uses `assets/prd-template.md`
+   - refuses to proceed when multiple prototype directions are still active
+   - writes a PRD focused on user-visible behavior and requirements
+   - avoids turning the document into an implementation plan
+   - recommends the next phase clearly

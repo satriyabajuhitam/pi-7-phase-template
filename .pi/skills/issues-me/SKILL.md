@@ -1,0 +1,214 @@
+---
+name: issues-me
+description: Break docs/prd.md into a local kanban-style implementation plan in docs/issues.md with vertical slices, dependencies, and parallelization guidance. Use when the PRD is ready and the next step is execution planning.
+---
+
+# Issue Me
+
+## When to use
+
+- `docs/prd.md` is ready and the next step is implementation planning
+- The user wants a local kanban-style breakdown in `docs/issues.md`
+- The work needs clear ticket boundaries, blockers, and parallelization guidance before execution
+- The team wants independently grabbable tickets rather than one large sequential plan
+
+## Do not use when
+
+- The PRD is missing or still too ambiguous
+- The project still needs Phase 3 prototyping or Phase 4 PRD refinement
+- The user wants direct implementation rather than planning
+- The work is so small and obvious that ticket breakdown adds no value
+
+---
+
+## Workflow
+
+### 0. Stay in planning mode
+
+While this skill is active:
+- Do not implement product code unless the user explicitly asks to switch modes
+- You may create or update `docs/issues.md`
+- Focus on execution planning, not coding
+- Prefer vertical slices, explicit blockers, and clear acceptance criteria over technical decomposition by layer
+
+### 1. Validate readiness
+
+Before drafting `docs/issues.md`, check whether Phase 5 is justified.
+
+Implementation planning is justified when most of these are true:
+- `docs/prd.md` exists and is concrete enough to plan from
+- scope and non-goals are stable enough for ticket breakdown
+- major open questions no longer block planning
+- if prototyping was used, the PRD already reflects exactly one winning direction
+
+If the project is not ready, say so clearly and recommend returning to the earlier phase that needs work.
+
+### 2. Inspect local artifacts first
+
+Before asking the user anything, inspect relevant local artifacts if they exist:
+- `docs/prd.md`
+- `docs/idea.md`
+- `docs/research.md`
+- `docs/prototype/comparison.md`
+- existing `docs/issues.md`
+
+Use them to extract:
+- the main user-visible flows
+- acceptance criteria and scope boundaries
+- dependencies and constraints
+- unresolved questions that may affect planning
+- likely foundations or shared contracts
+
+Do not ask the user for information that already exists in the repo.
+
+### 3. Read the issues template asset
+
+Read `assets/issues-template.md` before writing or restructuring `docs/issues.md`.
+
+Use it as the default shape unless the repo context strongly justifies a small adjustment.
+
+Respect the ticket conventions in that asset, especially:
+- `Status`: `todo`, `in-progress`, `blocked`, `done`
+- `Type`: `AFK`, `HITL`
+- `Depends on`: `none` or explicit ticket IDs
+- `Blocks`: explicit ticket IDs or blank when none
+- `Parallelizable`: `yes`, `no`
+
+### 4. Break the PRD into vertical slices
+
+Draft tickets as **vertical slices**, not horizontal layers.
+
+Vertical slice rules:
+- each ticket should deliver a narrow but complete outcome through all relevant layers
+- a completed ticket should be demoable, testable, or otherwise externally verifiable
+- prefer many thin slices over a few thick ones
+- avoid tickets like "build service layer" or "create schema" unless that work is genuinely the smallest meaningful outcome
+
+Prefer slices that map to real user-visible or system-visible outcomes.
+
+### 5. Classify tickets as AFK or HITL
+
+For each ticket, choose one:
+- `AFK`: an agent can execute it safely with the current context
+- `HITL`: human-in-the-loop is required for approval, review, policy, UX judgment, migration gating, or another material decision
+
+Prefer `AFK` where possible, but do not hide genuine human decision points.
+
+### 6. Map dependencies and parallelization
+
+For each ticket, make these explicit:
+- `Depends on`
+- `Blocks`
+- `Parallelizable`
+
+Also maintain a repo-level parallelization summary in `docs/issues.md`:
+- what can start immediately
+- what is blocked
+- what can run in separate lanes
+
+Do not assume everything can run in parallel.
+
+### 7. Review granularity before finalizing
+
+Before finalizing the plan, check:
+- Is any ticket too large?
+- Is any ticket too technical and not outcome-oriented?
+- Are blockers explicit?
+- Do the tickets collectively cover the PRD?
+- Is there a smaller, safer slicing that would unlock parallel execution?
+
+If the breakdown is weak, refine it before writing the final artifact.
+
+### 8. Write or refine `docs/issues.md`
+
+Write the plan using `assets/issues-template.md` as the base structure.
+
+At minimum include:
+- `Planning assumptions`
+- `Dependency rules`
+- `Parallelization plan`
+- `Tickets`
+
+For each ticket, include:
+- issue ID
+- title
+- status using only `todo`, `in-progress`, `blocked`, or `done`
+- type using only `AFK` or `HITL`
+- goal
+- why it exists
+- dependencies and blockers
+- whether it is parallelizable using only `yes` or `no`
+- source requirements
+- scope
+- acceptance criteria
+- notes or risks
+
+When capturing QA fallout later, prefer reopening an existing ticket if the original scope still fits; otherwise add a new ticket.
+
+### 9. Recommend the next phase
+
+Close by stating which next step is best:
+- execution
+- PRD revision
+- more research
+- more prototyping
+- stakeholder review
+
+Be specific about why.
+
+---
+
+## Default questioning order
+
+Use this order as a starting point:
+
+1. What are the smallest meaningful vertical slices in this PRD?
+2. Which slices can be completed and verified independently?
+3. Which slices are blocked by shared contracts, approvals, or earlier outcomes?
+4. Which slices are safe for AFK execution versus HITL review?
+5. What can run in parallel immediately?
+6. What still makes execution risky or ambiguous?
+
+---
+
+## Gotchas
+
+- Do not turn tickets into horizontal technical layers.
+- Do not skip readiness checks and force planning from a weak PRD.
+- Do not make tickets so large that a single ticket hides multiple outcomes.
+- Do not ignore blockers just to make the plan look parallel.
+- Do not omit acceptance criteria.
+- Do not assume every human decision can be delegated to an AFK ticket.
+- If the PRD still leaves critical ambiguity, say so clearly instead of bluffing.
+
+---
+
+## Verification
+
+A good run of this skill produces:
+
+**Opening:**
+> States whether the project is ready for Phase 5 and identifies the source artifacts being used.
+
+**During planning:**
+> Uses `assets/issues-template.md`, breaks the PRD into vertical slices, marks AFK vs HITL, and makes blockers explicit.
+
+**Artifact:**
+> `docs/issues.md` contains planning assumptions, dependency rules, a parallelization plan, and detailed tickets with acceptance criteria.
+
+**Closing:**
+> Recommends whether the project should move to execution or return to an earlier phase.
+
+### Smoke test
+
+1. `/reload`
+2. `/skill:issues-me`
+3. Give a prompt such as: `Break docs/prd.md into docs/issues.md for execution planning`
+4. Verify that the agent:
+   - checks readiness first
+   - inspects local artifacts before asking questions
+   - uses `assets/issues-template.md`
+   - writes vertical-slice tickets instead of layer tickets
+   - marks AFK vs HITL where relevant
+   - makes dependencies and parallelization explicit
+   - recommends the next phase clearly
