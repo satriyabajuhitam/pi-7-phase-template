@@ -44,6 +44,7 @@ Or trigger it naturally with prompts such as:
 - helps turn a vague idea into a concrete problem statement, scope, assumptions, and next step
 - does not start implementing or editing implementation files unless the user explicitly asks to switch modes
 - may maintain `docs/idea.md` as the written artifact for the grilling session when requested or when that file already exists as the obvious destination
+- updates `## Handoff to PRD` before recommending a PRD handoff when `docs/idea.md` is the active artifact
 - checks the codebase first when local evidence can answer a question
 - uses `CONTEXT.md` or relevant ADRs as constraints when they already exist in the repo
 - sharpens vague domain language instead of letting overloaded terms slide
@@ -79,6 +80,8 @@ For a successful run, verify that the agent:
 5. does not ask for information already available in the codebase
 6. respects `CONTEXT.md` or relevant ADRs when they exist
 7. updates `docs/idea.md` with distilled session notes when requested
-8. writes only to `docs/idea.md` when using an artifact, not unrelated files
-9. keeps the idea artifact aligned to the repo structure rather than dumping a raw transcript
-10. ends with a concise summary and a correct next-phase recommendation
+8. includes `## Handoff to PRD` with explicit readiness when `docs/idea.md` is the active artifact
+9. writes only to `docs/idea.md` when using an artifact, not unrelated files
+10. keeps the idea artifact aligned to the repo structure rather than dumping a raw transcript
+11. does not recommend PRD when the handoff still says it is not ready
+12. ends with a concise summary and a correct next-phase recommendation

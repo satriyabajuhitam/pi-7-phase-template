@@ -117,6 +117,7 @@ Default structure:
 - `## Need prototype?`
 - `## Biggest risk`
 - `## Recommended next step`
+- `## Handoff to PRD`
 
 Update the file at these checkpoints:
 - after the opening restatement + decision map
@@ -195,6 +196,13 @@ Stop when one of these is true:
 
 If `docs/idea.md` is the active session artifact, the closing summary must also be written there before handing off.
 
+Before recommending PRD as the next phase, update `## Handoff to PRD` in `docs/idea.md` with:
+- a concise handoff checklist
+- `Ready for next phase: yes/no`
+- `Primary blocker` whenever readiness is `no`
+
+Do not recommend PRD handoff when `## Handoff to PRD` is missing or still says `Ready for next phase: no`. In that case, route the user back to the blocker, the remaining question, or the earlier phase that best resolves it.
+
 After grilling, suggest a concrete next step such as creating `docs/research.md`, building a prototype, writing `docs/prd.md`, or moving to implementation if the idea is already clear enough.
 
 ---
@@ -269,6 +277,9 @@ A good run of this skill produces:
 If the session writes notes:
 - verify the file path is exactly `docs/idea.md`
 - verify the structure matches the repo convention for idea artifacts
+- verify `## Handoff to PRD` is present when `docs/idea.md` is used as the session artifact
+- verify `Ready for next phase: yes/no` is explicit in that handoff section
+- verify `Primary blocker` is present whenever readiness is `no`
 - verify only distilled decisions, questions, and next steps were recorded rather than a raw transcript dump
 - verify no unrelated implementation files were edited
 - verify the closing recommendation points to the correct next phase such as research, prototype, PRD, or execution
