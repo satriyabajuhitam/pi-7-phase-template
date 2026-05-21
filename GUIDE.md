@@ -82,78 +82,42 @@ Ini penting supaya project tetap kecil dan cocok untuk belajar.
 
 ### Apakah repo ini sudah bisa dipakai sebagai master?
 
-**Ya, hampir.**
+**Ya.**
 
-Untuk dipakai sebagai **master workflow**, repo ini sudah kuat karena sudah punya:
+Repo ini sudah siap dipakai sebagai **GitHub template repository** untuk memulai project baru dengan workflow 7 fase.
+
+Isi template ini sudah mencakup:
 - `AGENTS.md`
 - semua skill fase 1–7 di `.pi/skills/`
 - semua prompt template di `.pi/prompts/`
 - `GUIDE.md`
 - struktur artifact di `docs/`
+- artifact `docs/` yang sudah bersih dan siap dipakai
 
-Tapi untuk dipakai sebagai **master project yang bersih**, saya sarankan Anda menganggap repo ini sebagai **template workflow**, lalu membersihkan artifact contoh sebelum mulai project baru.
+### Cara memulai project baru
 
-Yang sebaiknya dibersihkan saat membuat project baru:
-- isi `docs/idea.md`
-- isi `docs/research.md`
-- isi `docs/prd.md`
-- isi `docs/issues.md`
-- isi `docs/qa.md` jika ada
-- isi `docs/prototype/`
-- folder sandbox/contoh seperti `sandbox/demo-notes/` bila tidak dibutuhkan
-- cache `.firecrawl/` bila ada
+Rekomendasi utama:
 
-### Contoh copy master project ke folder baru
+1. Buka repo template ini di GitHub
+2. Klik **Use this template**
+3. Buat repo baru, misalnya `my-todo-app`
+4. Clone repo baru tersebut ke mesin lokal
 
-Misalnya repo master ini ada di:
+Contoh:
 
 ```bash
-/path/to/pi-7-phase-template
+git clone git@github.com:YOUR_USERNAME/my-todo-app.git
+cd my-todo-app
 ```
 
-Dan Anda ingin memulai project baru di:
+Jika Anda belum memakai SSH, bisa juga via HTTPS:
 
 ```bash
-/path/to/my-todo-app
+git clone https://github.com/YOUR_USERNAME/my-todo-app.git
+cd my-todo-app
 ```
 
-Contoh perintah:
-
-```bash
-rsync -a \
-  --exclude '.git' \
-  --exclude '.firecrawl' \
-  /path/to/pi-7-phase-template/ \
-  /path/to/my-todo-app/
-```
-
-Lalu masuk ke project baru:
-
-```bash
-cd /path/to/my-todo-app
-```
-
-Kalau ingin project baru benar-benar bersih dari artifact contoh, jalankan:
-
-```bash
-: > docs/idea.md
-: > docs/research.md
-: > docs/prd.md
-: > docs/issues.md
-rm -f docs/qa.md
-rm -f docs/prototype/*.md
-rm -rf sandbox/demo-notes
-```
-
-Jika ingin langsung menjadikannya repo git baru:
-
-```bash
-git init
-git add .
-git commit -m "chore: initialize project from 7-phase workflow master"
-```
-
-### Setelah copy project
+### Setelah clone project baru
 
 Jalankan dulu:
 
@@ -171,8 +135,9 @@ Lalu pastikan prompt template ini tersedia:
 - `/qa`
 
 Catatan:
-- file di `docs/` boleh kosong saat mulai
+- file di `docs/` memang boleh kosong saat mulai
 - agent akan mengisinya selama proses berjalan
+- jika suatu saat Anda ingin copy lokal manual, lihat `MASTER_TEMPLATE.md`; namun alur utama yang direkomendasikan adalah **GitHub template repository**
 
 ---
 
