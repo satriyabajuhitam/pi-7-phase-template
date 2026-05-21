@@ -86,3 +86,15 @@ Each item should be testable from the outside.
 - `docs/idea.md`
 - `docs/research.md`
 - `docs/prototype/comparison.md`
+
+## Handoff to Issues
+- [ ] Main user flows are clear
+- [ ] Acceptance criteria are testable enough for planning
+- [ ] Scope boundaries are explicit
+- [ ] Dependencies and constraints that affect slicing are visible
+- [ ] Material ambiguities that could break ticket breakdown are explicitly listed
+
+Ready for next phase: yes/no
+Primary blocker: none / ...
+Notes:
+-
