@@ -2,6 +2,8 @@
 
 ## Purpose
 
+This file is primarily for the **maintainer of the template**, not the end user of a project created from the template.
+
 This repository is intended to serve as a **clean master template** for the local 7-phase AI-assisted development workflow used in this project.
 
 It is not a product app by itself.
@@ -11,6 +13,9 @@ It is a reusable workflow starter that provides:
 - prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
 - `GUIDE.md` as the usage guide
+
+If you want to **use** the template for a new project, start with `README.md` and `GUIDE.md`.
+If you want to **maintain or republish** the template itself, this file is the right reference.
 
 ---
 
@@ -62,23 +67,22 @@ It is a reusable workflow starter that provides:
 
 ---
 
-## Intended use
+## Maintainer workflow
 
-Use this repo as a starting point when you want to create a new project that follows the same workflow.
+Use this repo as the source template when you want to maintain, improve, or republish the workflow for future projects.
 
-Recommended flow:
-1. publish this repo as a **GitHub template repository**
-2. click **Use this template** to create a new project repo
-3. clone the new repo locally
-4. open the new project in Pi
-5. run `/reload`
-6. start with `/idea`
+Recommended maintainer flow:
+1. keep the repo clean and generic
+2. publish it as a **GitHub template repository**
+3. direct end users to click **Use this template**
+4. keep `README.md` and `GUIDE.md` consumer-facing
+5. keep `MASTER_TEMPLATE.md` focused on template maintenance
 
 ---
 
-## Recommended project creation process
+## How end users should create projects
 
-Preferred path:
+Preferred path for end users:
 
 1. Open the template repo on GitHub
 2. Click **Use this template**
@@ -103,12 +107,22 @@ This master template should stay clean:
 - do not leave project-specific prototype outputs in the template
 - do not leave `.firecrawl/` retrieval cache in the template
 - avoid adding app-specific sample code unless it is clearly marked as disposable example material
+- keep maintainer-only notes out of `README.md` unless they are also useful to end users
+- prefer project-local skills and prompts so the template stays portable
+
+### Maintainer checklist before publish
+
+- confirm `docs/` artifacts are empty
+- confirm `.firecrawl/` is empty or ignored
+- confirm no disposable sandbox/example output remains
+- confirm new skills and prompts are documented in `README.md`, `GUIDE.md`, and `AGENTS.md` when relevant
+- confirm template instructions still point to the GitHub template flow as the default path
 
 ---
 
 ## First command in a new project
 
-After opening the copied project in Pi:
+After an end user opens the generated project in Pi:
 
 ```txt
 /reload
@@ -124,6 +138,7 @@ Then begin with:
 
 ## Notes
 
+- `README.md` should stay optimized for first-time visitors to the GitHub repo.
 - `GUIDE.md` explains how to use the workflow with a simple from-scratch app example.
 - `AGENTS.md` defines the repo rules and workflow invariants.
 - The source of truth during project execution should live under `docs/`.

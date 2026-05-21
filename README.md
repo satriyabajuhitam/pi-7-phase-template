@@ -56,34 +56,49 @@ Optional helpers:
 
 ---
 
-## Recommended usage
+## Quick start
 
-### Option A — Best: use as a GitHub template
-
-1. Publish this repo to GitHub
-2. Enable **Template repository** in GitHub settings
-3. Click **Use this template** to create a new project repo
-4. Clone the new repo locally
-5. Open it in Pi
-6. Run:
+1. Click **Use this template** on GitHub
+2. Create your new repository
+3. Clone the new repo locally
+4. Open it in Pi
+5. Run:
 
 ```txt
 /reload
 ```
 
-7. Start with:
+6. Start with:
 
 ```txt
 /idea [your new project idea]
 ```
 
-### Option B — Local copy
+## Recommended usage
 
-If you are not using GitHub templates yet, see:
+### Best path: use as a GitHub template
+
+Example:
+
+```bash
+git clone git@github.com:YOUR_USERNAME/your-new-project.git
+cd your-new-project
+```
+
+If you are not using SSH yet:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/your-new-project.git
+cd your-new-project
+```
+
+### Maintainer notes
+
+If you are maintaining or republishing this workflow as your own master template, see:
 - `MASTER_TEMPLATE.md`
 - `GUIDE.md`
 
-for copy/setup guidance.
+for template-management and usage details.
 
 ---
 
