@@ -89,6 +89,11 @@ Focus on:
 - any research or prototype guidance that materially affects implementation
 - whether the ticket is suitable for TDD through a public interface
 
+If the area is unfamiliar, zoom out before editing:
+- identify the relevant modules and major callers
+- summarize the code path at one level above the line-by-line implementation
+- use that map to keep the change targeted and avoid breaking adjacent flows
+
 Prefer minimal, targeted changes over broad refactors.
 
 ### 6. Implement only that ticket
@@ -176,6 +181,7 @@ If `docs/issues.md` is inconsistent or unclear about dependencies, stop and surf
 - Do not silently rewrite acceptance criteria to fit the implementation you prefer.
 - Do not ignore a blocker to keep the loop moving.
 - Do not drift into opportunistic refactors unless the ticket explicitly requires them.
+- Do not stay trapped in local implementation detail when a quick module/caller map would reveal the safer change boundary.
 - Do not force TDD onto tickets where docs/config/setup work or a missing test harness would significantly expand the ticket scope.
 - Do not write a bulk wall of tests before implementation; keep TDD vertical.
 - Do not commit unless the user explicitly asked for commit-per-ticket execution.

@@ -49,6 +49,11 @@ Use them to determine:
 - whether QA already captured evidence or follow-up notes
 - whether the issue is still in scope or is actually new scope
 
+If the area is unfamiliar, zoom out first:
+- identify the relevant modules, entry points, and major callers
+- describe the code path one layer above the immediate failure site
+- use that map to decide where a trustworthy feedback loop should live
+
 Do not ask the user for information that is already in the repo.
 
 ### 2. Build a feedback loop before theorizing
@@ -174,6 +179,7 @@ Use this order as a starting point:
 - Do not start fixing a bug before you have a loop you trust.
 - Do not confuse a nearby error with the reported failure.
 - Do not jump from one vague intuition straight to code edits.
+- Do not stay buried in a tiny function if the real problem is understanding the surrounding module and caller path.
 - Do not create a giant transcript of every probe; keep the outcome distilled.
 - Do not leave temporary debug instrumentation behind.
 - Do not create a new artifact when `docs/issues.md` or `docs/qa.md` is already the right home.

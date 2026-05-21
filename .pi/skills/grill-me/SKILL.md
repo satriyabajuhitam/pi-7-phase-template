@@ -88,6 +88,7 @@ When the topic touches domain language, product concepts, or existing design dec
 - read `CONTEXT.md` first if it exists
 - read relevant files under `docs/adr/` if they exist
 - use those files as constraints during grilling rather than re-asking already settled decisions
+- if the area of code is unfamiliar, zoom out and map the relevant modules and major callers before drilling into details
 - if the user's terminology conflicts with documented language, call it out explicitly and ask for clarification
 - if a term is vague or overloaded, sharpen it with a concrete scenario before continuing
 - if codebase behavior contradicts the user's description, surface the contradiction clearly
