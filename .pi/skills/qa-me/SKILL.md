@@ -100,7 +100,7 @@ If this run is planning-only, leave findings framed as pending verification rath
 
 When QA reveals real follow-up work:
 - identify whether the follow-up should become `AFK` or `HITL`
-- recommend reopening an issue, adding a new issue, or returning to planning if needed
+- recommend reopening an issue, adding a new issue, returning to planning, or using `diagnose-me` if the failure still needs reproduction and isolation
 - update `docs/issues.md` only when the follow-up is clear enough to record responsibly
 
 Do not bury important QA failures in prose without linking them to next-step work.

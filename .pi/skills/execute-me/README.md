@@ -4,7 +4,7 @@ Project-local Pi skill for Phase 6 execution.
 
 ## Purpose
 
-Use this skill when `docs/issues.md` is ready and the next step is Ralph-style implementation. The skill selects exactly one ready `AFK` ticket, implements it, validates the change, and updates the ticket status.
+Use this skill when `docs/issues.md` is ready and the next step is Ralph-style implementation. The skill selects exactly one ready `AFK` ticket, implements it, validates the change, and updates the ticket status. For behavior changes that are testable through a public interface, it should prefer TDD without making TDD mandatory for every ticket.
 
 ## Usage
 
@@ -23,6 +23,8 @@ Example prompts:
 - inspects local artifacts first
 - selects exactly one ready `AFK` ticket
 - keeps scope limited to that ticket
+- prefers TDD for behavior changes that are testable through a public interface
+- avoids forcing TDD for docs, config, setup, or other poor-fit tickets
 - validates the change before marking the ticket done
 - updates `docs/issues.md`
 - reports whether execution can continue or is blocked

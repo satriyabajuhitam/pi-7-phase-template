@@ -24,6 +24,8 @@ This repo is designed to be used as a **GitHub template repository** for startin
 - `MASTER_TEMPLATE.md` explaining how to use this repo as a reusable master template
 
 Bundled project-local skills include:
+- `triage-me`
+- `diagnose-me`
 - `grill-me`
 - `firecrawl-cli`
 - `research-me`
@@ -39,6 +41,7 @@ Bundled project-local skills include:
 
 After opening the project in Pi and running `/reload`, these prompts are available:
 
+Core 7-phase flow:
 - `/idea`
 - `/research`
 - `/prototype`
@@ -46,6 +49,10 @@ After opening the project in Pi and running `/reload`, these prompts are availab
 - `/issues`
 - `/execute`
 - `/qa`
+
+Optional helpers:
+- `/triage`
+- `/diagnose`
 
 ---
 

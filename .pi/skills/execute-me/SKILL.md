@@ -87,6 +87,7 @@ Focus on:
 - the PRD sections it references
 - nearby code paths and existing patterns
 - any research or prototype guidance that materially affects implementation
+- whether the ticket is suitable for TDD through a public interface
 
 Prefer minimal, targeted changes over broad refactors.
 
@@ -99,6 +100,11 @@ Execution rules:
 - do not absorb neighboring tickets into this run
 - if a prerequisite is actually missing, stop and mark the ticket blocked
 - if the ticket text is too ambiguous to implement safely, ask a targeted question or mark it blocked
+- if the selected work is really a diagnosis problem rather than a clear execution task, mark it blocked and recommend `diagnose-me`
+- when the ticket changes behavior and is testable through a public interface, prefer TDD via a vertical red-green-refactor loop
+- in TDD mode, write one failing test for one behavior, implement the minimum code to pass it, then repeat
+- do not write all tests up front before implementation; avoid horizontal slicing
+- if TDD is not a good fit for this ticket, say so explicitly and use the smallest trustworthy validation instead
 
 ### 7. Validate before marking done
 
@@ -112,6 +118,7 @@ Run the most relevant validation available, such as:
 Do not mark the ticket done unless the acceptance criteria are plausibly satisfied and you have some validation evidence.
 
 If validation fails and you cannot resolve it within the selected ticket's scope, mark the ticket `blocked` and explain why.
+If TDD was appropriate but skipped, explain the reason briefly in your report.
 
 ### 8. Update `docs/issues.md`
 
@@ -151,8 +158,11 @@ If `docs/issues.md` is inconsistent or unclear about dependencies, stop and surf
 ## Validation rules
 
 - Prefer the smallest validation that gives trustworthy evidence.
+- When a behavior change is testable through a public interface, prefer test-first validation with a red-green-refactor loop.
 - If a ticket affects behavior already covered by tests, run those tests.
+- If you added tests during execution, run the new tests plus any nearby relevant tests.
 - If a ticket affects shared contracts or types, include typechecking.
+- If TDD is not practical for the ticket, say so explicitly and describe the alternative validation used.
 - If no automated validation exists, say that explicitly and describe the manual checks performed.
 - Validation is part of the ticket, not optional cleanup.
 
@@ -166,6 +176,8 @@ If `docs/issues.md` is inconsistent or unclear about dependencies, stop and surf
 - Do not silently rewrite acceptance criteria to fit the implementation you prefer.
 - Do not ignore a blocker to keep the loop moving.
 - Do not drift into opportunistic refactors unless the ticket explicitly requires them.
+- Do not force TDD onto tickets where docs/config/setup work or a missing test harness would significantly expand the ticket scope.
+- Do not write a bulk wall of tests before implementation; keep TDD vertical.
 - Do not commit unless the user explicitly asked for commit-per-ticket execution.
 
 ---

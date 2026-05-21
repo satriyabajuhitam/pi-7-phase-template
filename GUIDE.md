@@ -35,6 +35,10 @@ Urutan command yang tersedia:
 6. `/execute`
 7. `/qa`
 
+Tambahan opsional untuk project yang sudah berjalan:
+- `/triage` untuk bug report, feature request, refactor proposal, atau QA finding yang belum jelas harus masuk ke fase mana
+- `/diagnose` untuk bug, regression, flaky failure, atau QA finding yang butuh repro dan isolasi sebelum dieksekusi
+
 Artifact utama yang dihasilkan:
 - `docs/idea.md`
 - `docs/research.md`
@@ -126,6 +130,8 @@ Jalankan dulu:
 ```
 
 Lalu pastikan prompt template ini tersedia:
+- `/triage` (opsional helper)
+- `/diagnose` (opsional helper)
 - `/idea`
 - `/research`
 - `/prototype`

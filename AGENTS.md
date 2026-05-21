@@ -9,6 +9,29 @@ This repository follows a phased AI-assisted development workflow inspired by Ma
 
 ## Repository workflow
 
+### Optional helper — Local intake / triage
+When the user brings a new bug report, feature request, refactor proposal, QA finding, or vague work item and the right next phase is not yet obvious:
+- Use the project-local `triage-me` skill.
+- Inspect local artifacts first to determine whether the item is already in scope.
+- Classify the item and recommend exactly one local triage state such as `needs-info`, `needs-prd`, `needs-planning`, or `ready-for-execution`.
+- For bugs, attempt lightweight reproduction before routing the item.
+- Route the work to the smallest correct local artifact, usually `docs/idea.md`, `docs/research.md`, `docs/prd.md`, or `docs/issues.md`.
+- For QA fallout, reopen an existing ticket when the original scope is still correct; add a new ticket only when the finding is truly new scope.
+
+Prompt template:
+- Use `/triage [laporan-atau-permintaan-yang-perlu-ditriage]` to trigger the local intake workflow via `.pi/prompts/triage.md`.
+
+### Optional helper — Diagnosis
+When a bug, regression, flaky failure, or QA finding is too ambiguous for direct execution:
+- Use the project-local `diagnose-me` skill.
+- Build a trustworthy feedback loop before theorizing or fixing.
+- Reproduce the failure when possible, generate ranked hypotheses, and use focused probes.
+- Route the outcome to the smallest useful artifact, usually `docs/issues.md` or `docs/qa.md`.
+- Recommend a concrete handoff such as `ready-for-execution`, `needs-info`, `needs-research`, or `hitl`.
+
+Prompt template:
+- Use `/diagnose [bug-report-atau-finding-yang-perlu-didiagnosis]` to trigger the local diagnosis workflow via `.pi/prompts/diagnose.md`.
+
 ### Phase 1 — Idea
 When the user wants to refine an idea before research, prototyping, or implementation:
 - Use the project-local `grill-me` skill.
@@ -119,6 +142,8 @@ When the user wants to execute planned work Ralph-style:
 - Use the project-local `execute-me` skill.
 - Treat `docs/issues.md` as the task source for execution.
 - Execute exactly one ready `AFK` ticket per run.
+- Prefer test-first execution for behavior changes that are testable through a public interface.
+- Use red-green-refactor only when it fits the ticket and does not significantly expand the ticket scope.
 - Validate the change before marking the ticket done.
 - Update `docs/issues.md` with `in-progress`, `done`, or `blocked` status as appropriate.
 - Do not silently execute a second ticket in the same run.
@@ -159,6 +184,8 @@ Prompt template:
 - `.firecrawl/`
 
 ## Current project prompt templates
+- `.pi/prompts/triage.md`
+- `.pi/prompts/diagnose.md`
 - `.pi/prompts/idea.md`
 - `.pi/prompts/research.md`
 - `.pi/prompts/prototype.md`

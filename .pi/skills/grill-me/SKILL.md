@@ -80,9 +80,17 @@ After each question, provide your **recommended answer**:
 - Name meaningful tradeoffs if they exist
 - Avoid generic advice when codebase context supports a better answer
 
-### 4. Inspect the codebase when relevant
+### 4. Inspect the codebase and repo docs when relevant
 
 If a question can be answered from local files, inspect first. Use findings to sharpen the next question. Prefer checking the repository over asking for information the user shouldn't need to repeat.
+
+When the topic touches domain language, product concepts, or existing design decisions:
+- read `CONTEXT.md` first if it exists
+- read relevant files under `docs/adr/` if they exist
+- use those files as constraints during grilling rather than re-asking already settled decisions
+- if the user's terminology conflicts with documented language, call it out explicitly and ask for clarification
+- if a term is vague or overloaded, sharpen it with a concrete scenario before continuing
+- if codebase behavior contradicts the user's description, surface the contradiction clearly
 
 ### 5. Maintain a session artifact in `docs/idea.md`
 
@@ -154,6 +162,7 @@ Good questions:
 - Reveal tradeoffs that haven't been acknowledged
 - Test whether dependencies are understood
 - Clarify success criteria or failure conditions
+- Sharpen vague terminology with concrete scenarios when domain language is fuzzy
 
 Avoid:
 - Broad or open-ended questions that could mean anything
@@ -200,6 +209,8 @@ If the user wants a faster session ("just give me the top questions" or "I only 
 - If the user is vague, narrow scope before continuing.
 - Treat bug fixes and refactors as valid idea-refinement targets when scope, constraints, or risks are still fuzzy.
 - If codebase evidence contradicts the user's assumptions, say so clearly and update the decision map.
+- If `CONTEXT.md` or relevant ADRs exist, do not ignore them or casually re-litigate already-settled terminology and decisions.
+- Do not let vague or overloaded domain terms pass without challenge when they affect real decisions.
 - Do not start implementing just because the user's wording sounds like a build request. If the skill is active, stay in grilling mode until the user explicitly asks to switch.
 - When maintaining `docs/idea.md`, record distilled conclusions rather than raw Q&A transcript dumps.
 

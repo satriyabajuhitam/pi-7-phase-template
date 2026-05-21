@@ -21,6 +21,7 @@ Jika sudah siap:
 - bedakan dengan jelas automated checks vs human review
 - catat findings hanya jika memang ada evidence dari test, inspection, atau verifikasi aktual
 - jika ada follow-up work yang jelas, rekomendasikan atau catat sebagai AFK/HITL di loop berikutnya
+- jika failure masih butuh repro dan isolasi sebelum aman dieksekusi, rekomendasikan `diagnose-me`
 - tutup dengan rekomendasi fase berikutnya secara spesifik
 
 Fokus atau klarifikasi QA tambahan bila ada: $@
