@@ -1,25 +1,28 @@
 # Issues
 
 ## Planning assumptions
-- Source PRD: `docs/prd.md` for `feat/runs-once-harness-v1`
-- Planning scope: v1 local harness untuk menjalankan tepat satu ticket `AFK` lewat `runs-once.sh` dengan branch-per-issue, worker session fresh, audit trail `.runs/`, dan sinkronisasi manual ke orchestrator branch
-- Prototype winner: none; prototyping was not required before planning, hanya opsional untuk validasi detail operasional kecil
+- Source PRD: `docs/prd.md` for `feat/runs-afk-harness-v1`
+- Planning scope: bounded multi-iteration local harness `runs-afk.sh` di atas `runs-once.sh`, dengan auto-merge lokal hanya untuk iterasi `DONE`, hard-stop untuk `BLOCKED`/`FAIL`/merge conflict, summary agregat `.runs/`, dan stdout final human-readable
+- Prototype winner: none; prototyping was not required before planning, hanya opsional nanti bila ingin mengecek UX summary agregat
+- Historical base already landed:
+  - `runs-once.sh` v1 sudah ada sebagai primitive resmi per iterasi
+  - source of truth antar-iterasi tetap `docs/issues.md` pada branch orchestrator
 - Key constraints:
-  - `docs/issues.md` tetap source of truth antar-run
-  - v1 hanya mencakup `runs-once.sh`; `runs-afk.sh` ditunda
-  - tidak ada `progress.txt` baru; state antar-run cukup dari artifact repo, session history, dan git history
-  - harness tidak boleh menulis ulang substansi `execute-me` sebagai workflow paralel
-  - `.runs/` hanya untuk snapshot bootstrap, result minimum, dan metadata status run
+  - `runs-afk.sh` harus tetap helper semi-otomatis, bukan workflow diagnosis/planning otomatis
+  - setiap iterasi tetap berarti satu issue dan satu session fresh melalui `runs-once.sh`
+  - wrapper tidak boleh menambah state permanen baru seperti `progress.txt`
+  - stdout final cukup human-readable; surface machine-readable resmi tetap artifact JSON agregat
+  - branch issue hasil `DONE` tidak dihapus otomatis pada v1
 - Non-blocking open questions:
-  - worker non-interaktif bisa memakai prompt template khusus repo atau prompt inline selama kontraknya tetap tipis dan setara
-  - `.runs/` gitignore policy bisa diputuskan saat ticket dokumentasi/hygiene tanpa memblokir core harness
-  - snapshot tambahan untuk `FAIL` bisa tetap ditolak pada v1 jika dua artifact per run terbukti cukup
+  - nama field exact pada JSON agregat bisa diputuskan saat eksekusi selama behavior PRD tetap dijaga
+  - apakah dokumentasi operator terbaik berupa file baru `docs/runs-afk.md` atau perluasan doc harness yang sudah ada bisa diputuskan saat ticket dokumentasi
 
 ## Dependency rules
-- Runner selection/preflight contract harus jelas sebelum flow worker dan outcome run dianggap stabil.
-- Worker harus menghormati explicit target issue sebelum artifact `.runs/` dan status contract dianggap final.
-- Audit/result contract harus land dulu sebelum summary shell dan prosedur manual final didokumentasikan.
-- Flow `DONE` dan `BLOCKED` harus mengikuti perilaku worker yang benar-benar diimplementasikan; dokumentasi tidak boleh mendahului behavior aktual.
+- Entry point dan validasi iterasi harus land dulu sebelum perilaku loop lain dianggap stabil.
+- Flow sukses `DONE` + merge balik ke orchestrator harus jelas sebelum hard-stop policy untuk merge failure bisa diverifikasi penuh.
+- Stop policy final harus jelas sebelum summary agregat dianggap trustworthy.
+- Artifact agregat harus stabil sebelum stdout final dan dokumentasi operator difinalkan.
+- Live smoke validation harus menunggu perilaku inti dan output operator-facing stabil.
 - QA follow-up nanti sebaiknya reopen ticket yang relevan jika scope aslinya masih cocok.
 
 ## Ticket conventions
@@ -32,217 +35,238 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-001` — add deterministic runner preflight and target selection
-- `ISSUE-002` — tighten worker execution contract around explicit issue targets
+- `ISSUE-001` — add `runs-afk.sh` entry point, iteration validation, and zero-work baseline flow
 
 Blocked until prerequisites complete:
-- `ISSUE-003` blocked on `ISSUE-001` and `ISSUE-002`
-- `ISSUE-004` blocked on `ISSUE-001`, `ISSUE-002`, and `ISSUE-003`
-- `ISSUE-005` blocked on `ISSUE-001`, `ISSUE-002`, and `ISSUE-003`
-- `ISSUE-006` blocked on `ISSUE-004` and `ISSUE-005`
+- `ISSUE-002` blocked on `ISSUE-001`
+- `ISSUE-003` blocked on `ISSUE-002`
+- `ISSUE-004` blocked on `ISSUE-002` and `ISSUE-003`
+- `ISSUE-005` blocked on `ISSUE-004`
+- `ISSUE-006` blocked on `ISSUE-005`
 
 Suggested lanes:
-- Lane A: `ISSUE-001` -> `ISSUE-003` -> `ISSUE-004`
-- Lane B: `ISSUE-002` -> merge into `ISSUE-003`/`ISSUE-005`
+- Lane A: `ISSUE-001` -> `ISSUE-002` -> `ISSUE-003`
+- Lane B: `ISSUE-004` -> `ISSUE-005`
 - Lane C: `ISSUE-006` after core behavior is stable
 
 ## Tickets
 
-### ISSUE-001 — Add deterministic runner preflight and issue selection for `runs-once.sh`
+### ISSUE-001 — Add `runs-afk.sh` entry point, iteration validation, and `NO_READY` baseline
 - Status: done
 - Type: AFK
 - Goal:
-  - Let `runs-once.sh` safely start from orchestrator branch, detect whether work is available, and deterministically select the first eligible issue before any worker session begins.
+  - Let operators start a bounded batch run explicitly with `runs-afk.sh <iterations>` and get a clean, predictable outcome when there is no eligible work.
 - Why it exists:
-  - The harness cannot stay trustworthy if target selection, branch creation, and `NO_READY` behavior remain implicit or manual.
+  - The wrapper is not trustworthy until its invocation contract, initial preflight, and empty-backlog behavior are explicit.
 - Depends on: none
-- Blocks: ISSUE-003, ISSUE-004, ISSUE-005
-- Parallelizable: yes
+- Blocks: ISSUE-002, ISSUE-003, ISSUE-004, ISSUE-005, ISSUE-006
+- Parallelizable: no
 - Source requirements:
-  - Functional requirements 1, 2, 3, 4, 5
+  - Functional requirements 1, 2, 3, 4, 7
   - Acceptance criteria 1, 2
 - Scope:
-  - Add `runs-once.sh` entry point skeleton
-  - Implement preflight minimum checks for repo safety, `docs/issues.md`, branch safety, and required tooling
-  - Select the first eligible issue using only the agreed mechanical rules
-  - Return `NO_READY` when no eligible issue exists
-  - Create deterministic branch `ralph/ISSUE-XXX` only after a target is selected
+  - Add `runs-afk.sh` entry point
+  - Require an explicit positive integer iteration argument
+  - Verify safe orchestrator starting state before the batch begins
+  - Call `runs-once.sh` as the official primitive for the first iteration
+  - Stop cleanly when the first iteration yields `NO_READY`
 - Acceptance criteria:
-  - [x] When no issue is eligible, `runs-once.sh` exits with a normal `NO_READY` outcome and does not create a new issue branch.
-  - [x] When at least one issue is eligible, the runner selects the first eligible issue in file order and creates `ralph/ISSUE-XXX` from the orchestrator branch.
-  - [x] If preflight detects a dangerous repo state or missing required input/tooling, the run does not start worker execution and returns an actionable failure.
+  - [x] `runs-afk.sh` rejects missing or invalid iteration arguments with actionable feedback.
+  - [x] When no issue is eligible, `runs-afk.sh <iterations>` stops normally without attempting extra iterations.
+  - [x] The wrapper never exceeds the user-provided maximum iteration count.
 - Notes / risks:
-  - Added `runs-once.sh` plus `scripts/runs-once.mjs` with strict preflight, deterministic first-eligible selection, `NO_READY` handling, and deterministic branch creation.
-  - Added `tests/runs-once.test.mjs` and validated `NO_READY`, first-eligible branch creation, dirty repo failure, and missing-tooling failure with `node --test tests/runs-once.test.mjs`.
-  - Runner intentionally stays mechanical only; worker execution and `.runs/` artifacts are deferred to later tickets.
-  - Reopened for QA follow-up and now improved dirty-working-tree failure messaging so operators see dirty file paths plus concrete next-step commands.
-  - Follow-up validation: `node --test tests/runs-once.test.mjs` now checks `Dirty files`, file listing, actionable dirty-tree recovery commands, and actionable `NO_READY` guidance for missing `Auto-run` and blocked dependency cases.
-  - Reopened again for QA/UX follow-up and now `NO_READY` explains why no ticket was eligible plus concrete next-step guidance such as adding `Auto-run: yes`, resolving dependencies, or creating a new `todo` AFK ticket.
+  - Added `runs-afk.sh` plus `scripts/runs-afk.mjs` as the bounded-loop entry point foundation on top of `runs-once.sh`.
+  - Added `tests/runs-afk.test.mjs` covering invalid iteration arguments, `NO_READY` single-iteration stopping behavior, and safe failure when starting from an issue branch.
+  - Validation: `node --test tests/runs-once.test.mjs tests/runs-afk.test.mjs`.
+  - Keep this ticket focused on invocation and zero-work baseline; do not yet broaden it into merge orchestration or multi-status policy.
 
-### ISSUE-002 — Tighten worker execution around an explicit target issue
+### ISSUE-002 — Continue across successful `DONE` iterations with bounded auto-merge
 - Status: done
 - Type: AFK
 - Goal:
-  - Ensure the worker executes only the issue ID chosen by the runner and fails closed when that target is missing, mismatched, or not ready.
+  - Make `runs-afk.sh` meaningfully better than `runs-once.sh` by automatically returning to the orchestrator branch, merging successful issue branches, and continuing while budget remains.
 - Why it exists:
-  - Without a single deterministic target contract, runner selection and worker execution can drift and silently work on different tickets.
-- Depends on: none
-- Blocks: ISSUE-003, ISSUE-004, ISSUE-005
-- Parallelizable: yes
-- Source requirements:
-  - Functional requirements 6, 9, 10
-  - Acceptance criteria 2, 3
-- Scope:
-  - Tighten the worker path so it accepts an explicit issue target
-  - Preserve the normal human workflow behavior while adding deterministic harness behavior
-  - Prevent fallback selection of another eligible issue
-  - Map “target no longer ready” and material source-of-truth conflicts to the correct blocked behavior
-- Acceptance criteria:
-  - [x] Given an explicit issue target, worker execution only acts on that target and never silently picks a different ticket.
-  - [x] If the target issue is missing, materially mismatched, or no longer ready after verification, the worker returns a blocked-style outcome instead of improvising.
-  - [x] The worker still uses the existing repo execution workflow substantively rather than a second parallel execution model.
-- Notes / risks:
-  - `scripts/runs-once.mjs` now reuses `.pi/prompts/execute.md` as the worker prompt, injects the selected issue ID explicitly, and re-verifies the same target before dispatching Pi.
-  - Added fail-closed target verification plus `BLOCKED` shell output when the selected issue is missing, materially changed, or no longer ready.
-  - Expanded `tests/runs-once.test.mjs` to validate worker dispatch, explicit target prompt injection, and material conflict/no-longer-ready checks with `node --test tests/runs-once.test.mjs`.
-
-### ISSUE-003 — Add worker bootstrap context and `.runs/` artifact contract
-- Status: done
-- Type: AFK
-- Goal:
-  - Give fresh worker sessions enough explicit context to avoid hallucination and produce a stable audit trail per run.
-- Why it exists:
-  - Fresh sessions without explicit bootstrap context will guess scope, and runs without durable artifacts are hard to debug afterward.
-- Depends on: ISSUE-001, ISSUE-002
-- Blocks: ISSUE-004, ISSUE-005
+  - Without this flow, the wrapper is mostly cosmetic and does not remove the main multi-iteration operator friction.
+- Depends on: ISSUE-001
+- Blocks: ISSUE-003, ISSUE-004, ISSUE-005, ISSUE-006
 - Parallelizable: no
 - Source requirements:
-  - Functional requirements 7, 8, 13, 14, 15, 16, 17
-  - Acceptance criteria 1, 5, 6, 7, 8
+  - Functional requirements 5, 6, 11, 12, 17, 18
+  - Acceptance criteria 1, 3, 9
 - Scope:
-  - Inject issue excerpt and minimum required context into the worker bootstrap
-  - Load `docs/issues.md`, `docs/prd.md`, and only load `docs/research.md` when relevant
-  - Exclude `docs/idea.md` from worker context for v1
-  - Create `.runs/` artifacts using a shared basename per run
-  - Define and write `bootstrap.md` and `result.json`
+  - Detect `DONE` from each `runs-once.sh` iteration
+  - Return to the orchestrator branch after `DONE`
+  - Perform local `git merge --no-ff` from the issue branch
+  - Continue to the next iteration only after merge succeeds and iteration budget remains
+  - Preserve issue branches after success; no auto-delete in v1
 - Acceptance criteria:
-  - [x] Every run writes exactly two `.runs/` artifacts with the same basename: one `bootstrap.md` and one `result.json`.
-  - [x] `bootstrap.md` contains the selected issue excerpt plus the explicit context bootstrap needed by the worker.
-  - [x] `result.json` includes at least `status`, `status_reason`, `issue_id`, `branch`, `session`, and non-empty `next_action`.
-  - [x] `docs/research.md` is loaded only when the selected issue or PRD clearly requires it.
-  - [x] `docs/idea.md` is not part of worker bootstrap for v1.
+  - [x] After an iteration ends `DONE`, the wrapper checks out the orchestrator branch, merges the issue branch with `--no-ff`, and only then may continue.
+  - [x] When multiple eligible issues exist and the iteration budget allows, the wrapper can complete more than one successful iteration in a single batch.
+  - [x] If the iteration cap is reached after one or more successful iterations, the batch stops normally and reports the stop reason as iteration limit, not failure.
+  - [x] Successful issue branches are not deleted automatically.
 - Notes / risks:
-  - `scripts/runs-once.mjs` now writes exactly one `.bootstrap.md` and one `.result.json` per run with a shared timestamp+issue basename.
-  - Worker dispatch now carries explicit bootstrap context, selected issue excerpt, deterministic Pi session path, and explicit exclusion of `docs/idea.md`.
-  - `docs/research.md` is only required when the selected issue/bootstrap explicitly references research context.
-  - Validated with `node --test tests/runs-once.test.mjs` covering `NO_READY`, worker bootstrap artifact content, prompt injection, fail artifacts, and conditional research loading.
+  - `scripts/runs-afk.mjs` now reads the newest per-iteration `result.json`, detects `DONE`, checks out the orchestrator branch, merges the completed issue branch with `--no-ff`, and only then continues while iteration budget remains.
+  - Added `tests/runs-afk.test.mjs` coverage for multi-`DONE` continuation, merge-back before the next iteration, iteration-cap stopping, and preservation of successful issue branches.
+  - Validation: `node --test tests/runs-once.test.mjs tests/runs-afk.test.mjs`.
+  - This is the key behavioral slice that changes the safety model; keep it narrow to `DONE` only.
 
-### ISSUE-004 — Land the successful `DONE` flow for review and orchestrator merge
+### ISSUE-003 — Enforce hard-stop policy for `BLOCKED`, `FAIL`, and merge failure
 - Status: done
 - Type: AFK
 - Goal:
-  - Make a successful run end in a committed issue branch with a clear, reviewable path back to the orchestrator branch.
+  - Ensure the batch stops immediately and predictably whenever the loop leaves the safe happy path.
 - Why it exists:
-  - A “successful” run that still needs the operator to invent the closing procedure is not operationally complete.
-- Depends on: ISSUE-001, ISSUE-002, ISSUE-003
+  - Trust in `runs-afk.sh` depends more on what it refuses to do after trouble than on how fast it loops during success.
+- Depends on: ISSUE-002
+- Blocks: ISSUE-004, ISSUE-005, ISSUE-006
+- Parallelizable: no
+- Source requirements:
+  - Functional requirements 8, 9, 10
+  - Acceptance criteria 4, 5, 6
+- Scope:
+  - Treat `BLOCKED` as immediate hard-stop
+  - Treat `FAIL` as immediate hard-stop with non-zero outcome
+  - Treat merge failure/conflict after `DONE` as immediate hard-stop
+  - Prevent any automatic diagnosis, follow-up issue creation, or silent skip-to-next behavior
+- Acceptance criteria:
+  - [x] If an iteration returns `BLOCKED`, the batch stops immediately and does not start another issue.
+  - [x] If an iteration returns `FAIL`, the batch stops immediately and surfaces an error outcome rather than a normal completion.
+  - [x] If merge-back to the orchestrator branch fails or conflicts after `DONE`, the batch stops before attempting another iteration.
+  - [x] No `BLOCKED` path auto-creates a new issue, edits source of truth outside the normal execution flow, or launches diagnosis automatically.
+- Notes / risks:
+  - `scripts/runs-afk.mjs` now treats only `DONE` as continuable; `NO_READY` and `BLOCKED` stop the batch immediately, while unexpected zero-exit statuses now fail closed.
+  - Added `tests/runs-afk.test.mjs` coverage for `BLOCKED` hard-stop without merge-back, non-zero `FAIL` stop behavior, and merge-failure hard-stop before any later iteration can start.
+  - Validation: `node --test tests/runs-once.test.mjs tests/runs-afk.test.mjs`.
+  - Distinguish clearly between “normal stop” (`NO_READY`, iteration cap) and “operator intervention required” (`BLOCKED`, `FAIL`, merge failure).
+
+### ISSUE-004 — Write per-loop aggregate JSON summary with per-iteration pointers
+- Status: done
+- Type: AFK
+- Goal:
+  - Give operators one machine-readable artifact that summarizes the whole batch and points back to each iteration’s detailed run artifacts.
+- Why it exists:
+  - Without an aggregate summary, operators still have to manually stitch together multiple per-run artifacts to understand what happened.
+- Depends on: ISSUE-002, ISSUE-003
+- Blocks: ISSUE-005, ISSUE-006
+- Parallelizable: no
+- Source requirements:
+  - Functional requirements 13, 14, 15, 17
+  - Acceptance criteria 2, 4, 6, 7
+- Scope:
+  - Write exactly one aggregate artifact per batch under `.runs/`
+  - Record final loop status and stop reason
+  - Record actual iteration count and orchestrator branch
+  - Record each processed issue with its outcome
+  - Record explicit pointers to each iteration’s `bootstrap` and `result` artifacts
+- Acceptance criteria:
+  - [x] Each batch writes one aggregate JSON artifact in `.runs/`.
+  - [x] The aggregate artifact includes final loop status, stop reason, iteration count, orchestrator branch, processed issues with outcomes, and pointers to per-run artifacts.
+  - [x] The aggregate artifact remains useful for all terminal states: `NO_READY`, iteration-cap completion, `BLOCKED`, `FAIL`, and merge failure.
+- Notes / risks:
+  - `scripts/runs-afk.mjs` now writes exactly one `.runs/*-afk-summary.json` per batch with loop status, stop reason, iteration count, orchestrator branch, and per-iteration pointers back to each `bootstrap` and `result` artifact.
+  - Added `tests/runs-afk.test.mjs` coverage for aggregate summaries across `NO_READY`, multi-`DONE` iteration-cap completion, `BLOCKED`, `FAIL`, and merge-failure stop paths.
+  - Validation: `node --test tests/runs-once.test.mjs tests/runs-afk.test.mjs`.
+  - Keep the contract thin; the aggregate artifact is an index and summary, not a replacement for per-run detail.
+
+### ISSUE-005 — Render final operator summary and document `runs-afk.sh` workflow
+- Status: done
+- Type: AFK
+- Goal:
+  - Make the bounded loop understandable to operators without requiring them to open JSON first.
+- Why it exists:
+  - A technically correct loop still fails operationally if humans cannot quickly read the outcome and know what to do next.
+- Depends on: ISSUE-004
 - Blocks: ISSUE-006
 - Parallelizable: no
 - Source requirements:
-  - Functional requirements 11, 18
-  - Acceptance criteria 2, 4
+  - Functional requirements 16
+  - Acceptance criteria 7, 8, 9
 - Scope:
-  - Ensure validation gates run before `DONE`
-  - Ensure successful runs leave a commit in the issue branch
-  - Keep the shell on the issue branch after the run
-  - Render final shell summary and explicit `next_action` for human review and manual merge
+  - Print a final human-readable batch summary to stdout
+  - Keep stdout consistent with the aggregate JSON
+  - Document command usage, stop reasons, and operator expectations for `DONE`, `NO_READY`, `BLOCKED`, `FAIL`, and merge failure
+  - Document that JSON aggregate is the official machine-readable surface
 - Acceptance criteria:
-  - [x] A `DONE` run only occurs after the selected issue is executed and validated successfully.
-  - [x] A `DONE` run leaves a commit on `ralph/ISSUE-XXX` and keeps the user on that branch for review.
-  - [x] `result.json` and final shell output both give explicit next steps to switch back to the orchestrator branch and merge manually.
+  - [x] Final stdout summary shows the batch outcome in a way that a human can understand without opening the JSON artifact first.
+  - [x] Stdout summary stays consistent with the aggregate JSON for the same run.
+  - [x] Operator docs explain how `runs-afk.sh` behaves on success, normal stop, and hard-stop paths.
 - Notes / risks:
-  - `runs-once.sh` now refuses `DONE` when the worker exits cleanly but leaves the target issue not-`done` in `docs/issues.md`.
-  - Successful runs now write explicit manual merge steps, create a reviewable commit on `ralph/ISSUE-XXX`, and keep the shell on the issue branch.
-  - Validation evidence: `node --test tests/runs-once.test.mjs` covers success commit creation, manual merge instructions, and failure when the worker does not leave a done ticket.
-  - Do not auto-merge in v1, even if the run succeeded cleanly.
+  - `scripts/runs-afk.mjs` now prints a final human-readable batch summary with status, stop reason, iteration counts, orchestrator branch, processed issues, and aggregate artifact path.
+  - Added `docs/runs-afk.md` as the operator guide for command usage, stop behavior, aggregate artifacts, and the boundary between human-readable stdout and machine-readable JSON.
+  - Updated `README.md` to point operators to the new bounded-loop harness guide.
+  - Validation: `node --test tests/runs-once.test.mjs tests/runs-afk.test.mjs`.
+  - Do not accidentally turn stdout into a second stable scripting contract.
 
-### ISSUE-005 — Land the safe `BLOCKED` and `FAIL` flows
-- Status: done
-- Type: AFK
+### ISSUE-006 — Run live bounded-loop smoke validation against safe AFK work
+- Status: todo
+- Type: HITL
 - Goal:
-  - Make blocked and failed runs operationally safe, auditable, and explicit about what the human should do next.
+  - Validate that the real local batch flow works end-to-end with actual AFK tickets and produces the operator experience described in the PRD.
 - Why it exists:
-  - Error paths are where trust in the harness will be won or lost.
-- Depends on: ISSUE-001, ISSUE-002, ISSUE-003
-- Blocks: ISSUE-006
-- Parallelizable: no
-- Source requirements:
-  - Functional requirements 9, 12, 16, 18
-  - Acceptance criteria 3, 8
-- Scope:
-  - Map “target no longer ready” and material source-of-truth conflicts to `BLOCKED`
-  - Discard partial code for `BLOCKED` runs while preserving relevant status/notes updates
-  - Produce explicit `FAIL` outcomes for infra/process failures
-  - Ensure every non-success result still has a useful `status_reason` and `next_action`
-- Acceptance criteria:
-  - [x] When the target issue is no longer ready after verification, the run ends as `BLOCKED` rather than `NO_READY` or `FAIL`.
-  - [x] `BLOCKED` runs do not preserve partial code as a success path and do not instruct users to merge the issue branch into orchestrator.
-  - [x] `BLOCKED` and `FAIL` runs both produce `result.json` with non-empty `next_action` and a controlled `status_reason`.
-- Notes / risks:
-  - `scripts/runs-once.mjs` now cleans blocked-run code changes while preserving `docs/issues.md` plus `.runs/` artifacts.
-  - `BLOCKED` next actions now direct manual copy-back of relevant `docs/issues.md` updates and explicitly forbid merging the issue branch.
-  - `FAIL` results keep controlled `status_reason: run_failed` with non-empty `next_action`, including worker non-zero exit cases.
-  - Validated with `node --test tests/runs-once.test.mjs`, including target-no-longer-ready `BLOCKED` flow and worker non-zero `FAIL` flow.
-
-### ISSUE-006 — Document operator workflow and local repo hygiene for `runs-once.sh`
-- Status: done
-- Type: AFK
-- Goal:
-  - Document how operators should use `runs-once.sh`, audit `.runs/`, and perform the manual sync procedures for `DONE`, `BLOCKED`, `NO_READY`, and `FAIL`.
-- Why it exists:
-  - A local harness is incomplete if operators cannot tell how to use it safely or how to interpret its run artifacts.
-- Depends on: ISSUE-004, ISSUE-005
+  - Multi-iteration local orchestration has operational edges that automated tests alone may miss.
+- Depends on: ISSUE-005
 - Blocks:
 - Parallelizable: no
 - Source requirements:
-  - Functional requirements 18
-  - Acceptance criteria 4, 5, 8, 9
-  - Open questions on `.runs/` repo hygiene and worker prompt shape, as resolved by implementation
+  - Acceptance criteria 1, 2, 3, 4, 5, 6, 7, 8, 9
 - Scope:
-  - Document `runs-once.sh` usage and status outcomes
-  - Document manual `DONE` merge flow and `BLOCKED` copy-back flow
-  - Document `.runs/` purpose, naming convention, and retention expectations for v1
-  - Resolve/document whether `.runs/` belongs in `.gitignore` for the intended local UX
+  - Prepare or reuse harmless AFK tickets for live validation
+  - Run `runs-afk.sh` with a bounded iteration count
+  - Observe at least one successful continuation path and one stop path if safely feasible
+  - Capture any follow-up findings back into the board
 - Acceptance criteria:
-  - [x] Relevant docs explain how to run `runs-once.sh` and interpret its final status summary.
-  - [x] Relevant docs explain the official manual sync procedure for `DONE` and `BLOCKED`.
-  - [x] Relevant docs explain what `.runs/` contains and how it should be treated in local repo hygiene.
+  - [ ] A human operator can run `runs-afk.sh <iterations>` end-to-end on the real repo and inspect the resulting aggregate summary plus per-run artifacts.
+  - [ ] The live run confirms the wrapper stops for the right reason and leaves the repo in the expected branch state.
+  - [ ] Any gaps found during smoke validation are routed back by reopening the relevant ticket or adding a genuinely new one.
 - Notes / risks:
-  - Added `docs/runs-once.md` as the operator guide for command usage, status meanings, `.runs/` audit artifacts, and official manual sync procedures.
-  - Updated `README.md` to point operators to the new harness guide.
-  - Resolved repo hygiene by adding `.runs/` and `.runs-sessions/` to `.gitignore` as local operational artifacts.
-  - Validated doc coverage against current harness behavior with `rg -n "runs-once|NO_READY|BLOCKED|DONE|FAIL|\\.runs|\\.runs-sessions|git merge --no-ff|copy-back|jangan merge" docs/runs-once.md README.md .gitignore scripts/runs-once.mjs`.
+  - Keep validation low-risk; prefer harmless documentation-only or similarly safe AFK work when setting up live test tickets.
 
-### ISSUE-007 — Dummy AFK smoke test for `runs-once.sh`
+### ISSUE-007 — Temporary AFK smoke-test ticket for `runs-afk.sh`
 - Status: todo
 - Type: AFK
 - Auto-run: yes
 - Goal:
-  - Provide one safe temporary AFK ticket so the local harness can be smoke-tested end-to-end with Pi CLI live.
+  - Provide one harmless eligible AFK ticket so `runs-afk.sh` can be exercised end-to-end on the real repo.
 - Why it exists:
-  - The current board has no eligible AFK ticket, so `runs-once.sh` can only exercise the `NO_READY` path.
-- Depends on: none
-- Blocks:
+  - `ISSUE-006` needs at least one safe AFK work item, and the current remaining board is otherwise dominated by HITL validation work.
+- Depends on: ISSUE-005
+- Blocks: ISSUE-006
 - Parallelizable: no
 - Source requirements:
-  - Functional requirements 3, 5, 6, 11, 16
+  - Acceptance criteria 1, 2, 7, 8, 9
 - Scope:
-  - Let the worker execute exactly one harmless smoke-test task
-  - Prefer a tiny documentation-only change
-  - Produce a real `DONE`, `BLOCKED`, or `FAIL` outcome for manual QA observation
+  - Keep the change tiny and documentation-only
+  - Prefer touching `docs/runs-afk.md` rather than product code
+  - Make the resulting run easy to review and easy to revert if desired
 - Acceptance criteria:
-  - [ ] `runs-once.sh` can select this ticket as the first eligible AFK issue.
-  - [ ] The live run produces observable shell output and `.runs/` artifacts for manual review.
-  - [ ] After the smoke test, the team can either delete this temporary ticket or mark it done with explicit notes.
+  - [ ] `runs-afk.sh` can select this ticket as the first eligible AFK issue.
+  - [ ] The live run produces observable stdout plus `.runs/*-afk-summary.json` and per-run artifacts for manual review.
+  - [ ] After validation, the team can keep, revise, or remove this temporary smoke-test ticket explicitly.
 - Notes / risks:
-  - Temporary QA-only ticket for live harness verification.
-  - Prefer the smallest possible change, ideally limited to docs, so the smoke test stays low risk.
+  - Temporary QA-only ticket for live bounded-loop verification.
+  - Keep the change as small as possible, ideally limited to a short doc note in `docs/runs-afk.md`.
+
+### ISSUE-008 — Second temporary AFK smoke-test ticket for `runs-afk.sh`
+- Status: todo
+- Type: AFK
+- Auto-run: yes
+- Goal:
+  - Provide a second harmless eligible AFK ticket so `runs-afk.sh` continuation behavior can be observed across more than one successful iteration.
+- Why it exists:
+  - `ISSUE-006` ideally verifies not just one isolated run, but also the bounded multi-iteration path where the wrapper continues after a successful `DONE`.
+- Depends on: ISSUE-005
+- Blocks: ISSUE-006
+- Parallelizable: no
+- Source requirements:
+  - Acceptance criteria 1, 2, 3, 7, 8, 9
+- Scope:
+  - Keep the change tiny and documentation-only
+  - Prefer a different small note in `docs/runs-afk.md` or nearby docs so it is easy to distinguish from `ISSUE-007`
+  - Make the resulting run easy to review and easy to revert if desired
+- Acceptance criteria:
+  - [ ] `runs-afk.sh` can continue from `ISSUE-007` to this ticket when iteration budget allows.
+  - [ ] The live run shows a real multi-iteration path with aggregate summary output that lists at least two processed issues.
+  - [ ] After validation, the team can keep, revise, or remove this temporary smoke-test ticket explicitly.
+- Notes / risks:
+  - Temporary QA-only ticket for validating continuation after a successful first iteration.
+  - Keep the change as small as possible, ideally another short doc-only edit.

@@ -1,28 +1,28 @@
 # PRD
 
 ## Overview
-V1 menambahkan harness lokal ala Ralph untuk mengeksekusi tepat satu ticket `AFK` secara semi-otomatis melalui `runs-once.sh`. Harness ini tetap menghormati workflow repo yang sudah ada: `docs/issues.md` tetap source of truth, eksekusi tetap satu issue per session fresh, hasil tetap direview manusia, dan sinkronisasi kembali ke branch orchestrator tetap manual.
+Increment berikutnya menambahkan `runs-afk.sh` sebagai harness lokal multi-iterasi yang bounded di atas `runs-once.sh`. Tujuannya bukan mengganti kontrak aman `runs-once.sh`, tetapi mengurangi friksi saat operator ingin memproses beberapa ticket `AFK` yang eligible secara berurutan dengan guardrail yang tetap ketat, audit trail yang jelas, dan source of truth yang tetap berada di `docs/issues.md` pada branch orchestrator.
 
 ## Problem statement
-Saat ini repo sudah punya aturan Phase 6 yang jelas, tetapi operator masih harus melakukan banyak langkah berulang secara manual: memeriksa issue yang ready, membuat branch issue, memulai sesi fresh, menjaga agar agent hanya mengerjakan satu ticket, lalu menutup sesi dengan jejak audit yang rapi. Tanpa harness tipis, disiplin "1 issue = 1 session" mudah bocor dan operasional lokal terasa lebih berat dari yang seharusnya.
+`runs-once.sh` v1 sudah membuat satu sesi eksekusi menjadi aman dan reviewable, tetapi operator masih harus mengulang banyak langkah manual ketika ada beberapa ticket `AFK` yang eligible: menjalankan command lagi, kembali ke branch orchestrator, merge hasil sukses, lalu memulai sesi berikutnya. Friksi ini membuat loop multi-ticket tetap berat secara operasional walaupun perilaku satu-ticket sudah cukup baik.
 
 ## Desired outcome
 Setelah perubahan ini selesai:
-- user bisa menjalankan satu command lokal untuk memproses tepat satu ticket `AFK` yang eligible
-- runner selalu bekerja dari target issue yang deterministik dan branch issue yang terisolasi
-- worker session selalu fresh, punya context bootstrap yang cukup, dan tidak boleh memilih issue lain
-- hasil run selalu menghasilkan audit trail yang konsisten dan langkah lanjut yang jelas
-- review manusia dan sinkronisasi ke orchestrator branch tetap eksplisit dan aman
+- user bisa menjalankan satu command bounded untuk memproses beberapa ticket `AFK` secara berurutan
+- setiap ticket tetap dieksekusi lewat session fresh terpisah melalui `runs-once.sh`
+- `docs/issues.md` pada branch orchestrator tetap menjadi source of truth antar-iterasi
+- hanya hasil `DONE` yang boleh otomatis disinkronkan kembali ke orchestrator branch
+- hasil loop selalu berhenti secara prediktif, punya alasan berhenti yang jelas, dan meninggalkan audit trail agregat yang mudah ditelusuri
 
 ## Users and actors
 - Primary users:
-  - Maintainer atau contributor lokal yang memakai workflow 7-phase ini untuk mengeksekusi ticket `AFK`
+  - Maintainer atau contributor lokal yang ingin menjalankan beberapa ticket `AFK` secara berurutan tanpa kehilangan guardrail `runs-once.sh`
 - Secondary users:
-  - Reviewer manusia yang meninjau hasil run sebelum sinkronisasi ke orchestrator branch
+  - Reviewer manusia yang meninjau hasil branch issue dan outcome loop setelah batch selesai atau berhenti
 - Internal actors or systems involved:
+  - `runs-afk.sh`
   - `runs-once.sh`
-  - Pi worker non-interaktif
-  - workflow/skill eksekusi repo (`execute-me`)
+  - Pi worker non-interaktif yang tetap dipakai lewat `runs-once.sh`
   - `docs/issues.md`
   - `docs/prd.md`
   - opsional `docs/research.md`
@@ -31,159 +31,160 @@ Setelah perubahan ini selesai:
 
 ## Scope
 - In scope:
-  - command lokal `runs-once.sh` untuk satu run satu issue
-  - seleksi mekanis issue eligible pertama dari `docs/issues.md`
-  - branch-per-issue yang deterministik (`ralph/ISSUE-XXX`)
-  - worker session fresh dengan context bootstrap eksplisit
-  - audit trail run di `.runs/`
-  - ringkasan hasil run dan langkah lanjut eksplisit
-  - prosedur manual resmi untuk sinkronisasi `DONE` dan `BLOCKED`
+  - command lokal `runs-afk.sh <iterations>` untuk bounded multi-iteration local loop
+  - pemanggilan berulang `runs-once.sh` sebagai primitive resmi per iterasi
+  - auto-return ke orchestrator branch dan auto-merge lokal hanya untuk iterasi `DONE`
+  - stop policy yang eksplisit untuk `DONE`, `NO_READY`, `BLOCKED`, `FAIL`, dan merge failure
+  - artifact agregat per-loop di `.runs/`
+  - ringkasan final human-readable ke stdout
 - Included workflows:
-  - eligible issue ditemukan lalu selesai `DONE`
-  - target issue menjadi tidak ready lalu berakhir `BLOCKED`
-  - tidak ada issue eligible lalu berakhir `NO_READY`
-  - kegagalan proses/infra lalu berakhir `FAIL`
+  - satu atau lebih iterasi `DONE` lalu berhenti karena `NO_READY`
+  - satu atau lebih iterasi `DONE` lalu berhenti karena batas iterasi tercapai
+  - iterasi `DONE` lalu merge ke orchestrator gagal atau conflict
+  - iterasi berakhir `BLOCKED`
+  - iterasi berakhir `FAIL`
+  - iterasi pertama langsung `NO_READY`
 - Included surfaces or entry points:
+  - `runs-afk.sh`
   - `runs-once.sh`
   - `docs/issues.md`
-  - `docs/prd.md`
-  - `docs/research.md` bila relevan
   - `.runs/`
-  - branch `ralph/ISSUE-XXX`
+  - branch orchestrator dan branch issue `ralph/ISSUE-XXX`
 
 ## Non-goals
 - Explicitly out of scope for this phase:
-  - `runs-afk.sh` multi-iterasi
-  - sinkronisasi otomatis kembali ke orchestrator branch
-  - GitHub PR automation atau integrasi issue GitHub
-  - file progress tambahan seperti `progress.txt`
-  - eksekusi beberapa issue dalam satu sesi
-  - workflow paralel kedua yang menyalin ulang logika `execute-me`
+  - mengubah kontrak dasar atau behavior inti `runs-once.sh`
+  - auto-diagnosis setelah `BLOCKED`
+  - auto-create issue resmi atau auto-edit `docs/issues.md` di luar flow eksekusi normal `runs-once.sh` + merge sukses
+  - scheduler, cron, daemon, atau background automation tak terbatas
+  - GitHub PR automation atau integrasi issue tracker eksternal
+  - auto-delete branch issue setelah merge sukses
+  - stdout machine-readable yang menjadi kontrak scripting resmi
 - Nice-to-have but deferred:
-  - scheduler/cron
-  - cleanup policy atau retention policy yang lebih canggih untuk `.runs/`
-  - index global di `.runs/`
-  - helper command untuk merge/copy-back otomatis
+  - cleanup policy branch issue yang lebih canggih
+  - retention policy artifact `.runs/`
+  - helper terpisah untuk branch hygiene atau cleanup lama
+  - subflow diagnosis opsional yang hanya membuat draft follow-up
 - Related problems not solved here:
-  - menentukan apakah seluruh backlog `AFK` sudah aman untuk fully autonomous looping
-  - menghilangkan kebutuhan review manusia sebelum sync ke orchestrator
-  - menyederhanakan seluruh Phase 6 menjadi background automation penuh
+  - menentukan apakah seluruh backlog `AFK` sudah aman untuk autonomous execution penuh
+  - menghilangkan kebutuhan review manusia untuk hasil batch
+  - menjadikan `runs-afk.sh` sebagai workflow planning, triage, atau diagnosis otomatis
 
 ## User experience and behavior
-User memulai dari branch orchestrator yang memegang `docs/issues.md` sebagai source of truth. User menjalankan `runs-once.sh` secara eksplisit.
+User memulai dari branch orchestrator yang bersih dan menjalankan `runs-afk.sh` dengan jumlah iterasi maksimum yang eksplisit.
 
-Jika tidak ada issue eligible, command berhenti normal tanpa membuat branch issue baru. User mendapat ringkasan terstruktur, file audit run tetap dibuat, dan `next_action` memberi langkah eksplisit untuk kembali meninjau orchestrator branch atau backlog.
+Jika tidak ada issue eligible sejak awal, loop berhenti normal tanpa menjalankan iterasi kerja tambahan. User tetap mendapat artifact agregat dan ringkasan akhir yang menjelaskan bahwa tidak ada ticket eligible.
 
-Jika ada issue eligible, runner memilih issue eligible pertama berdasarkan aturan mekanis yang disepakati, membuat branch `ralph/ISSUE-XXX`, lalu memulai worker session fresh. Worker menerima context bootstrap yang cukup kaya untuk tidak menebak-nebak scope: excerpt issue terpilih, issue ID target, branch target, path artifact wajib, dan instruksi bahwa `docs/issues.md` adalah source of truth.
+Jika sebuah iterasi `runs-once.sh` berakhir `DONE`, wrapper kembali ke branch orchestrator, melakukan merge lokal `--no-ff` dari branch issue yang baru selesai, lalu hanya setelah merge sukses wrapper boleh memulai iterasi berikutnya.
 
-Worker membaca excerpt ticket, memverifikasi ticket yang sama di `docs/issues.md`, lalu membaca bagian relevan di `docs/prd.md`. Jika `docs/research.md` dirujuk oleh issue atau PRD, worker membacanya; jika tidak, file ini tidak dimuat untuk menghindari noise.
+Jika merge sukses tetapi batas iterasi sudah habis, loop berhenti normal dan menjelaskan bahwa batch berhenti karena cap iterasi yang diminta user sudah tercapai.
 
-Jika worker berhasil dan validation lolos, status run menjadi `DONE`. Command meninggalkan user di branch issue untuk review manusia. Hasil sukses memiliki commit di branch issue, ringkasan hasil yang jelas, audit trail di `.runs/`, dan langkah lanjut eksplisit untuk pindah ke orchestrator branch lalu melakukan merge manual.
+Jika sebuah iterasi berakhir `BLOCKED`, loop berhenti total. Wrapper tidak boleh mencoba diagnosis otomatis, tidak boleh membuat follow-up issue resmi, dan tidak boleh lanjut ke ticket berikutnya. Operator harus meninjau artifact run yang sudah ada.
 
-Jika worker mendeteksi konflik material, target issue tidak lagi ready, atau eksekusi perlu keputusan manusia, status run menjadi `BLOCKED`. Partial code tidak boleh dipertahankan sebagai commit sukses. User tetap mendapat audit trail dan langkah lanjut eksplisit untuk membawa kembali hanya perubahan `docs/issues.md` yang relevan ke orchestrator branch tanpa merge branch issue.
+Jika sebuah iterasi berakhir `FAIL`, atau jika merge pasca-`DONE` gagal atau conflict, loop berhenti total dan tidak boleh mencoba ticket berikutnya. Operator harus diberi alasan berhenti yang jelas dan tahu iterasi mana yang terakhir berhasil.
 
-Untuk semua status, output akhir harus konsisten: `Status`, `Issue`, `Branch`, `Session`, dan `Next action`. `Next action` harus selalu non-empty.
+Untuk semua hasil akhir, `runs-afk.sh` menulis satu artifact JSON agregat di `.runs/` dan mencetak satu ringkasan final human-readable ke stdout. Summary agregat harus menunjukkan status akhir loop, alasan berhenti, jumlah iterasi yang benar-benar dijalankan, branch orchestrator, daftar issue yang diproses beserta outcome masing-masing, dan pointer ke artifact per-run agar audit cepat tetap mudah.
 
 ## Functional requirements
-1. Sistem harus menyediakan entry point lokal `runs-once.sh` yang menjalankan tepat satu run untuk tepat satu issue atau berhenti normal bila tidak ada target yang eligible.
-2. Sebelum memulai worker, runner harus melakukan preflight minimum: repo tidak dalam state berbahaya untuk run, `docs/issues.md` tersedia, ada tool utama yang dibutuhkan, dan current branch aman untuk memulai orchestrator flow.
-3. Runner harus memilih issue eligible pertama dari `docs/issues.md` berdasarkan aturan mekanis berikut: `Status: todo`, `Type: AFK`, `Auto-run: yes`, dan semua dependency sudah selesai.
-4. Jika tidak ada issue eligible, runner harus mengembalikan status `NO_READY`, tidak membuat branch issue baru, dan tetap menghasilkan artifact run serta `next_action` yang eksplisit.
-5. Jika ada issue eligible, runner harus membuat branch issue deterministik `ralph/ISSUE-XXX` dari orchestrator branch sebelum worker mulai bekerja.
-6. Worker harus berjalan dalam sesi fresh dan hanya boleh mengeksekusi issue ID target yang diteruskan oleh runner; worker tidak boleh diam-diam memilih ticket lain.
-7. Context bootstrap worker harus memuat excerpt ticket terpilih, issue ID target, branch target, path `docs/issues.md`, path `docs/prd.md`, opsional `docs/research.md` bila relevan, penegasan bahwa `docs/issues.md` adalah source of truth, dan instruksi hard-fail jika target issue tidak cocok atau tidak ready.
-8. Worker harus mengikuti urutan baca ringan: excerpt ticket target, verifikasi di `docs/issues.md`, baca bagian relevan di `docs/prd.md`, baca `docs/research.md` hanya jika diperlukan, lalu eksekusi dan validasi.
-9. Jika excerpt ticket dan `docs/issues.md` tidak sinkron, worker harus mempercayai `docs/issues.md`; jika konfliknya material atau target issue tidak lagi ready, hasil run harus menjadi `BLOCKED`.
-10. Worker harus memakai workflow eksekusi repo yang sama secara substantif dengan `execute-me`, sehingga harness tidak menciptakan jalur eksekusi paralel yang menyimpang.
-11. Pada hasil `DONE`, runner harus memastikan issue branch memiliki commit hasil kerja, `docs/issues.md` sudah diperbarui sesuai outcome, dan artifact result menyertakan langkah sinkronisasi manual ke orchestrator branch.
-12. Pada hasil `BLOCKED`, runner harus membuang partial code yang tidak boleh dipertahankan, namun tetap menyimpan update status/notes yang relevan di branch issue dan memberi langkah manual untuk membawa kembali hanya perubahan `docs/issues.md` ke orchestrator branch.
-13. Untuk setiap run, runner harus menulis tepat dua artifact di `.runs/` dengan basename yang sama: satu `bootstrap.md` dan satu `result.json`.
-14. Nama artifact per-run harus memuat timestamp, issue ID, dan kind agar bisa diaudit tanpa index global.
-15. `result.json` minimum harus memuat `status`, `status_reason`, `issue_id`, `branch`, `session`, dan `next_action`.
-16. `status_reason` harus berupa string singkat yang terkontrol. `next_action` harus berupa array langkah eksplisit dan harus selalu non-empty untuk semua status, termasuk `FAIL`.
-17. Field `session` di `result.json` harus memakai session file/path Pi yang sebenarnya agar audit trail mudah dilacak.
-18. Sinkronisasi kembali ke orchestrator branch untuk v1 harus tetap manual: `DONE` melalui merge branch issue, `BLOCKED` melalui copy-back perubahan `docs/issues.md` yang relevan tanpa merge code branch.
+1. Sistem harus menyediakan entry point lokal `runs-afk.sh <iterations>` untuk menjalankan bounded multi-iteration loop di atas `runs-once.sh`.
+2. `runs-afk.sh` harus menolak input iterasi yang tidak valid dan hanya berjalan ketika user memberi jumlah iterasi maksimum yang eksplisit.
+3. Sebelum loop dimulai, wrapper harus memverifikasi state awal aman untuk orchestrator flow, termasuk repo bisa memulai `runs-once.sh` secara sah dari branch orchestrator.
+4. Wrapper harus menjalankan paling banyak sejumlah iterasi yang diminta user, tidak lebih.
+5. Setiap iterasi harus tetap memakai `runs-once.sh` sebagai primitive resmi sehingga satu iterasi tetap berarti satu issue dan satu session fresh.
+6. Wrapper hanya boleh lanjut ke iterasi berikutnya setelah iterasi sebelumnya berakhir `DONE` dan merge lokal kembali ke branch orchestrator berhasil.
+7. Jika sebuah iterasi berakhir `NO_READY`, loop harus berhenti normal tanpa error dan tidak boleh mencoba iterasi tambahan.
+8. Jika sebuah iterasi berakhir `BLOCKED`, loop harus berhenti total dan tidak boleh memicu diagnosis otomatis, tidak boleh membuat issue resmi baru, dan tidak boleh lanjut ke iterasi berikutnya.
+9. Jika sebuah iterasi berakhir `FAIL`, loop harus berhenti total dengan hasil error yang jelas dan tidak boleh lanjut ke iterasi berikutnya.
+10. Jika merge pasca-`DONE` gagal atau conflict, loop harus berhenti total dan tidak boleh lanjut ke iterasi berikutnya.
+11. Setelah setiap iterasi `DONE`, wrapper harus kembali ke branch orchestrator dan melakukan merge lokal `--no-ff` dari branch issue yang baru selesai sebelum mengevaluasi apakah loop boleh lanjut.
+12. Wrapper tidak boleh menghapus branch issue otomatis setelah merge sukses pada v1.
+13. Untuk setiap loop, wrapper harus menulis tepat satu artifact agregat machine-readable di `.runs/`.
+14. Artifact agregat minimum harus memuat: status akhir loop, alasan berhenti, jumlah iterasi yang dijalankan, branch orchestrator, daftar issue yang diproses beserta outcome-nya, dan pointer eksplisit ke artifact per-run tiap iterasi.
+15. Pointer audit pada artifact agregat harus cukup untuk membawa operator ke artifact `bootstrap` dan `result` dari tiap iterasi tanpa perlu menebak-nebak nama file.
+16. Ringkasan final di stdout harus human-readable dan konsisten dengan artifact agregat, tetapi stdout tidak perlu menjadi kontrak machine-readable resmi.
+17. Jika batas iterasi tercapai setelah satu atau lebih iterasi sukses, loop harus berhenti normal dan artifact agregat harus menyatakan bahwa alasan berhenti adalah cap iterasi, bukan kegagalan.
+18. Wrapper harus mempertahankan `docs/issues.md` pada branch orchestrator sebagai source of truth antar-iterasi; tidak boleh ada jalur lain yang diam-diam mengambil alih state loop permanen.
 
 ## Edge cases
 - Invalid input:
-  - `docs/issues.md` tidak punya field `Auto-run` pada ticket target
-  - issue target yang diteruskan runner tidak ditemukan lagi saat worker memverifikasi file
+  - argumen iterasi hilang
+  - argumen iterasi bukan bilangan bulat positif
 - Partial failure:
-  - worker sudah mengubah file tetapi validation gagal
-  - update status issue berhasil tetapi commit akhir gagal
+  - beberapa iterasi awal sukses, lalu iterasi berikutnya `BLOCKED`
+  - iterasi `DONE` sukses tetapi merge kembali ke orchestrator gagal
 - External dependency failure:
-  - proses Pi worker tidak bisa dijalankan
-  - git command yang dibutuhkan runner gagal
+  - `runs-once.sh` tidak bisa dipanggil
+  - git merge gagal karena conflict atau masalah repo lokal
 - Timeouts / retries:
-  - worker run berhenti di tengah dan runner harus mengembalikan `FAIL` dengan langkah lanjut yang jelas
+  - worker di dalam `runs-once.sh` berhenti di tengah dan mengembalikan `FAIL`
+  - batch berhenti di tengah setelah sebagian iterasi sukses
 - Permissions / access issues:
-  - branch tidak bisa dibuat atau file artifact tidak bisa ditulis
+  - wrapper tidak bisa menulis artifact agregat
+  - branch orchestrator tidak bisa di-checkout kembali
 - Duplicate or repeated actions:
-  - user menjalankan `runs-once.sh` saat target issue yang sama sudah tidak eligible lagi
-  - user mencoba sinkronisasi manual dua kali dari branch issue yang sama
+  - user menjalankan `runs-afk.sh` saat branch issue lama masih ada dari run sebelumnya
+  - loop berhenti karena `NO_READY` padahal sebelumnya sudah menyelesaikan beberapa iterasi sukses
 - Empty or missing data:
-  - `docs/research.md` tidak ada atau tidak relevan untuk issue target
-  - `.runs/` belum ada dan harus dibuat tanpa mengganggu artifact utama repo
+  - artifact per-run tidak ditemukan saat wrapper menyusun summary agregat
+  - iterasi pertama langsung `NO_READY`
 
 ## Acceptance criteria
-- [ ] Saat `docs/issues.md` tidak memiliki issue eligible, menjalankan `runs-once.sh` berakhir dengan `NO_READY`, tidak membuat branch issue baru, dan menghasilkan `bootstrap.md` serta `result.json` dengan `next_action` non-empty.
-- [ ] Saat ada issue eligible, runner memilih issue eligible pertama sesuai urutan file, membuat branch `ralph/ISSUE-XXX`, dan worker hanya mengeksekusi issue target tersebut.
-- [ ] Jika target issue tidak lagi ready saat diverifikasi worker, hasil run menjadi `BLOCKED`, partial code tidak dipertahankan sebagai hasil sukses, dan `result.json` memuat `status_reason` serta `next_action` yang jelas.
-- [ ] Saat run berakhir `DONE`, branch issue memiliki commit hasil kerja, `result.json` memuat semua field minimum, dan output akhir memberi langkah eksplisit untuk merge manual ke orchestrator branch.
-- [ ] Untuk setiap run, `.runs/` berisi tepat dua artifact dengan basename yang sama: satu `bootstrap.md` dan satu `result.json`.
-- [ ] `docs/research.md` hanya dimuat ketika issue target atau PRD memang membutuhkannya, bukan secara default setiap run.
-- [ ] `docs/idea.md` tidak dimuat ke worker v1.
-- [ ] `result.json` selalu memiliki `next_action` non-empty untuk `DONE`, `NO_READY`, `BLOCKED`, dan `FAIL`.
-- [ ] Workflow manusia yang sudah ada tetap bisa dipakai tanpa harness multi-iterasi; v1 tidak memerlukan `runs-afk.sh`.
+- [ ] Menjalankan `runs-afk.sh <iterations>` dengan input iterasi valid memproses paling banyak sejumlah iterasi yang diminta, tidak lebih.
+- [ ] Jika iterasi pertama atau iterasi berikutnya menghasilkan `NO_READY`, loop berhenti normal, tidak mencoba iterasi tambahan, dan menulis summary agregat dengan alasan berhenti yang sesuai.
+- [ ] Jika sebuah iterasi menghasilkan `DONE` lalu merge kembali ke orchestrator sukses, loop boleh lanjut ke iterasi berikutnya selama batas iterasi belum habis.
+- [ ] Jika merge pasca-`DONE` gagal atau conflict, loop berhenti total sebelum mencoba issue berikutnya dan summary agregat menunjukkan titik berhentinya.
+- [ ] Jika sebuah iterasi menghasilkan `BLOCKED`, loop berhenti total, tidak memicu diagnosis otomatis, tidak membuat issue resmi baru, dan tidak lanjut ke iterasi berikutnya.
+- [ ] Jika sebuah iterasi menghasilkan `FAIL`, loop berhenti total dan hasil akhir memperjelas bahwa batch gagal, bukan selesai normal.
+- [ ] Artifact agregat per-loop memuat status akhir loop, alasan berhenti, jumlah iterasi dijalankan, branch orchestrator, daftar issue + outcome, dan pointer ke artifact per-run tiap iterasi.
+- [ ] Ringkasan final ke stdout konsisten dengan artifact agregat dan dapat dibaca manusia tanpa membuka file JSON terlebih dahulu.
+- [ ] Branch issue hasil iterasi `DONE` tidak dihapus otomatis oleh wrapper v1.
 
 ## Constraints
 - Business constraints:
   - workflow harus tetap ringan untuk penggunaan lokal sehari-hari
-  - user tetap memegang review dan sinkronisasi manual pada v1
+  - `runs-afk.sh` harus terasa sebagai helper semi-otomatis, bukan sistem orchestration besar
 - Legal or compliance constraints:
   - none known
 - Technical constraints that affect behavior:
-  - `docs/issues.md` tetap source of truth antar-run
-  - harness tidak boleh menambah state file permanen baru seperti `progress.txt`
-  - harness tidak boleh menulis ulang substansi `execute-me` sebagai workflow paralel
-  - `.runs/` tidak boleh menjadi dumping ground artifact sembarang
+  - `docs/issues.md` tetap source of truth antar-iterasi
+  - `runs-once.sh` tetap primitive resmi per iterasi
+  - wrapper tidak boleh menambah state permanen baru seperti `progress.txt`
+  - artifact agregat loop tidak boleh menggantikan artifact detail per-run
+  - stdout bukan kontrak machine-readable resmi
 - Timeline or rollout constraints:
-  - v1 harus dibatasi ke `runs-once.sh` saja
-  - multi-iterasi ditunda ke fase berikutnya
+  - phase ini harus fokus pada local bounded loop, bukan scheduler atau background runner
+  - boundary diagnosis/planning tetap di luar scope v1
 
 ## Dependencies
 - Relevant external services:
-  - none required for v1 local workflow
+  - none required for local v1 loop
 - Upstream or downstream systems:
-  - Pi CLI
-  - workflow/skill `execute-me`
+  - `runs-once.sh`
+  - Pi CLI melalui flow yang sudah dipakai `runs-once.sh`
   - `docs/issues.md`
-  - `docs/prd.md`
-  - opsional `docs/research.md`
   - git local repository state
+  - `.runs/`
 - Required research findings:
-  - Ralph loop sebaiknya mulai dari HITL-first, bounded, one-task-at-a-time, dengan feedback loop dan audit trail yang jelas
-  - prompt tipis tidak boleh berarti context tipis untuk sesi fresh
+  - Ralph loop sebaiknya bounded, one-task-at-a-time, dan memakai feedback loop yang jelas
+  - task source dan output loop boleh dikustomisasi selama behavior tetap jelas dan auditable
+  - automation yang lebih aman tidak harus commit langsung ke main; branch/reviewable outputs tetap valid
 - Prototype decisions being promoted:
-  - No prototype was required before PRD; prototype ringan nanti opsional hanya untuk validasi detail operasional
+  - No prototype was required before PRD; prototype ringan nanti opsional hanya untuk mengecek UX summary agregat
 
 ## Open questions
-- Apakah worker deterministik v1 sebaiknya dipicu lewat prompt template khusus repo, atau prompt inline yang digenerate runner selama kontraknya tetap tipis dan setara?
-- Apakah `.runs/` perlu otomatis di-`gitignore` sebagai bagian dari UX v1, atau cukup didokumentasikan sebagai artifact operasional lokal?
-- Apakah hasil `FAIL` perlu menyertakan snapshot tambahan selain `bootstrap.md` dan `result.json`, atau dua artifact per run tetap cukup untuk v1?
+- Tidak ada open question material yang memblokir planning. Detail kecil seperti nama field exact pada JSON agregat bisa diputuskan saat issue breakdown selama behavior di PRD tetap dijaga.
 
 ## Recommended next step
 - Suggested next phase:
   - Phase 5 / issues planning
 - Why that is the right next step:
-  - Scope v1 sudah sempit, perilaku utama sudah jelas, kontrak artifact sudah cukup konkret, dan remaining open questions tidak memerlukan kembali ke research atau prototype besar
+  - Behavior loop, stop policy, scope boundaries, dan kontrak audit utama sudah cukup jelas untuk dipecah menjadi ticket yang terencana
 - What should happen immediately after this PRD is accepted:
-  - Pecah pekerjaan menjadi ticket yang membedakan: runner/preflight, worker targeting contract, audit trail `.runs/`, dan dokumentasi/prosedur manual sinkronisasi
+  - Pecah pekerjaan ke ticket terpisah untuk wrapper entry point, merge/handoff antar-iterasi, summary agregat, dan operator-facing output/validation
 
 ## Source artifacts
 - `docs/idea.md`
 - `docs/research.md`
-- `docs/archive/prd-readiness-gate-validator.md`
 
 ## Handoff to Issues
 - [x] Main user flows are clear
@@ -195,6 +196,7 @@ Untuk semua status, output akhir harus konsisten: `Status`, `Issue`, `Branch`, `
 Ready for next phase: yes
 Primary blocker: none
 Notes:
-- V1 sengaja dibatasi ke `runs-once.sh`
-- `runs-afk.sh` ditunda sampai model one-run flow dan sinkronisasi manual terbukti nyaman
-- Prototype ringan nanti boleh dipakai hanya untuk memvalidasi detail operasional kecil, bukan untuk mengganti model inti
+- `runs-afk.sh` tetap wrapper bounded di atas `runs-once.sh`, bukan workflow eksekusi paralel baru
+- Source of truth antar-iterasi tetap `docs/issues.md` pada branch orchestrator
+- `BLOCKED` dan `FAIL` tetap memantul ke manusia; tidak ada diagnosis/planning otomatis di v1
+- Stdout final cukup human-readable; JSON agregat adalah surface machine-readable resmi
