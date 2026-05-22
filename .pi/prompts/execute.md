@@ -14,6 +14,9 @@ Gunakan artifact proyek berikut sebagai sumber konteks utama bila relevan:
 Tentukan dulu apakah proyek memang siap masuk Phase 6. Jika belum siap, jelaskan gap utamanya dan rekomendasikan fase yang harus didahulukan.
 
 Jika sudah siap:
+- bila fokus tambahan memuat issue ID eksplisit seperti `ISSUE-002`, perlakukan issue itu sebagai target wajib
+- saat target wajib diberikan, verifikasi issue ID yang sama di `docs/issues.md` sebelum implementasi dan jangan fallback ke ticket AFK lain
+- bila target wajib itu missing, materially mismatched, atau tidak lagi ready, hentikan dan tandai `blocked` alih-alih improvisasi
 - pilih tepat satu ticket `AFK` yang benar-benar ready dari `docs/issues.md`, mengikuti urutan file kecuali pengguna menentukan lain
 - jangan kerjakan ticket `HITL`
 - jangan mengerjakan ticket kedua dalam run yang sama

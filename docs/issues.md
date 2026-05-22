@@ -1,22 +1,25 @@
 # Issues
 
 ## Planning assumptions
-- Source PRD: `docs/prd.md` for `feat/readiness-gate-validator`
-- Planning scope: minor release untuk parity handoff `idea -> PRD` dan `PRD -> issues`, validator readiness gate, CI enforcement, dan docs terkait
-- Prototype winner: none; prototyping was not needed
+- Source PRD: `docs/prd.md` for `feat/runs-once-harness-v1`
+- Planning scope: v1 local harness untuk menjalankan tepat satu ticket `AFK` lewat `runs-once.sh` dengan branch-per-issue, worker session fresh, audit trail `.runs/`, dan sinkronisasi manual ke orchestrator branch
+- Prototype winner: none; prototyping was not required before planning, hanya opsional untuk validasi detail operasional kecil
 - Key constraints:
-  - template harus tetap clean saat `docs/` artifacts kosong
-  - validator fokus ke `docs/idea.md` dan `docs/prd.md`
-  - local behavior advisory, CI behavior blocking
-  - jangan menilai kualitas semantik artifact
+  - `docs/issues.md` tetap source of truth antar-run
+  - v1 hanya mencakup `runs-once.sh`; `runs-afk.sh` ditunda
+  - tidak ada `progress.txt` baru; state antar-run cukup dari artifact repo, session history, dan git history
+  - harness tidak boleh menulis ulang substansi `execute-me` sebagai workflow paralel
+  - `.runs/` hanya untuk snapshot bootstrap, result minimum, dan metadata status run
 - Non-blocking open questions:
-  - extensibility ke fase berikutnya boleh tetap internal/modular dulu
-  - release hygiene bisa diselesaikan pada ticket dokumentasi tanpa memblokir eksekusi inti
+  - worker non-interaktif bisa memakai prompt template khusus repo atau prompt inline selama kontraknya tetap tipis dan setara
+  - `.runs/` gitignore policy bisa diputuskan saat ticket dokumentasi/hygiene tanpa memblokir core harness
+  - snapshot tambahan untuk `FAIL` bisa tetap ditolak pada v1 jika dua artifact per run terbukti cukup
 
 ## Dependency rules
-- Contract surfaces untuk handoff harus jelas sebelum validator dan CI dianggap final.
-- Validator lokal harus land dulu sebelum integrasi CI blocking.
-- Dokumentasi final harus mengikuti perilaku validator dan surface yang benar-benar diimplementasikan.
+- Runner selection/preflight contract harus jelas sebelum flow worker dan outcome run dianggap stabil.
+- Worker harus menghormati explicit target issue sebelum artifact `.runs/` dan status contract dianggap final.
+- Audit/result contract harus land dulu sebelum summary shell dan prosedur manual final didokumentasikan.
+- Flow `DONE` dan `BLOCKED` harus mengikuti perilaku worker yang benar-benar diimplementasikan; dokumentasi tidak boleh mendahului behavior aktual.
 - QA follow-up nanti sebaiknya reopen ticket yang relevan jika scope aslinya masih cocok.
 
 ## Ticket conventions
@@ -29,159 +32,189 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-001` — align `idea -> PRD` handoff surfaces
-- `ISSUE-002` — align `PRD -> issues` handoff surfaces
+- `ISSUE-001` — add deterministic runner preflight and target selection
+- `ISSUE-002` — tighten worker execution contract around explicit issue targets
 
 Blocked until prerequisites complete:
 - `ISSUE-003` blocked on `ISSUE-001` and `ISSUE-002`
-- `ISSUE-004` blocked on `ISSUE-003`
-- `ISSUE-005` blocked on `ISSUE-001`, `ISSUE-002`, `ISSUE-003`, and `ISSUE-004`
+- `ISSUE-004` blocked on `ISSUE-001`, `ISSUE-002`, and `ISSUE-003`
+- `ISSUE-005` blocked on `ISSUE-001`, `ISSUE-002`, and `ISSUE-003`
+- `ISSUE-006` blocked on `ISSUE-004` and `ISSUE-005`
 
 Suggested lanes:
 - Lane A: `ISSUE-001` -> `ISSUE-003` -> `ISSUE-004`
-- Lane B: `ISSUE-002` -> merge into validator/doc flow
-- Lane C: `ISSUE-005` after implementation behavior is stable
+- Lane B: `ISSUE-002` -> merge into `ISSUE-003`/`ISSUE-005`
+- Lane C: `ISSUE-006` after core behavior is stable
 
 ## Tickets
 
-### ISSUE-001 — Align `idea -> PRD` handoff contract across Phase 1 surfaces
+### ISSUE-001 — Add deterministic runner preflight and issue selection for `runs-once.sh`
 - Status: done
 - Type: AFK
 - Goal:
-  - Make the `idea -> PRD` handoff contract consistent across the relevant skill, prompt, and repo guidance surfaces.
+  - Let `runs-once.sh` safely start from orchestrator branch, detect whether work is available, and deterministically select the first eligible issue before any worker session begins.
 - Why it exists:
-  - `v1-context-hardening` introduced stronger handoff rules, but enforcement is still partial and can diverge across surfaces.
+  - The harness cannot stay trustworthy if target selection, branch creation, and `NO_READY` behavior remain implicit or manual.
 - Depends on: none
-- Blocks: ISSUE-003, ISSUE-005
+- Blocks: ISSUE-003, ISSUE-004, ISSUE-005
 - Parallelizable: yes
 - Source requirements:
-  - FR-1
-  - AC-8
+  - Functional requirements 1, 2, 3, 4, 5
+  - Acceptance criteria 1, 2
 - Scope:
-  - Update Phase 1 surfaces so they consistently mention `## Handoff to PRD`
-  - Ensure readiness semantics and `Primary blocker` expectations are aligned
-  - Close obvious parity gaps between prompt instructions, skill behavior, and repo guidance
+  - Add `runs-once.sh` entry point skeleton
+  - Implement preflight minimum checks for repo safety, `docs/issues.md`, branch safety, and required tooling
+  - Select the first eligible issue using only the agreed mechanical rules
+  - Return `NO_READY` when no eligible issue exists
+  - Create deterministic branch `ralph/ISSUE-XXX` only after a target is selected
 - Acceptance criteria:
-  - [x] Relevant Phase 1 surfaces consistently require `## Handoff to PRD` before recommending PRD handoff
-  - [x] Relevant Phase 1 surfaces consistently require `Ready for next phase: yes/no`
-  - [x] Relevant Phase 1 surfaces consistently require `Primary blocker` when readiness is `no`
-  - [x] No Phase 1 surface still gives contradictory guidance for the covered handoff
+  - [x] When no issue is eligible, `runs-once.sh` exits with a normal `NO_READY` outcome and does not create a new issue branch.
+  - [x] When at least one issue is eligible, the runner selects the first eligible issue in file order and creates `ralph/ISSUE-XXX` from the orchestrator branch.
+  - [x] If preflight detects a dangerous repo state or missing required input/tooling, the run does not start worker execution and returns an actionable failure.
 - Notes / risks:
-  - Updated `grill-me` skill + README and `GUIDE.md` so Phase 1 guidance now matches the hardened prompt and AGENTS contract
+  - Added `runs-once.sh` plus `scripts/runs-once.mjs` with strict preflight, deterministic first-eligible selection, `NO_READY` handling, and deterministic branch creation.
+  - Added `tests/runs-once.test.mjs` and validated `NO_READY`, first-eligible branch creation, dirty repo failure, and missing-tooling failure with `node --test tests/runs-once.test.mjs`.
+  - Runner intentionally stays mechanical only; worker execution and `.runs/` artifacts are deferred to later tickets.
 
-### ISSUE-002 — Align `PRD -> issues` handoff contract across Phase 4 and 5 surfaces
+### ISSUE-002 — Tighten worker execution around an explicit target issue
 - Status: done
 - Type: AFK
 - Goal:
-  - Make the `PRD -> issues` handoff contract consistent across PRD, issues planning, and related guidance surfaces.
+  - Ensure the worker executes only the issue ID chosen by the runner and fails closed when that target is missing, mismatched, or not ready.
 - Why it exists:
-  - The repo already added part of this hardening, but planning can still drift if the relevant skill and guidance do not enforce the same contract.
+  - Without a single deterministic target contract, runner selection and worker execution can drift and silently work on different tickets.
 - Depends on: none
-- Blocks: ISSUE-003, ISSUE-005
+- Blocks: ISSUE-003, ISSUE-004, ISSUE-005
 - Parallelizable: yes
 - Source requirements:
-  - FR-1
-  - AC-8
+  - Functional requirements 6, 9, 10
+  - Acceptance criteria 2, 3
 - Scope:
-  - Update Phase 4 and 5 surfaces so they consistently mention `## Handoff to Issues`
-  - Ensure readiness semantics and `Primary blocker` expectations are aligned
-  - Close parity gaps between PRD prompt/template behavior and issues planning behavior
+  - Tighten the worker path so it accepts an explicit issue target
+  - Preserve the normal human workflow behavior while adding deterministic harness behavior
+  - Prevent fallback selection of another eligible issue
+  - Map “target no longer ready” and material source-of-truth conflicts to the correct blocked behavior
 - Acceptance criteria:
-  - [x] Relevant Phase 4 and 5 surfaces consistently require `## Handoff to Issues` before recommending or starting planning
-  - [x] Relevant Phase 4 and 5 surfaces consistently require `Ready for next phase: yes/no`
-  - [x] Relevant Phase 4 and 5 surfaces consistently require `Primary blocker` when readiness is `no`
-  - [x] No covered Phase 4 or 5 surface still gives contradictory guidance for the covered handoff
+  - [x] Given an explicit issue target, worker execution only acts on that target and never silently picks a different ticket.
+  - [x] If the target issue is missing, materially mismatched, or no longer ready after verification, the worker returns a blocked-style outcome instead of improvising.
+  - [x] The worker still uses the existing repo execution workflow substantively rather than a second parallel execution model.
 - Notes / risks:
-  - Updated `prd-me` and `issues-me` skill + README surfaces and `GUIDE.md` so PRD handoff readiness is now enforced consistently before planning
+  - `scripts/runs-once.mjs` now reuses `.pi/prompts/execute.md` as the worker prompt, injects the selected issue ID explicitly, and re-verifies the same target before dispatching Pi.
+  - Added fail-closed target verification plus `BLOCKED` shell output when the selected issue is missing, materially changed, or no longer ready.
+  - Expanded `tests/runs-once.test.mjs` to validate worker dispatch, explicit target prompt injection, and material conflict/no-longer-ready checks with `node --test tests/runs-once.test.mjs`.
 
-### ISSUE-003 — Add local readiness validator for active idea and PRD artifacts
+### ISSUE-003 — Add worker bootstrap context and `.runs/` artifact contract
 - Status: done
 - Type: AFK
 - Goal:
-  - Provide a local validator that checks readiness-gate structure and minimum logic for active `docs/idea.md` and `docs/prd.md`.
+  - Give fresh worker sessions enough explicit context to avoid hallucination and produce a stable audit trail per run.
 - Why it exists:
-  - Text-only guidance is easy to bypass; local validation gives fast feedback before CI.
+  - Fresh sessions without explicit bootstrap context will guess scope, and runs without durable artifacts are hard to debug afterward.
 - Depends on: ISSUE-001, ISSUE-002
 - Blocks: ISSUE-004, ISSUE-005
 - Parallelizable: no
 - Source requirements:
-  - FR-2
-  - FR-3
-  - FR-4
-  - FR-5
-  - FR-6
-  - FR-7
-  - FR-9
-  - AC-1
-  - AC-2
-  - AC-3
-  - AC-4
-  - AC-5
-  - AC-7
+  - Functional requirements 7, 8, 13, 14, 15, 16, 17
+  - Acceptance criteria 1, 5, 6, 7, 8
 - Scope:
-  - Add a repo-local validation command or script
-  - Validate only active/non-empty `docs/idea.md` and `docs/prd.md`
-  - Check required section, readiness field, blocker field, and minimum readiness logic
-  - Return clear advisory output for local use
+  - Inject issue excerpt and minimum required context into the worker bootstrap
+  - Load `docs/issues.md`, `docs/prd.md`, and only load `docs/research.md` when relevant
+  - Exclude `docs/idea.md` from worker context for v1
+  - Create `.runs/` artifacts using a shared basename per run
+  - Define and write `bootstrap.md` and `result.json`
 - Acceptance criteria:
-  - [x] Active `docs/idea.md` fails with specific output if `## Handoff to PRD` is missing
-  - [x] Active `docs/prd.md` fails with specific output if `## Handoff to Issues` is missing
-  - [x] Active artifacts fail if `Ready for next phase` or `Primary blocker` is missing
-  - [x] Active artifacts fail if readiness is `no` and blocker is empty or `none`
-  - [x] Active artifacts fail if readiness is `yes` and the relevant handoff checklist still has unchecked items
-  - [x] Empty template-state `docs/idea.md` and `docs/prd.md` do not fail validation
-  - [x] Local output is clearly advisory and actionable
+  - [x] Every run writes exactly two `.runs/` artifacts with the same basename: one `bootstrap.md` and one `result.json`.
+  - [x] `bootstrap.md` contains the selected issue excerpt plus the explicit context bootstrap needed by the worker.
+  - [x] `result.json` includes at least `status`, `status_reason`, `issue_id`, `branch`, `session`, and non-empty `next_action`.
+  - [x] `docs/research.md` is loaded only when the selected issue or PRD clearly requires it.
+  - [x] `docs/idea.md` is not part of worker bootstrap for v1.
 - Notes / risks:
-  - Added `scripts/validate-readiness-gates.mjs`; validated current repo state plus targeted temp-file cases for missing section, missing field, placeholder blocker, unchecked checklist, and empty template-state artifacts
+  - `scripts/runs-once.mjs` now writes exactly one `.bootstrap.md` and one `.result.json` per run with a shared timestamp+issue basename.
+  - Worker dispatch now carries explicit bootstrap context, selected issue excerpt, deterministic Pi session path, and explicit exclusion of `docs/idea.md`.
+  - `docs/research.md` is only required when the selected issue/bootstrap explicitly references research context.
+  - Validated with `node --test tests/runs-once.test.mjs` covering `NO_READY`, worker bootstrap artifact content, prompt injection, fail artifacts, and conditional research loading.
 
-### ISSUE-004 — Enforce readiness validator in CI as a blocking check
+### ISSUE-004 — Land the successful `DONE` flow for review and orchestrator merge
 - Status: done
 - Type: AFK
 - Goal:
-  - Run the readiness validator in CI so invalid handoff state blocks merge/release flow.
+  - Make a successful run end in a committed issue branch with a clear, reviewable path back to the orchestrator branch.
 - Why it exists:
-  - Local advisory feedback is helpful, but the repo still needs a hard gate before changes land.
-- Depends on: ISSUE-003
-- Blocks: ISSUE-005
+  - A “successful” run that still needs the operator to invent the closing procedure is not operationally complete.
+- Depends on: ISSUE-001, ISSUE-002, ISSUE-003
+- Blocks: ISSUE-006
 - Parallelizable: no
 - Source requirements:
-  - FR-8
-  - AC-6
+  - Functional requirements 11, 18
+  - Acceptance criteria 2, 4
 - Scope:
-  - Add CI execution for the readiness validator
-  - Ensure failures are visible and actionable in CI logs
-  - Preserve the distinction between local advisory behavior and CI blocking behavior
+  - Ensure validation gates run before `DONE`
+  - Ensure successful runs leave a commit in the issue branch
+  - Keep the shell on the issue branch after the run
+  - Render final shell summary and explicit `next_action` for human review and manual merge
 - Acceptance criteria:
-  - [x] CI runs the readiness validator automatically
-  - [x] CI fails when the validator finds a covered readiness-gate violation
-  - [x] CI logs make it clear which artifact and rule failed
-  - [x] CI does not silently pass when validator execution itself fails
+  - [x] A `DONE` run only occurs after the selected issue is executed and validated successfully.
+  - [x] A `DONE` run leaves a commit on `ralph/ISSUE-XXX` and keeps the user on that branch for review.
+  - [x] `result.json` and final shell output both give explicit next steps to switch back to the orchestrator branch and merge manually.
 - Notes / risks:
-  - Added `.github/workflows/readiness-gates.yml` and CI mode for the validator; verified local advisory mode, CI blocking mode, and CI-mode failure exit/status with a targeted temp-file case
+  - `runs-once.sh` now refuses `DONE` when the worker exits cleanly but leaves the target issue not-`done` in `docs/issues.md`.
+  - Successful runs now write explicit manual merge steps, create a reviewable commit on `ralph/ISSUE-XXX`, and keep the shell on the issue branch.
+  - Validation evidence: `node --test tests/runs-once.test.mjs` covers success commit creation, manual merge instructions, and failure when the worker does not leave a done ticket.
+  - Do not auto-merge in v1, even if the run succeeded cleanly.
 
-### ISSUE-005 — Document validator usage, scope boundaries, and release hygiene updates
+### ISSUE-005 — Land the safe `BLOCKED` and `FAIL` flows
 - Status: done
 - Type: AFK
 - Goal:
-  - Update repo documentation so contributors understand the new validator behavior, scope, and limits.
+  - Make blocked and failed runs operationally safe, auditable, and explicit about what the human should do next.
 - Why it exists:
-  - Hardening is incomplete if users cannot tell when validation applies or how to respond to failures.
-- Depends on: ISSUE-001
-- Blocks:
-- Parallelizable: yes
+  - Error paths are where trust in the harness will be won or lost.
+- Depends on: ISSUE-001, ISSUE-002, ISSUE-003
+- Blocks: ISSUE-006
+- Parallelizable: no
 - Source requirements:
-  - FR-10
-  - AC-8
-  - AC-9
+  - Functional requirements 9, 12, 16, 18
+  - Acceptance criteria 3, 8
 - Scope:
-  - Document local advisory usage and CI blocking behavior
-  - Explain clean template handling for empty artifacts
-  - Explain minor release scope boundaries and what is deferred
-  - Add any minimum release hygiene notes chosen for this release
+  - Map “target no longer ready” and material source-of-truth conflicts to `BLOCKED`
+  - Discard partial code for `BLOCKED` runs while preserving relevant status/notes updates
+  - Produce explicit `FAIL` outcomes for infra/process failures
+  - Ensure every non-success result still has a useful `status_reason` and `next_action`
 - Acceptance criteria:
-  - [x] Relevant docs explain what the validator checks for `docs/idea.md` and `docs/prd.md`
-  - [x] Relevant docs explain local advisory versus CI blocking behavior
-  - [x] Relevant docs explain why empty template-state artifacts do not fail validation
-  - [x] Relevant docs do not promise downstream hardening that is out of scope for this minor release
+  - [x] When the target issue is no longer ready after verification, the run ends as `BLOCKED` rather than `NO_READY` or `FAIL`.
+  - [x] `BLOCKED` runs do not preserve partial code as a success path and do not instruct users to merge the issue branch into orchestrator.
+  - [x] `BLOCKED` and `FAIL` runs both produce `result.json` with non-empty `next_action` and a controlled `status_reason`.
 - Notes / risks:
-  - Updated `README.md`, `GUIDE.md`, and `MASTER_TEMPLATE.md` to document validator behavior, CI blocking versus local advisory mode, empty template-state handling, and the intentionally limited scope of this minor release
+  - `scripts/runs-once.mjs` now cleans blocked-run code changes while preserving `docs/issues.md` plus `.runs/` artifacts.
+  - `BLOCKED` next actions now direct manual copy-back of relevant `docs/issues.md` updates and explicitly forbid merging the issue branch.
+  - `FAIL` results keep controlled `status_reason: run_failed` with non-empty `next_action`, including worker non-zero exit cases.
+  - Validated with `node --test tests/runs-once.test.mjs`, including target-no-longer-ready `BLOCKED` flow and worker non-zero `FAIL` flow.
+
+### ISSUE-006 — Document operator workflow and local repo hygiene for `runs-once.sh`
+- Status: done
+- Type: AFK
+- Goal:
+  - Document how operators should use `runs-once.sh`, audit `.runs/`, and perform the manual sync procedures for `DONE`, `BLOCKED`, `NO_READY`, and `FAIL`.
+- Why it exists:
+  - A local harness is incomplete if operators cannot tell how to use it safely or how to interpret its run artifacts.
+- Depends on: ISSUE-004, ISSUE-005
+- Blocks:
+- Parallelizable: no
+- Source requirements:
+  - Functional requirements 18
+  - Acceptance criteria 4, 5, 8, 9
+  - Open questions on `.runs/` repo hygiene and worker prompt shape, as resolved by implementation
+- Scope:
+  - Document `runs-once.sh` usage and status outcomes
+  - Document manual `DONE` merge flow and `BLOCKED` copy-back flow
+  - Document `.runs/` purpose, naming convention, and retention expectations for v1
+  - Resolve/document whether `.runs/` belongs in `.gitignore` for the intended local UX
+- Acceptance criteria:
+  - [x] Relevant docs explain how to run `runs-once.sh` and interpret its final status summary.
+  - [x] Relevant docs explain the official manual sync procedure for `DONE` and `BLOCKED`.
+  - [x] Relevant docs explain what `.runs/` contains and how it should be treated in local repo hygiene.
+- Notes / risks:
+  - Added `docs/runs-once.md` as the operator guide for command usage, status meanings, `.runs/` audit artifacts, and official manual sync procedures.
+  - Updated `README.md` to point operators to the new harness guide.
+  - Resolved repo hygiene by adding `.runs/` and `.runs-sessions/` to `.gitignore` as local operational artifacts.
+  - Validated doc coverage against current harness behavior with `rg -n "runs-once|NO_READY|BLOCKED|DONE|FAIL|\\.runs|\\.runs-sessions|git merge --no-ff|copy-back|jangan merge" docs/runs-once.md README.md .gitignore scripts/runs-once.mjs`.

@@ -158,6 +158,7 @@ Important behavior:
 ## Read next
 
 - `GUIDE.md` — step-by-step usage guide with a simple from-scratch app example
+- `docs/runs-once.md` — operator guide for the one-ticket local harness
 - `MASTER_TEMPLATE.md` — notes for using this repo as a reusable template base
 - `AGENTS.md` — repository workflow rules for agents
 
