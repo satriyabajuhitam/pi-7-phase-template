@@ -218,3 +218,28 @@ Suggested lanes:
   - Updated `README.md` to point operators to the new harness guide.
   - Resolved repo hygiene by adding `.runs/` and `.runs-sessions/` to `.gitignore` as local operational artifacts.
   - Validated doc coverage against current harness behavior with `rg -n "runs-once|NO_READY|BLOCKED|DONE|FAIL|\\.runs|\\.runs-sessions|git merge --no-ff|copy-back|jangan merge" docs/runs-once.md README.md .gitignore scripts/runs-once.mjs`.
+
+### ISSUE-007 — Dummy AFK smoke test for `runs-once.sh`
+- Status: todo
+- Type: AFK
+- Auto-run: yes
+- Goal:
+  - Provide one safe temporary AFK ticket so the local harness can be smoke-tested end-to-end with Pi CLI live.
+- Why it exists:
+  - The current board has no eligible AFK ticket, so `runs-once.sh` can only exercise the `NO_READY` path.
+- Depends on: none
+- Blocks:
+- Parallelizable: no
+- Source requirements:
+  - Functional requirements 3, 5, 6, 11, 16
+- Scope:
+  - Let the worker execute exactly one harmless smoke-test task
+  - Prefer a tiny documentation-only change
+  - Produce a real `DONE`, `BLOCKED`, or `FAIL` outcome for manual QA observation
+- Acceptance criteria:
+  - [ ] `runs-once.sh` can select this ticket as the first eligible AFK issue.
+  - [ ] The live run produces observable shell output and `.runs/` artifacts for manual review.
+  - [ ] After the smoke test, the team can either delete this temporary ticket or mark it done with explicit notes.
+- Notes / risks:
+  - Temporary QA-only ticket for live harness verification.
+  - Prefer the smallest possible change, ideally limited to docs, so the smoke test stays low risk.
