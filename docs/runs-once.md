@@ -175,6 +175,15 @@ Alasannya:
 - source of truth workflow tetap ada di `docs/issues.md`, `docs/prd.md`, dan session outcome
 - menghindari noise pada diff dan commit review
 
+## Temporary smoke-test ticket
+
+Untuk smoke test end-to-end, tim boleh menambahkan tepat satu ticket `AFK` sementara dengan `Auto-run: yes`.
+
+Panduan v1:
+- usahakan scope sekecil mungkin, idealnya perubahan dokumentasi saja
+- gunakan ticket ini hanya untuk memverifikasi shell output, branch flow, dan artifact `.runs/`
+- setelah observasi selesai, hapus ticket sementara itu atau tandai `done` dengan catatan eksplisit
+
 ## Operator checklist
 
 Sebelum run:

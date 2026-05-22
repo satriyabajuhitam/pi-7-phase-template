@@ -220,7 +220,7 @@ Suggested lanes:
   - Validated doc coverage against current harness behavior with `rg -n "runs-once|NO_READY|BLOCKED|DONE|FAIL|\\.runs|\\.runs-sessions|git merge --no-ff|copy-back|jangan merge" docs/runs-once.md README.md .gitignore scripts/runs-once.mjs`.
 
 ### ISSUE-007 — Dummy AFK smoke test for `runs-once.sh`
-- Status: todo
+- Status: done
 - Type: AFK
 - Auto-run: yes
 - Goal:
@@ -237,9 +237,12 @@ Suggested lanes:
   - Prefer a tiny documentation-only change
   - Produce a real `DONE`, `BLOCKED`, or `FAIL` outcome for manual QA observation
 - Acceptance criteria:
-  - [ ] `runs-once.sh` can select this ticket as the first eligible AFK issue.
-  - [ ] The live run produces observable shell output and `.runs/` artifacts for manual review.
-  - [ ] After the smoke test, the team can either delete this temporary ticket or mark it done with explicit notes.
+  - [x] `runs-once.sh` can select this ticket as the first eligible AFK issue.
+  - [x] The live run produces observable shell output and `.runs/` artifacts for manual review.
+  - [x] After the smoke test, the team can either delete this temporary ticket or mark it done with explicit notes.
 - Notes / risks:
   - Temporary QA-only ticket for live harness verification.
   - Prefer the smallest possible change, ideally limited to docs, so the smoke test stays low risk.
+  - Live smoke run targeted `ISSUE-007` on branch `ralph/ISSUE-007` and observed bootstrap artifact `.runs/20260522T023539Z-ISSUE-007.bootstrap.md`.
+  - Added a temporary smoke-test note to `docs/runs-once.md` so operators know to keep future harness probes docs-only and disposable.
+  - Validation: `node --test tests/runs-once.test.mjs`.
