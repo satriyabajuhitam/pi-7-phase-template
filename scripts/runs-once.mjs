@@ -62,6 +62,14 @@ export function getCurrentBranch() {
   return branch;
 }
 
+function listDirtyPaths(statusOutput) {
+  return statusOutput
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => parseStatusPath(line.slice(3).trim()))
+    .filter(Boolean);
+}
+
 export function ensureCleanWorkingTree() {
   const result = git([
     'status',
@@ -78,7 +86,10 @@ export function ensureCleanWorkingTree() {
 
   const output = result.stdout.trim();
   if (output !== '') {
-    throw new Error('working tree is not clean; commit or stash local changes before running runs-once.sh');
+    const error = new Error('working tree is not clean; commit or stash local changes before running runs-once.sh');
+    error.code = 'DIRTY_WORKING_TREE';
+    error.dirtyPaths = listDirtyPaths(result.stdout);
+    throw error;
   }
 }
 
@@ -164,22 +175,69 @@ export function parseTickets(content) {
   });
 }
 
+export function explainTicketIneligibility(ticket, ticketsById) {
+  if (ticket.status !== 'todo') {
+    return `${ticket.id}: status is ${ticket.status || 'missing'}`;
+  }
+
+  if (ticket.type !== 'afk') {
+    return `${ticket.id}: Type is not AFK`;
+  }
+
+  if (ticket.autoRun !== 'yes') {
+    return `${ticket.id}: Auto-run is not yes`;
+  }
+
+  const blockingDependency = ticket.dependsOn.find((dependencyId) => ticketsById.get(dependencyId)?.status !== 'done');
+  if (blockingDependency) {
+    return `${ticket.id}: dependency ${blockingDependency} is not done`;
+  }
+
+  return null;
+}
+
+export function suggestNoReadyActions(tickets) {
+  const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
+  const suggestions = [];
+
+  for (const ticket of tickets) {
+    if (ticket.status !== 'todo') {
+      if (ticket.status === 'done') {
+        suggestions.push(`All current work for ${ticket.id} is already done; create a new \`todo\` AFK ticket if all current tickets are already done.`);
+      }
+      continue;
+    }
+
+    if (ticket.type !== 'afk') {
+      suggestions.push(`For ${ticket.id}, change \`Type\` to \`AFK\` only if this ticket is safe for autonomous execution.`);
+      continue;
+    }
+
+    if (ticket.autoRun !== 'yes') {
+      suggestions.push(`For ${ticket.id}, add \`Auto-run: yes\` if this ticket is intentionally allowed to run via runs-once.sh.`);
+      continue;
+    }
+
+    const blockingDependency = ticket.dependsOn.find((dependencyId) => byId.get(dependencyId)?.status !== 'done');
+    if (blockingDependency) {
+      suggestions.push(`For ${ticket.id}, mark ${blockingDependency} done or otherwise resolve that dependency before retrying.`);
+    }
+  }
+
+  return [...new Set(suggestions)];
+}
+
+export function collectNoReadyReasons(tickets) {
+  const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
+  return tickets
+    .map((ticket) => explainTicketIneligibility(ticket, byId))
+    .filter(Boolean);
+}
+
 export function findFirstEligibleTicket(tickets) {
   const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
 
-  return tickets.find((ticket) => {
-    if (ticket.status !== 'todo') {
-      return false;
-    }
-    if (ticket.type !== 'afk') {
-      return false;
-    }
-    if (ticket.autoRun !== 'yes') {
-      return false;
-    }
-
-    return ticket.dependsOn.every((dependencyId) => byId.get(dependencyId)?.status === 'done');
-  });
+  return tickets.find((ticket) => explainTicketIneligibility(ticket, byId) === null);
 }
 
 export function ensureSafeBranch(branch) {
@@ -502,6 +560,18 @@ export function printRunSummary(result) {
   console.log(`Branch: ${result.branch}`);
   console.log(`Session: ${result.session}`);
   console.log(`Reason: ${result.status_detail}`);
+  if (Array.isArray(result.no_ready_reasons) && result.no_ready_reasons.length > 0) {
+    console.log('Why no ticket was selected:');
+    result.no_ready_reasons.forEach((reason) => {
+      console.log(`- ${reason}`);
+    });
+  }
+  if (Array.isArray(result.dirty_files) && result.dirty_files.length > 0) {
+    console.log('Dirty files:');
+    result.dirty_files.forEach((path) => {
+      console.log(`- ${path}`);
+    });
+  }
   console.log('Artifacts:');
   console.log(`- ${result.bootstrap_path}`);
   console.log(`- ${result.result_path}`);
@@ -522,6 +592,8 @@ function createRunState(now = new Date()) {
     statusReason: 'unexpected_failure',
     statusDetail: 'runs-once.sh failed before the run could be classified.',
     nextAction: ['Inspect the shell output and retry after fixing the failure.'],
+    noReadyReasons: [],
+    dirtyFiles: [],
     bootstrapContent: '',
     ...paths,
   };
@@ -536,6 +608,8 @@ function toResultJson(runState) {
     branch: runState.branch,
     session: runState.session,
     next_action: runState.nextAction,
+    no_ready_reasons: runState.noReadyReasons,
+    dirty_files: runState.dirtyFiles,
     bootstrap_path: runState.bootstrapPath,
     result_path: runState.resultPath,
     orchestrator_branch: runState.orchestratorBranch,
@@ -587,9 +661,11 @@ export async function main() {
       runState.status = 'NO_READY';
       runState.statusReason = 'no_eligible_issue';
       runState.statusDetail = 'No AFK ticket is currently eligible for runs-once.sh.';
+      runState.noReadyReasons = collectNoReadyReasons(tickets);
       runState.nextAction = [
         'Review docs/issues.md on the orchestrator branch.',
-        'Mark at least one AFK ticket with Auto-run: yes and satisfied dependencies before retrying.',
+        ...suggestNoReadyActions(tickets),
+        'Retry `./runs-once.sh` after at least one ticket becomes eligible.',
       ];
       runState.bootstrapContent = buildNoReadyBootstrapMarkdown({ orchestratorBranch: currentBranch });
 
@@ -684,10 +760,20 @@ export async function main() {
     runState.status = 'FAIL';
     runState.statusReason = 'run_failed';
     runState.statusDetail = error.message;
-    runState.nextAction = [
-      'Inspect the failure details in the shell output and result.json.',
-      'Fix the blocking repo or tooling problem before retrying runs-once.sh.',
-    ];
+
+    if (error.code === 'DIRTY_WORKING_TREE') {
+      runState.dirtyFiles = error.dirtyPaths ?? [];
+      runState.nextAction = [
+        'Run `git status --short` to review the dirty files listed above.',
+        'Commit the changes you want to keep, or run `git stash push -u` to clear the working tree temporarily.',
+        'Retry `./runs-once.sh` after the repo is clean.',
+      ];
+    } else {
+      runState.nextAction = [
+        'Inspect the failure details in the shell output and result.json.',
+        'Fix the blocking repo or tooling problem before retrying runs-once.sh.',
+      ];
+    }
 
     const result = await finalizeRun(runState);
     printRunSummary(result);

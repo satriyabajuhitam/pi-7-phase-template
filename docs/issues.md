@@ -75,6 +75,9 @@ Suggested lanes:
   - Added `runs-once.sh` plus `scripts/runs-once.mjs` with strict preflight, deterministic first-eligible selection, `NO_READY` handling, and deterministic branch creation.
   - Added `tests/runs-once.test.mjs` and validated `NO_READY`, first-eligible branch creation, dirty repo failure, and missing-tooling failure with `node --test tests/runs-once.test.mjs`.
   - Runner intentionally stays mechanical only; worker execution and `.runs/` artifacts are deferred to later tickets.
+  - Reopened for QA follow-up and now improved dirty-working-tree failure messaging so operators see dirty file paths plus concrete next-step commands.
+  - Follow-up validation: `node --test tests/runs-once.test.mjs` now checks `Dirty files`, file listing, actionable dirty-tree recovery commands, and actionable `NO_READY` guidance for missing `Auto-run` and blocked dependency cases.
+  - Reopened again for QA/UX follow-up and now `NO_READY` explains why no ticket was eligible plus concrete next-step guidance such as adding `Auto-run: yes`, resolving dependencies, or creating a new `todo` AFK ticket.
 
 ### ISSUE-002 — Tighten worker execution around an explicit target issue
 - Status: done

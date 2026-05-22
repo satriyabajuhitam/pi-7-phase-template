@@ -128,14 +128,17 @@ function readRunArtifacts(repoDir) {
   };
 }
 
-test('returns NO_READY without creating an issue branch and still writes two run artifacts', () => {
+test('returns NO_READY without creating an issue branch, and explains why no ticket was eligible', () => {
   const { repoDir, env } = setupRepo({
-    issuesContent: `# Issues\n\n### ISSUE-001 — Example\n- Status: todo\n- Type: AFK\n- Depends on: none\n`,
+    issuesContent: `# Issues\n\n### ISSUE-001 — Already done\n- Status: done\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-002 — Missing auto-run\n- Status: todo\n- Type: AFK\n- Depends on: none\n`,
   });
 
   const result = runScript(repoDir, env);
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Status: NO_READY/);
+  assert.match(result.stdout, /Why no ticket was selected:/);
+  assert.match(result.stdout, /ISSUE-001: status is done/);
+  assert.match(result.stdout, /ISSUE-002: Auto-run is not yes/);
 
   const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoDir, env });
   assert.equal(branch.stdout.trim(), 'main');
@@ -146,7 +149,31 @@ test('returns NO_READY without creating an issue branch and still writes two run
   assert.equal(artifacts.result.session, 'not-started');
   assert.ok(Array.isArray(artifacts.result.next_action));
   assert.ok(artifacts.result.next_action.length > 0);
+  assert.match(artifacts.result.next_action.join('\n'), /ISSUE-002.*add `Auto-run: yes`/i);
+  assert.match(artifacts.result.next_action.join('\n'), /create a new `todo` AFK ticket if all current tickets are already done/i);
+  assert.deepEqual(artifacts.result.no_ready_reasons, [
+    'ISSUE-001: status is done',
+    'ISSUE-002: Auto-run is not yes',
+  ]);
   assert.match(artifacts.bootstrap, /No eligible AFK issue was selected/i);
+});
+
+test('NO_READY explains blocked dependency cases with actionable next steps', () => {
+  const { repoDir, env } = setupRepo({
+    issuesContent: `# Issues\n\n### ISSUE-001 — Dependency\n- Status: blocked\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-002 — Waiting\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: ISSUE-001\n`,
+  });
+
+  const result = runScript(repoDir, env);
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /ISSUE-001: status is blocked/);
+  assert.match(result.stdout, /ISSUE-002: dependency ISSUE-001 is not done/);
+
+  const artifacts = readRunArtifacts(repoDir);
+  assert.deepEqual(artifacts.result.no_ready_reasons, [
+    'ISSUE-001: status is blocked',
+    'ISSUE-002: dependency ISSUE-001 is not done',
+  ]);
+  assert.match(artifacts.result.next_action.join('\n'), /mark ISSUE-001 done or otherwise resolve that dependency/i);
 });
 
 test('successful DONE flow validates worker outcome, leaves a commit on the issue branch, and prints explicit manual merge steps', () => {
@@ -228,7 +255,7 @@ test('includes docs/research.md in bootstrap only when the selected ticket expli
   assert.match(artifacts.bootstrap, /- docs\/research\.md/);
 });
 
-test('fails early on a dirty working tree before worker execution starts and still records a FAIL result', () => {
+test('fails early on a dirty working tree before worker execution starts and still records an actionable FAIL result', () => {
   const { repoDir, env } = setupRepo({
     issuesContent: `# Issues\n\n### ISSUE-001 — First\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n`,
   });
@@ -239,11 +266,19 @@ test('fails early on a dirty working tree before worker execution starts and sti
   assert.equal(result.status, 1);
   assert.match(result.stdout, /Status: FAIL/);
   assert.match(result.stdout, /working tree is not clean/i);
+  assert.match(result.stdout, /Dirty files:/);
+  assert.match(result.stdout, /dirty\.txt/);
+  assert.match(result.stdout, /git status --short/);
+  assert.match(result.stdout, /git stash push -u/);
 
   const artifacts = readRunArtifacts(repoDir);
   assert.equal(artifacts.result.status, 'FAIL');
   assert.equal(artifacts.result.status_reason, 'run_failed');
   assert.match(artifacts.result.status_detail, /working tree is not clean/i);
+  assert.deepEqual(artifacts.result.dirty_files, ['dirty.txt']);
+  assert.ok(Array.isArray(artifacts.result.next_action));
+  assert.ok(artifacts.result.next_action.length > 0);
+  assert.match(artifacts.result.next_action.join('\n'), /git status --short/);
 });
 
 test('fails with an actionable message when required tooling is missing', () => {
