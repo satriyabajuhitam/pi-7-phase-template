@@ -16,6 +16,12 @@ Dokumen ini sengaja memuat perubahan kecil yang aman untuk `ISSUE-007`, supaya `
 
 Sesudah validasi, tim boleh mempertahankan, merevisi, atau menghapus note sementara ini secara eksplisit.
 
+## Temporary multi-iteration follow-up note
+
+Note singkat ini ditambahkan untuk `ISSUE-008` sebagai smoke test lanjutan yang tetap aman dan mudah dibedakan dari `ISSUE-007`.
+
+Tujuannya adalah memberi satu ticket `AFK` dokumentasi tambahan agar `runs-afk.sh` bisa menunjukkan jalur sukses multi-iterasi nyata ketika budget iterasi masih tersedia.
+
 ## Preconditions
 
 Sebelum menjalankan `./runs-afk.sh`, pastikan:
