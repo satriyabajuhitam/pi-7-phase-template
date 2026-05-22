@@ -248,7 +248,7 @@ Suggested lanes:
   - Done via a tiny reversible note in `docs/runs-afk.md`; bootstrap `.runs/20260522T041247Z-ISSUE-007.bootstrap.md` confirms this ticket was selected for the live smoke run.
 
 ### ISSUE-008 — Second temporary AFK smoke-test ticket for `runs-afk.sh`
-- Status: todo
+- Status: done
 - Type: AFK
 - Auto-run: yes
 - Goal:
@@ -271,3 +271,5 @@ Suggested lanes:
 - Notes / risks:
   - Temporary QA-only ticket for validating continuation after a successful first iteration.
   - Keep the change as small as possible, ideally another short doc-only edit.
+  - Done via a second tiny reversible note in `docs/runs-afk.md`, distinct from `ISSUE-007`, to keep multi-iteration smoke validation low-risk.
+  - Validation: manual diff review of `docs/runs-afk.md` and `docs/issues.md`; no TDD because this ticket is documentation-only and does not change runtime behavior.
