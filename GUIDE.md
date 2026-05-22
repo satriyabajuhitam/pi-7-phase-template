@@ -406,6 +406,24 @@ Workflow kita mengambil pola Ralph seperti ini:
 - validasi tiap iterasi
 - progress disimpan di `docs/issues.md`
 
+### Helper operator lokal untuk queue AFK
+Jika Anda ingin melihat berapa banyak ticket `AFK` yang bisa diproses sebelum memilih iteration cap untuk batch lokal, gunakan:
+
+```bash
+./runs-afk.sh --count
+```
+
+Jika Anda ingin preview yang lebih mudah dibaca manusia, termasuk urutan ticket yang bisa diproses dan ticket yang belum eligible, gunakan:
+
+```bash
+./runs-afk.sh --list
+```
+
+Kedua helper ini:
+- tidak menjalankan batch
+- tidak membuat artifact `.runs/`
+- hanya membantu inspeksi queue dari `docs/issues.md`
+
 ---
 
 ## Phase 7 — QA

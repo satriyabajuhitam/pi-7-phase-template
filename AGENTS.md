@@ -150,6 +150,7 @@ When the user wants to execute planned work Ralph-style:
 - Validate the change before marking the ticket done.
 - Update `docs/issues.md` with `in-progress`, `done`, or `blocked` status as appropriate.
 - Do not silently execute a second ticket in the same run.
+- If the user asks for local AFK queue inspection before running a batch, use `./runs-afk.sh --count` for a numeric estimate and `./runs-afk.sh --list` for a human-readable preview; neither command should be treated as execution.
 
 Prompt template:
 - Use `/execute [fokus-atau-klarifikasi-eksekusi]` to trigger the Phase 6 execution workflow via `.pi/prompts/execute.md`.

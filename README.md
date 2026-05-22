@@ -21,6 +21,7 @@ This repo is designed to be used as a **GitHub template repository** for startin
 - prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
 - `GUIDE.md` with a practical usage walkthrough
+- local harness operator docs for `runs-once.sh` and `runs-afk.sh`
 - `MASTER_TEMPLATE.md` explaining how to use this repo as a reusable master template
 
 Bundled project-local skills include:
@@ -159,7 +160,7 @@ Important behavior:
 
 - `GUIDE.md` — step-by-step usage guide with a simple from-scratch app example
 - `docs/runs-once.md` — operator guide for the one-ticket local harness
-- `docs/runs-afk.md` — operator guide for the bounded multi-iteration local harness
+- `docs/runs-afk.md` — operator guide for the bounded multi-iteration local harness, including `--count` and `--list`
 - `MASTER_TEMPLATE.md` — notes for using this repo as a reusable template base
 - `AGENTS.md` — repository workflow rules for agents
 
