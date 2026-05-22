@@ -311,6 +311,25 @@ test('fails fast when the batch starts from an issue branch', () => {
   assert.throws(() => readdirSync(join(repoDir, '.runs')), /ENOENT/);
 });
 
+test('prints actionable dirty-working-tree guidance before the batch starts', () => {
+  const { repoDir, env } = setupRepo({
+    issuesContent: '# Issues\n',
+  });
+
+  writeFileSync(join(repoDir, 'dirty.txt'), 'local change\n');
+
+  const result = runAfk(repoDir, env, ['2']);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /working tree is not clean/i);
+  assert.match(result.stderr, /Dirty files:/);
+  assert.match(result.stderr, /dirty\.txt/);
+  assert.match(result.stderr, /git status --short/);
+  assert.match(result.stderr, /git stash push -u/);
+  assert.match(result.stderr, /Retry `\.\/runs-afk\.sh <iterations>` after the repo is clean\./);
+
+  assert.throws(() => readdirSync(join(repoDir, '.runs')), /ENOENT/);
+});
+
 test('continues across successful DONE iterations by merging back to the orchestrator branch', () => {
   const { repoDir, env } = setupRepo({
     issuesContent: '# Issues\n',

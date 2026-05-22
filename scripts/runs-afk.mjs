@@ -281,6 +281,21 @@ export async function main() {
     }
   } catch (error) {
     console.error(`Error: ${error.message}`);
+
+    if (error.code === 'DIRTY_WORKING_TREE') {
+      const dirtyFiles = error.dirtyPaths ?? [];
+      if (dirtyFiles.length > 0) {
+        console.error('Dirty files:');
+        dirtyFiles.forEach((path) => {
+          console.error(`- ${path}`);
+        });
+      }
+      console.error('Next action:');
+      console.error('1. Run `git status --short` to review the dirty files listed above.');
+      console.error('2. Commit the changes you want to keep, or run `git stash push -u` to clear the working tree temporarily.');
+      console.error('3. Retry `./runs-afk.sh <iterations>` after the repo is clean.');
+    }
+
     process.exitCode = 1;
     return;
   }

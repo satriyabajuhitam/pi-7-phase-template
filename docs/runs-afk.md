@@ -10,18 +10,6 @@ V1 ini tetap semi-otomatis:
 - `BLOCKED`, `FAIL`, dan merge failure tetap memantul ke manusia
 - output machine-readable resmi ada di artifact JSON agregat, bukan di stdout
 
-## Temporary smoke-test note
-
-Dokumen ini sengaja memuat perubahan kecil yang aman untuk `ISSUE-007`, supaya `runs-afk.sh` punya satu ticket `AFK` dokumentasi yang mudah direview saat smoke test live.
-
-Sesudah validasi, tim boleh mempertahankan, merevisi, atau menghapus note sementara ini secara eksplisit.
-
-## Temporary multi-iteration follow-up note
-
-Note singkat ini ditambahkan untuk `ISSUE-008` sebagai smoke test lanjutan yang tetap aman dan mudah dibedakan dari `ISSUE-007`.
-
-Tujuannya adalah memberi satu ticket `AFK` dokumentasi tambahan agar `runs-afk.sh` bisa menunjukkan jalur sukses multi-iterasi nyata ketika budget iterasi masih tersedia.
-
 ## Preconditions
 
 Sebelum menjalankan `./runs-afk.sh`, pastikan:
