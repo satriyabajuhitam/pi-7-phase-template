@@ -222,7 +222,7 @@ Suggested lanes:
   - Keep validation low-risk; prefer harmless documentation-only or similarly safe AFK work when setting up live test tickets.
 
 ### ISSUE-007 — Temporary AFK smoke-test ticket for `runs-afk.sh`
-- Status: todo
+- Status: done
 - Type: AFK
 - Auto-run: yes
 - Goal:
@@ -245,6 +245,7 @@ Suggested lanes:
 - Notes / risks:
   - Temporary QA-only ticket for live bounded-loop verification.
   - Keep the change as small as possible, ideally limited to a short doc note in `docs/runs-afk.md`.
+  - Done via a tiny reversible note in `docs/runs-afk.md`; bootstrap `.runs/20260522T041247Z-ISSUE-007.bootstrap.md` confirms this ticket was selected for the live smoke run.
 
 ### ISSUE-008 — Second temporary AFK smoke-test ticket for `runs-afk.sh`
 - Status: todo
