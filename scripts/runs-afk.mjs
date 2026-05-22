@@ -5,10 +5,20 @@ import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureCleanWorkingTree, ensureSafeBranch, getCurrentBranch, git, requireCommand } from './runs-once.mjs';
+import {
+  ensureCleanWorkingTree,
+  ensureSafeBranch,
+  explainTicketIneligibility,
+  findFirstEligibleTicket,
+  getCurrentBranch,
+  git,
+  parseTickets,
+  requireCommand,
+} from './runs-once.mjs';
 
 const RUNS_ONCE_SCRIPT_PATH = resolve(fileURLToPath(new URL('../runs-once.sh', import.meta.url)));
 const RUN_ARTIFACT_DIR = '.runs';
+const ISSUES_PATH = 'docs/issues.md';
 
 function isPositiveInteger(value) {
   return /^[1-9]\d*$/.test(value);
@@ -16,7 +26,94 @@ function isPositiveInteger(value) {
 
 function printUsage() {
   console.error('Usage: ./runs-afk.sh <iterations>');
+  console.error('   or: ./runs-afk.sh --count');
+  console.error('   or: ./runs-afk.sh --list');
   console.error('Provide a positive integer iteration count, for example: ./runs-afk.sh 3');
+}
+
+function cloneTickets(tickets) {
+  return tickets.map((ticket) => ({
+    ...ticket,
+    dependsOn: [...ticket.dependsOn],
+  }));
+}
+
+function analyzeTicketQueue(tickets) {
+  const simulatedTickets = cloneTickets(tickets);
+  const processableTickets = [];
+
+  while (true) {
+    const nextTicket = findFirstEligibleTicket(simulatedTickets);
+    if (!nextTicket) {
+      break;
+    }
+
+    processableTickets.push({ ...nextTicket, dependsOn: [...nextTicket.dependsOn] });
+    nextTicket.status = 'done';
+  }
+
+  const ticketsById = new Map(simulatedTickets.map((ticket) => [ticket.id, ticket]));
+  const notEligibleTickets = simulatedTickets
+    .filter((ticket) => ticket.status !== 'done')
+    .map((ticket) => ({
+      id: ticket.id,
+      reason: explainTicketIneligibility(ticket, ticketsById),
+    }))
+    .filter((ticket) => ticket.reason);
+
+  return {
+    processableTickets,
+    notEligibleTickets,
+  };
+}
+
+async function readBoardTickets() {
+  let issuesContent;
+  try {
+    issuesContent = await readFile(ISSUES_PATH, 'utf8');
+  } catch (error) {
+    throw new Error(`could not read ${ISSUES_PATH}: ${error.message}`);
+  }
+
+  return parseTickets(issuesContent);
+}
+
+async function countRunnableIterations() {
+  const tickets = await readBoardTickets();
+  return analyzeTicketQueue(tickets).processableTickets.length;
+}
+
+function formatIneligibilityReason(reason) {
+  return reason.replace(/^([^:]+):\s*/, '$1 — ');
+}
+
+async function printRunnableTicketList() {
+  const tickets = await readBoardTickets();
+  const { processableTickets, notEligibleTickets } = analyzeTicketQueue(tickets);
+
+  console.log('Processable AFK queue:');
+  if (processableTickets.length === 0) {
+    console.log('none');
+  } else {
+    processableTickets.forEach((ticket, index) => {
+      console.log(`${index + 1}. ${ticket.id} — ${ticket.title}`);
+    });
+  }
+
+  console.log('');
+  console.log('Not eligible:');
+  if (notEligibleTickets.length === 0) {
+    console.log('none');
+  } else {
+    notEligibleTickets.forEach((ticket) => {
+      console.log(`- ${formatIneligibilityReason(ticket.reason)}`);
+    });
+  }
+
+  console.log('');
+  console.log('Summary:');
+  console.log(`- Processable count: ${processableTickets.length}`);
+  console.log(`- Not eligible count: ${notEligibleTickets.length}`);
 }
 
 function toTimestamp(now = new Date()) {
@@ -181,6 +278,26 @@ async function writeAggregateSummary(batchState) {
 
 export async function main() {
   const args = process.argv.slice(2);
+
+  if (args.length === 1 && args[0] === '--count') {
+    try {
+      console.log(String(await countRunnableIterations()));
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (args.length === 1 && args[0] === '--list') {
+    try {
+      await printRunnableTicketList();
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      process.exitCode = 1;
+    }
+    return;
+  }
 
   if (args.length !== 1) {
     printUsage();

@@ -263,12 +263,56 @@ test('rejects missing or invalid iteration arguments with actionable usage', () 
   const missing = runAfk(repoDir, env);
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /Usage: \.\/runs-afk\.sh <iterations>/);
+  assert.match(missing.stderr, /\.\/runs-afk\.sh --count/);
+  assert.match(missing.stderr, /\.\/runs-afk\.sh --list/);
   assert.match(missing.stderr, /positive integer iteration count/i);
 
   const invalid = runAfk(repoDir, env, ['0']);
   assert.equal(invalid.status, 1);
   assert.match(invalid.stderr, /Invalid iterations value: 0/);
   assert.match(invalid.stderr, /Usage: \.\/runs-afk\.sh <iterations>/);
+});
+
+test('prints only the processable AFK ticket count for --count', () => {
+  const { repoDir, env } = setupRepo({
+    issuesContent: `# Issues\n\n### ISSUE-001 — First\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-002 — Depends on first\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: ISSUE-001\n\n### ISSUE-003 — HITL\n- Status: todo\n- Type: HITL\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-004 — Missing auto-run\n- Status: todo\n- Type: AFK\n- Depends on: none\n\n### ISSUE-005 — Already done\n- Status: done\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-006 — Independent\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n`,
+  });
+
+  const result = runAfk(repoDir, env, ['--count']);
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout.trim(), '3');
+  assert.equal(result.stderr.trim(), '');
+
+  assert.throws(() => readdirSync(join(repoDir, '.runs')), /ENOENT/);
+
+  const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoDir, env });
+  assert.equal(branch.stdout.trim(), 'main');
+});
+
+test('prints a human-readable queue preview for --list', () => {
+  const { repoDir, env } = setupRepo({
+    issuesContent: `# Issues\n\n### ISSUE-002 — Dummy AFK ready ticket\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-003 — Dummy AFK unlocked by ISSUE-002\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: ISSUE-002\n\n### ISSUE-004 — Dummy HITL gate\n- Status: todo\n- Type: HITL\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-005 — Dummy AFK without auto-run\n- Status: todo\n- Type: AFK\n- Auto-run: no\n- Depends on: none\n\n### ISSUE-006 — Dummy independent AFK ticket\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: none\n\n### ISSUE-007 — Dummy AFK blocked by HITL dependency\n- Status: todo\n- Type: AFK\n- Auto-run: yes\n- Depends on: ISSUE-004\n`,
+  });
+
+  const result = runAfk(repoDir, env, ['--list']);
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Processable AFK queue:/);
+  assert.match(result.stdout, /1\. ISSUE-002 — Dummy AFK ready ticket/);
+  assert.match(result.stdout, /2\. ISSUE-003 — Dummy AFK unlocked by ISSUE-002/);
+  assert.match(result.stdout, /3\. ISSUE-006 — Dummy independent AFK ticket/);
+  assert.match(result.stdout, /Not eligible:/);
+  assert.match(result.stdout, /- ISSUE-004 — Type is not AFK/);
+  assert.match(result.stdout, /- ISSUE-005 — Auto-run is not yes/);
+  assert.match(result.stdout, /- ISSUE-007 — dependency ISSUE-004 is not done/);
+  assert.match(result.stdout, /Summary:/);
+  assert.match(result.stdout, /- Processable count: 3/);
+  assert.match(result.stdout, /- Not eligible count: 3/);
+  assert.equal(result.stderr.trim(), '');
+
+  assert.throws(() => readdirSync(join(repoDir, '.runs')), /ENOENT/);
+
+  const branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoDir, env });
+  assert.equal(branch.stdout.trim(), 'main');
 });
 
 test('stops normally on NO_READY without attempting extra iterations', () => {

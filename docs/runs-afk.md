@@ -35,6 +35,30 @@ Contoh:
 
 Argumen `<iterations>` wajib berupa integer positif.
 
+Untuk memperkirakan batas loop yang masuk akal dari board saat ini tanpa menjalankan batch, gunakan:
+
+```bash
+./runs-afk.sh --count
+```
+
+Perilaku `--count`:
+- mencetak **angka saja** ke stdout
+- menghitung berapa ticket `AFK` yang bisa diproses berurutan dari `docs/issues.md` saat ini bila tiap iterasi sukses berakhir `DONE`
+- ikut mempertimbangkan dependency yang bisa terbuka setelah ticket sebelumnya selesai
+- tidak membuat artifact `.runs/`
+
+Untuk preview human-readable dari urutan ticket yang bisa diproses dan ticket yang belum eligible, gunakan:
+
+```bash
+./runs-afk.sh --list
+```
+
+Perilaku `--list`:
+- mencetak urutan `Processable AFK queue`
+- mencetak bagian `Not eligible` beserta alasan setiap ticket belum bisa ikut batch
+- mencetak `Summary` dengan jumlah processable dan not eligible
+- tidak menjalankan batch dan tidak membuat artifact `.runs/`
+
 ## What the wrapper does
 
 Untuk setiap iterasi, wrapper akan:
