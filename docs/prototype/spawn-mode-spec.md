@@ -22,10 +22,20 @@ Instead:
 ## Command UX
 ### `/spawn-mode`
 When the user runs `/spawn-mode`, the extension should:
-1. show current mode status
-2. present a selection UI with:
+1. show current mode status first
+2. show backend health / availability before any choice is made
+3. present a selection UI with:
    - `on`
    - `off`
+
+Interactive expectation:
+- the current status should be visible **above** the `on` / `off` choices, not only as a separate transient notification
+- preferred summary shape:
+  - `Current spawn mode: on|off`
+  - `Spawn backend: available|unavailable`
+
+Non-UI expectation:
+- `/spawn-mode` with no args should still print or notify the current mode and backend health instead of returning silently
 
 ## State model
 - `spawnMode: "on" | "off"`
@@ -58,6 +68,9 @@ Success message:
 
 ## Health check when enabling
 When the user chooses `on`, the extension should verify that a `spawn` tool is available in the current session.
+
+Status visibility rule:
+- the current mode intent and backend health should remain visible in extension status text, not only in one-shot notifications
 
 If `spawn` is available:
 - mode stays `on`
@@ -105,6 +118,20 @@ Recommended degraded-mode message:
 - use upstream `pi-spawn`
 - pin the version in `.pi/settings.json`
 - keep local workflow abstractions branded around `spawn mode` / `delegation`, not around upstream internals
+
+## Child session inheritance posture
+Default desired contract for this repo:
+- child sessions inherit the parent agent's active built-in tools
+- child sessions inherit the parent agent's active extension tools when upstream Pi exposes them
+- child sessions inherit normal project/global skills, prompt resources, and extension policy hooks
+- child sessions inherit the parent model credentials and thinking level unless explicitly overridden
+
+Optional future control surface:
+- the parent may later narrow child scope with explicit allowlists or overrides for tools, skills, or extensions
+- default posture remains **inherit first, restrict intentionally**
+
+Branch policy implication:
+- if upstream `pi-spawn` behavior diverges from this desired inheritance contract, record the gap as an upstream issue or fork-ready patch note instead of expanding immediately into a custom spawn engine
 
 ### Exit path if upstream stalls
 If upstream maintenance stops:

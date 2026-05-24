@@ -1,17 +1,15 @@
 # QA
 
 ## Objective
-- Verify the current `exp/pi-spawn` experiment branch is coherent enough for handoff and continued use as-is.
+- Verify that the repo-local `spawn` replacement is good enough for continued branch use after `ISSUE-001` through `ISSUE-006`, while making the remaining perceived-performance caveat explicit.
 
 ## Scope under test
 - Features or flows under review:
-  - upstream `pi-spawn` availability in repo sessions
-  - `7-phase` spawn conventions
-  - local `spawn-mode` policy guardrails
-  - `delegate-me` delegation-planning behavior
-  - single / parallel / serial delegation patterns
-  - branch-facing guidance for experimental users
-  - Phase 6 execution-prep behavior for one ready AFK ticket
+  - repo-local `spawn` backend compatibility with the existing public tool contract
+  - collapsed inline status-card readability
+  - temporary active-spawn widget behavior during parallel runs
+  - completion/error/fallback/truncation state clarity in a 3-parallel-spawn scenario
+  - side-by-side baseline vs replacement verdict for readability and perceived slowness
 - Completed tickets included:
   - ISSUE-001
   - ISSUE-002
@@ -19,101 +17,111 @@
   - ISSUE-004
   - ISSUE-005
   - ISSUE-006
-  - ISSUE-007
-  - ISSUE-008
 - Explicitly out of scope for this pass:
-  - custom spawn-engine work
-  - long-session continuity / retrieval-backed memory
-  - broader context-management platform design
+  - overlay viewer or persistent spawn history
+  - broad benchmark harness or deep performance profiling
+  - long-session memory / background completion design
+  - any API change to `spawn`
 
 ## Source artifacts
 - `docs/prd.md`
 - `docs/issues.md`
-- `docs/prototype/spawn-conventions.md`
-- `docs/prototype/validation.md`
-- `docs/prototype/real-flow-1-phase-2.md`
-- `docs/prototype/real-flow-2-phase-5.md`
-- `docs/prototype/real-flow-3-phase-6.md`
-- `docs/pi-spawn.md`
-- `docs/prototype/spawn-mode-spec.md`
-- `docs/prototype/spawn-mode-validation.md`
-- `.pi/extensions/spawn-mode.ts`
-- `.pi/skills/delegate-me/SKILL.md`
+- Other relevant sources:
+  - `docs/prototype/spawn-replacement-side-by-side-validation.md`
+  - `.pi/extensions/spawn/index.ts`
+  - `.pi/extensions/spawn-mode.ts`
+  - `.pi/settings.json`
 
 ## Build / revision under review
-- Branch / commit / working tree context: `exp/pi-spawn` branch, working tree updated with experiment docs plus local delegation guardrails under `.pi/`
-- Environment notes: upstream `npm:pi-spawn@0.1.0` is pinned project-locally; validation was based on artifact inspection, targeted Pi runs, and branch-local prototype notes
+- Branch / commit / working tree context:
+  - current replacement branch with repo-local `spawn` extension under `.pi/extensions/spawn/index.ts`
+- Environment notes:
+  - upstream `npm:pi-spawn@0.1.0` is no longer loaded from `.pi/settings.json`
+  - validation evidence comes from print-mode Pi checks, real `spawn` smoke execution, source inspection, a human side-by-side run, and a later perf-focused implementation pass
 
 ## Test scenarios
-1. Confirm `spawn` is available and usable in repo sessions after reload.
-2. Confirm the conventions support single, parallel, and serial delegation with strict output contracts.
-3. Confirm `spawn-mode off` blocks guarded delegation entry points clearly.
-4. Confirm backend-unavailable mode degrades to a no-spawn recommendation instead of a hard failure.
-5. Confirm one real Phase 6 execution-prep flow returns exactly one ready AFK ticket and a concise brief.
+1. [Automated] Confirm the replacement branch still starts normally and exposes a `spawn` tool.
+2. [Automated] Confirm one real `spawn` call can complete successfully without breaking the parent flow.
+3. [Inspection] Confirm the replacement keeps the same public tool name/parameter contract and does not add forbidden v1 surfaces.
+4. [Human] Run the shared 3-parallel-spawn comparison scenario and judge whether active-state readability is better than baseline.
+5. [Human] Verify collapsed cards distinguish done, error, fallback/no-`return_result`, truncation, warning, and empty states without expansion.
+6. [Human] Verify the temporary active-spawn widget appears only while work is active, shows up to 3 items, and collapses overflow.
+7. [Human] Judge whether the replacement feels visibly slower than baseline in the same 3-parallel-spawn scenario.
 
 ## Edge cases to verify
 - Invalid input:
-  - prompts missing phase, scope, or source artifacts should be treated as non-standard use
+  - invalid `spawn` inputs should continue to fail under the same public contract
 - Permissions / access:
-  - sub-agents only know the files they are given; no inherited parent context
+  - the replacement must not imply new powers beyond the existing `spawn` model
 - Empty state:
-  - empty `docs/prd.md` / `docs/issues.md` should not fake readiness
+  - empty output should still show as an explicit empty-result state
+  - no active widget should remain after all spawns finish
 - Error state:
-  - `spawn` unavailable until package/session is active
-  - local policy mode may intentionally block delegation while off
+  - strict failure and fallback/no-`return_result` paths should read differently from normal completion
 - Retry / duplicate action:
-  - parallel spawns should remain independent; dependent tasks should stay serial
+  - repeated or parallel spawns should not leave stale widget state behind
 - External dependency failure:
-  - if upstream package loading fails, execution-prep should stop early and surface the blocker
+  - model/session/tool failures should surface as distinct errors rather than ambiguous text blobs
 
 ## Human review checklist
 - UX and behavior consistency:
-  - branch guidance matches the validated prototype behavior
+  - queued/running/done/error/fallback/warning/truncated/empty states are scan-friendly in normal terminal use
 - Copy / labeling sanity:
-  - `docs/pi-spawn.md` clearly states this is an experiment branch
+  - `fallback` and `[no return_result]` wording is understandable and not misleadingly “successful”
 - Security sanity check:
-  - sub-agent prompts stay file-grounded and avoid hidden context assumptions
+  - no new persistence or hidden context behavior is implied by the new UI
 - Performance sanity check:
-  - delegation stays narrow and avoids broad, expensive prompts
+  - the replacement should not feel materially slower in the shared 3-parallel-spawn scenario
+  - if it still feels slower, record whether that is acceptable for branch continuation versus broader release
 - Maintainability / readability spot check:
-  - guidance is short, reusable, and does not duplicate the prototype notes
+  - the implementation remains a minimal `spawn` replacement, not a new subagent platform
 
 ## Known risks
-- Evidence set is still small: three real flows plus guidance stabilization
-- The branch is validated for delegation hygiene, not for long-session memory or broad standardization
-- The upstream dependency is small and lightly adopted, so future maintenance continuity is not guaranteed
-- The local guardrail layer is intentionally thin and still depends on Pi extension hook stability
+- There is still no automated TUI render harness, so UX evidence depends on manual review plus source inspection.
+- A non-strict child can still fall back to degraded-success when it does not call `return_result`, and strict child output may still surface fallback-style JSON-like content for debugging; this is currently treated as a UX/copy nuance rather than a branch blocker because the states are now clearly differentiated.
+- Broader confidence still depends on continued real-world use, even though the current branch-level guardrails now pass.
 
 ## Findings
 - Pass:
-  - `pi-spawn` works in this repo and supports single, parallel, and serial patterns
-  - `docs/prototype/spawn-conventions.md` and `docs/pi-spawn.md` provide usable branch-local guidance
-  - local `spawn-mode` policy blocks guarded delegation cleanly while off
-  - backend-unavailable behavior now degrades to a parent-only no-spawn recommendation instead of a hard dead-end
-  - real Phase 2, Phase 5, and Phase 6 flows were validated against repo artifacts
-  - one concise execution brief can be prepared for exactly one ready AFK ticket
-  - HITL decision recorded: continue using the branch as-is; do not promote yet
-  - the branch now has an explicit dependency-risk mitigation path: version pinning, fallback-to-single-agent behavior, and a fork-ready exit strategy
+  - the replacement branch owns the only active `spawn` backend locally
+  - print-mode startup checks succeeded
+  - tool-availability checks confirmed `spawn` is present
+  - real `spawn` smoke execution completed successfully and returned control to the parent flow
+  - the replacement preserves the v1 `spawn` contract and avoids forbidden surfaces such as overlay/history/registry additions
+  - side-by-side HITL re-checks showed better readability and clearer completion state than baseline
+  - the `ISSUE-002` rework made fallback vs done easier to distinguish and made collapsed cards lighter to scan
+  - the active-spawn widget behavior is implemented as transient in-memory state only
+  - the first `ISSUE-006` perf-focused pass reduced one plausible source of avoidable UI overhead by batching partial stream updates and reusing one computed streaming preview across surfaces
+  - the second `ISSUE-006` perf-focused pass further reduced partial-update work by shrinking the preview buffer window, increasing the update interval to 100ms, and sending only the compact preview text during streaming updates
+  - the final HITL re-check after fresh reload reported that running-state UI felt lighter, parallel activity felt smoother to scan, and perceived performance was roughly at baseline parity for the shared 3-parallel-spawn scenario
+  - the PRD performance guardrail is now satisfied for the current branch scope
 - Fail:
-  - none found in the branch-local documentation workflow
+  - none in the latest recorded branch state
 - Uncertain:
-  - broader team standardization still needs more real-world evidence before promotion
-  - upstream maintenance continuity remains uncertain despite the small surface area of the dependency
+  - whether the debugging-oriented fallback-style JSON-like strict output should later get copy refinement, even though the current UX distinguishes it clearly enough for operator use
+  - how this branch will feel under broader real-world usage beyond the current validation scenario
 
 ## Follow-up issues
 - New AFK tickets:
-  - none required for the current branch-handoff state
+  - none required immediately from the current QA evidence
 - New HITL tickets:
-  - none required immediately; the branch decision is already recorded
+  - none required immediately for current branch sign-off
 - Existing tickets to reopen or unblock:
-  - none
+  - none now
+  - if broader real-world use reveals a new performance gap or confusing strict/fallback copy case, reopen the smallest fitting issue rather than guessing now
 
 ## Release / sign-off recommendation
-- Ready for release: no
-- Ready for next execution pass: yes, if more validation is desired
-- Blocked pending HITL: no
-- Needs more testing: only if the branch is going to be promoted or standardized more broadly
+- Ready for release:
+  - yes, for the current repo-local branch scope and broader sign-off target captured in this plan
+- Ready for next execution pass:
+  - no immediate AFK pass is required
+- Blocked pending HITL:
+  - no
+- Needs more testing:
+  - only if the team wants additional confidence beyond the current branch-level sign-off scenario
 
 ## Next step
-- Recommended action: hand off the branch as a stable experimental setup and keep using it as-is, with dependency-risk mitigation documented in `docs/prototype/spawn-mode-spec.md`
-- Why: the experimental goal is met, and the branch now has a clearer fallback and fork-ready strategy without expanding into a custom spawn engine too early
+- Recommended action:
+  - proceed to broader sign-off / handoff using the current branch state
+- Why:
+  - the latest HITL evidence after fresh reload shows that readability stays better than baseline, completion clarity stays better than baseline, and the performance guardrail is now satisfied for this branch scope

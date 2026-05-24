@@ -11,7 +11,7 @@ const DELEGATE_SKILL_PATTERN = /^\/skill:delegate-me(?:\s|$)/;
 const MODE_ENABLED_MESSAGE = "spawn mode enabled";
 const MODE_DISABLED_MESSAGE = "spawn mode disabled";
 const BACKEND_UNAVAILABLE_MESSAGE =
-	"spawn backend unavailable. Reload the session or verify the project-local pi-spawn package is installed.";
+	"spawn backend unavailable. Reload the session or verify the local spawn backend is loaded.";
 const FALLBACK_MESSAGE = "spawn backend unavailable; falling back to parent-only workflow.";
 const SKILL_BLOCK_MESSAGE =
 	"delegate-me is unavailable while spawn mode is off. Run /spawn-mode and choose on.";
@@ -24,13 +24,39 @@ export default function spawnModeExtension(pi: ExtensionAPI) {
 		if (ctx.hasUI) ctx.ui.notify(message, level);
 	}
 
-	function updateStatus(ctx: ExtensionContext) {
-		if (!ctx.hasUI) return;
-		ctx.ui.setStatus("spawn-mode", undefined);
-	}
-
 	function isSpawnAvailable() {
 		return pi.getAllTools().some((tool) => tool.name === "spawn");
+	}
+
+	function getBackendStatus() {
+		return isSpawnAvailable() ? "available" : "unavailable";
+	}
+
+	function getStatusSummary() {
+		return `Current spawn mode: ${spawnMode}\nSpawn backend: ${getBackendStatus()}`;
+	}
+
+	function reportStatus(ctx: ExtensionContext, level: "info" | "warning" | "error" = "info") {
+		const summary = getStatusSummary();
+		if (ctx.hasUI) {
+			notify(ctx, summary, level);
+			return;
+		}
+		pi.sendMessage({
+			customType: "spawn-mode-status",
+			content: summary,
+			display: true,
+			details: { level, spawnMode, backend: getBackendStatus() },
+		});
+	}
+
+	function updateStatus(ctx: ExtensionContext) {
+		if (!ctx.hasUI) return;
+		const theme = ctx.ui.theme;
+		const modeText = theme.fg(spawnMode === "on" ? "success" : "warning", `spawn:${spawnMode}`);
+		const backendAvailable = isSpawnAvailable();
+		const backendText = theme.fg(backendAvailable ? "success" : "error", `backend:${backendAvailable ? "available" : "unavailable"}`);
+		ctx.ui.setStatus("spawn-mode", `${modeText} ${backendText}`);
 	}
 
 	function persistState() {
@@ -93,11 +119,11 @@ export default function spawnModeExtension(pi: ExtensionAPI) {
 			}
 
 			if (!ctx.hasUI) {
+				reportStatus(ctx);
 				return;
 			}
 
-			notify(ctx, `current spawn mode: ${spawnMode}`, "info");
-			const choice = await ctx.ui.select("Choose spawn mode", ["on", "off"]);
+			const choice = await ctx.ui.select(`${getStatusSummary()}\n\nChoose spawn mode`, ["on", "off"]);
 			if (!choice) return;
 
 			if (choice === "on") {

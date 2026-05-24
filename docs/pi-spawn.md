@@ -110,6 +110,26 @@ The currently safest pattern in this repo is:
 5. use single / parallel / serial intentionally
 6. treat the result as a handoff aid, not as automatic truth
 
+## Missing `return_result` posture
+This branch expects spawned children to call `return_result` for the final handoff.
+
+Current branch behavior:
+- if the child calls `return_result`, the parent receives the intended structured handoff
+- if the child skips `return_result`, the default branch behavior treats the output as **degraded-success**, not silent-success
+- degraded-success is surfaced with an explicit warning that the result fell back to the last assistant message
+- an optional strict mode is now available through `strictResult: true`
+- when strict mode is enabled and the child skips `return_result`, the spawn fails explicitly instead of returning degraded-success
+
+Use strict mode when:
+- the parent requires a hard structured-handoff contract
+- the task is validation-heavy or execution-critical
+- silent or advisory fallback would be too risky
+
+Avoid strict mode when:
+- the work is exploratory
+- research synthesis value matters more than strict protocol adherence
+- you still want useful fallback output instead of a hard failure by default
+
 ## Dependency posture
 This branch currently uses:
 - upstream `pi-spawn`
@@ -122,6 +142,29 @@ Operational stance:
 - fork-ready if upstream maintenance stops
 
 This branch should not assume upstream continuity forever.
+
+## Child inheritance contract in this repo
+Desired default posture:
+- child sessions inherit the parent agent's active built-in tools
+- child sessions inherit normal skills, prompt resources, and extension policy hooks
+- child sessions do **not** inherit nested `spawn`
+- future parent-side narrowing for tools / skills / extensions is a possible follow-up, not current branch scope
+
+Current validated behavior:
+- active built-in tools are inherited as a subset by the child
+- normal resource loading still brings in local skills and extension hooks
+- in this repo's current setup, the child loads:
+  - project-local `spawn-mode`
+  - global `permission-gate`
+  - local `7-phase` skills under `.pi/skills/`
+- no extra extension tools are currently inherited here because the loaded extensions are policy/controller extensions, not child-tool providers
+
+Important nuance:
+- child sessions inherit resources and hooks, not the parent session's full runtime state history
+- that is acceptable in this branch because upstream `pi-spawn` excludes itself from the child loader, so nested `spawn` remains blocked
+
+Detailed validation artifact:
+- `docs/prototype/spawn-inheritance-validation.md`
 
 ## Where to look for deeper detail
 - `docs/prd.md`
