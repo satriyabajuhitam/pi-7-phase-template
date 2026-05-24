@@ -42,6 +42,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Container, Markdown, Spacer, Text, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { TOOL_NAME } from "./shared";
 
 // Path of this extension file — used to exclude spawn from subagent sessions.
 const SELF_PATH = fileURLToPath(import.meta.url);
@@ -607,7 +608,7 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	const spawnTool = defineTool({
-		name: "spawn",
+		name: TOOL_NAME,
 		label: "Spawn Subagent",
 		description: SPAWN_DESCRIPTION,
 
