@@ -113,6 +113,7 @@
 ## Release / sign-off recommendation
 - Ready for release:
   - yes, for the current repo-local branch scope and broader sign-off target captured in this plan
+  - this means ready for continued use and review on `exp/pi-spawn`, not automatic merge approval to `main`
 - Ready for next execution pass:
   - no immediate AFK pass is required
 - Blocked pending HITL:
@@ -122,6 +123,6 @@
 
 ## Next step
 - Recommended action:
-  - proceed to broader sign-off / handoff using the current branch state
+  - proceed to broader sign-off / handoff using the current branch state while keeping the implementation on `exp/pi-spawn` unless a separate merge decision is made
 - Why:
   - the latest HITL evidence after fresh reload shows that readability stays better than baseline, completion clarity stays better than baseline, and the performance guardrail is now satisfied for this branch scope

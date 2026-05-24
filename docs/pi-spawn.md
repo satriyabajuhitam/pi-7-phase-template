@@ -3,6 +3,12 @@
 ## Status
 This repository currently treats `pi-spawn` as an **experiment branch workflow**, not a final platform decision.
 
+Current status decision:
+- approved for continued use on `exp/pi-spawn`
+- ready for branch-level sign-off and review
+- **not** implicitly approved for merge to `main`
+- any future merge to `main` requires a separate human decision
+
 Branch context:
 - branch: `exp/pi-spawn`
 - approach: upstream `pi-spawn`
