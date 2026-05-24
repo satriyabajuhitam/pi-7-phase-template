@@ -61,6 +61,18 @@ If the area is unfamiliar, zoom out first:
 
 Do not ask the user for information that is already in the repo.
 
+Use `spawn` proactively for **context-heavy diagnosis** when it helps keep the parent focused on the feedback loop and final diagnosis rather than every exploratory detail.
+
+Good triggers:
+- the suspected failure path spans multiple files, modules, or callers
+- independent evidence gathering would help rank hypotheses faster
+- two or more hypotheses can be checked with separate recon passes without sharing state
+
+Preferred usage:
+- use `preset: "scout"` for code-path mapping, evidence gathering, and ambiguity reduction
+- use `preset: "reviewer"` for a compact sanity check on the current best explanation or ranked hypotheses
+- use parallel `spawn` only for independent probes; the parent still owns reproduction status, hypothesis ranking, and the final artifact update
+
 ### 2. Build a feedback loop before theorizing
 
 Do not move into free-form speculation until you have the best feedback loop you can build.

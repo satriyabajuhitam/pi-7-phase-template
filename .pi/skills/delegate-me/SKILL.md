@@ -32,7 +32,8 @@ While this skill is active:
 - do not jump straight into `spawn`
 - first decide whether delegation is warranted at all
 - prefer the smallest correct action
-- treat `spawn` as an augmentation tool, not the default workflow
+- treat `spawn` as a **context-offloading tool** whose main value is keeping the parent session smaller without materially reducing quality
+- when a task is context-heavy but still analysis-first, lean toward the narrowest spawn mode that preserves parent clarity
 
 ### 1. Check delegation readiness
 
@@ -140,6 +141,7 @@ The parent remains the final authority.
 - the work is mostly direct file editing
 - the blocker is already obvious from missing artifacts
 - the task needs a human decision, not sub-agent analysis
+- delegation would add more coordination overhead than parent-context savings
 
 ### Choose **Single spawn** when
 
@@ -147,6 +149,7 @@ The parent remains the final authority.
 - one artifact pair needs review
 - one readiness check is needed
 - one handoff summary is needed
+- one compact recon/review pass would keep a context-heavy task out of the parent
 
 ### Choose **Parallel spawn** when
 
@@ -154,6 +157,7 @@ The parent remains the final authority.
 - separate concerns can be inspected in isolation
 - no spawned result depends on another spawned result
 - comparison or triangulation is more useful than one blended read
+- parallel evidence gathering would materially reduce parent-context load
 
 ### Choose **Serial spawn** when
 
@@ -161,6 +165,7 @@ The parent remains the final authority.
 - you need scout -> synthesize -> act
 - the second prompt must incorporate the first result
 - a Phase 6 brief should target one exact ready ticket chosen first
+- the parent should receive progressively distilled handoffs instead of holding the full exploratory trail
 
 ---
 
