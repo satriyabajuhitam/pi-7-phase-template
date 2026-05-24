@@ -63,8 +63,14 @@ interface SubagentUsage {
 	stopReason: string | undefined;
 }
 
+const SPAWN_PRESETS = ["scout", "planner", "reviewer"] as const;
+type SpawnPreset = (typeof SPAWN_PRESETS)[number];
+
 interface TaskResult {
 	prompt: string;
+	preset?: SpawnPreset;
+	timeout?: number;
+	timedOut?: boolean;
 	output: string;
 	usage: SubagentUsage;
 	error?: string;
@@ -116,6 +122,58 @@ const EMPTY_USAGE: SubagentUsage = {
 	turns: 0,
 	model: "",
 	stopReason: undefined,
+};
+
+const PRESET_GUIDANCE: Record<SpawnPreset, { intent: string; defaultShape: string; guidance: string }> = {
+	scout: {
+		intent: "Read-only reconnaissance and evidence-first mapping.",
+		defaultShape: "Summary / Evidence / Open questions",
+		guidance: [
+			"Preset: scout",
+			"Intent: read-only reconnaissance and evidence-first mapping.",
+			"Read-only posture: inspect, map, and summarize; do not edit files unless the user explicitly changes the task.",
+			"Unless the user explicitly asks for another format, use this exact output shape with section headings: Summary / Evidence / Open questions.",
+			"In Summary, give a concise synthesis of the most relevant findings.",
+			"In Evidence, cite exact file paths, symbols, line numbers, or concrete observed values when available.",
+			"In Open questions, list only unresolved points that would materially affect the next step.",
+			"Prefer concise grounded findings over broad brainstorming.",
+			"Do not change tools, model, or runtime behavior because of this preset.",
+			"The user task remains authoritative. If the user asks for a different output format, follow that instead.",
+		].join("\n"),
+	},
+	planner: {
+		intent: "Grounded planning and execution-brief preparation.",
+		defaultShape: "Objective / Likely files / Risks / Recommended next step",
+		guidance: [
+			"Preset: planner",
+			"Intent: grounded planning and execution-brief preparation.",
+			"Read-only posture: inspect the repository and turn grounded findings into a concise plan; do not edit files unless the user explicitly changes the task.",
+			"Unless the user explicitly asks for another format, use this exact output shape with section headings: Objective / Likely files / Risks / Recommended next step.",
+			"In Objective, restate the concrete outcome to achieve.",
+			"In Likely files, list the most relevant files, modules, or surfaces to touch.",
+			"In Risks, call out the main sequencing, dependency, or validation risks.",
+			"In Recommended next step, name the smallest sensible next action.",
+			"Prefer concise plans grounded in the repository rather than broad brainstorming.",
+			"Do not change tools, model, or runtime behavior because of this preset.",
+			"The user task remains authoritative. If the user asks for a different output format, follow that instead.",
+		].join("\n"),
+	},
+	reviewer: {
+		intent: "Independent review and verification with evidence.",
+		defaultShape: "Verdict / Evidence / Follow-ups",
+		guidance: [
+			"Preset: reviewer",
+			"Intent: independent review and verification with evidence.",
+			"Read-only posture: inspect the repository and produce an independent review; do not edit files unless the user explicitly changes the task.",
+			"Unless the user explicitly asks for another format, use this exact output shape with section headings: Verdict / Evidence / Follow-ups.",
+			"In Verdict, state the review judgment concisely.",
+			"In Evidence, cite exact file paths, symbols, line numbers, or concrete observed values when available.",
+			"In Follow-ups, list only the most relevant next checks or actions that follow from the review.",
+			"Prefer grounded verification and explicit follow-ups over vague impressions.",
+			"Do not change tools, model, or runtime behavior because of this preset.",
+			"The user task remains authoritative. If the user asks for a different output format, follow that instead.",
+		].join("\n"),
+	},
 };
 
 function formatTokens(n: number): string {
@@ -176,6 +234,22 @@ function getResultPreview(r: TaskResult): string {
 	}
 	if (firstLine) return truncatePreviewLine(firstLine);
 	return "No output.";
+}
+
+function buildSessionPrompt(prompt: string, preset?: SpawnPreset): string {
+	if (!preset) return prompt;
+	const presetGuidance = PRESET_GUIDANCE[preset].guidance;
+	return [presetGuidance, "", "User task:", prompt].join("\n");
+}
+
+function formatPresetBadge(theme: { fg: (color: string, text: string) => string }, preset?: SpawnPreset): string {
+	if (!preset) return "";
+	return " " + theme.fg("accent", `[preset: ${preset}]`);
+}
+
+function getPresetSummary(preset: SpawnPreset): { intent: string; defaultShape: string } {
+	const presetInfo = PRESET_GUIDANCE[preset];
+	return { intent: presetInfo.intent, defaultShape: presetInfo.defaultShape };
 }
 
 function getStreamingPreview(text: string): string {
@@ -255,6 +329,10 @@ const MISSING_RETURN_RESULT_STRICT_WARNING =
 const MISSING_RETURN_RESULT_STRICT_ERROR =
 	"subagent finished without calling return_result while strictResult was enabled.";
 
+function getTimeoutError(timeoutMs: number | undefined): string {
+	return `subagent timed out after ${timeoutMs ?? 0} ms.`;
+}
+
 function formatResultText(result: Pick<TaskResult, "output" | "warning">): string {
 	if (!result.warning) return result.output;
 	if (result.output) return `${result.output}\n\n[Warning: ${result.warning}]`;
@@ -320,6 +398,9 @@ Good: "Read src/auth/login.ts lines 40-80. The login handler crashes when the to
 
 async function runOne(
 	prompt: string,
+	sessionPrompt: string,
+	preset: SpawnPreset | undefined,
+	timeoutMs: number | undefined,
 	parentModel: Model<any>,
 	modelRegistry: ModelRegistry,
 	thinking: ThinkingLevel,
@@ -396,7 +477,18 @@ async function runOne(
 		}
 	});
 
+	let timedOut = false;
+	let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 	const abortListener = () => {
+		void session.abort();
+	};
+	const clearTimeoutHandle = () => {
+		if (timeoutHandle === undefined) return;
+		clearTimeout(timeoutHandle);
+		timeoutHandle = undefined;
+	};
+	const timeoutAbort = () => {
+		timedOut = true;
 		void session.abort();
 	};
 
@@ -405,8 +497,13 @@ async function runOne(
 			void session.abort();
 		}
 		signal?.addEventListener("abort", abortListener, { once: true });
+		if (timeoutMs !== undefined) {
+			timeoutHandle = setTimeout(timeoutAbort, timeoutMs);
+		}
 
-		await session.prompt(prompt);
+		await session.prompt(sessionPrompt);
+		clearTimeoutHandle();
+		if (timedOut) throw new Error(getTimeoutError(timeoutMs));
 
 		const modelId = session.model?.id ?? parentModel.id;
 		const usage = collectUsage(messages, modelId);
@@ -415,12 +512,15 @@ async function runOne(
 		const finalOutput = await truncateFinalOutput(returnedResult ?? getFinalOutput(messages));
 		return {
 			prompt,
+			preset,
+			...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
 			usage,
 			...(strictResult && missingReturnResult ? { error: MISSING_RETURN_RESULT_STRICT_ERROR } : {}),
 			...(missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
 			...finalOutput,
 		};
 	} catch (err: any) {
+		clearTimeoutHandle();
 		const modelId = session.model?.id ?? parentModel.id;
 		const usage = collectUsage(messages, modelId);
 		const missingReturnResult = returnedResult === undefined;
@@ -428,12 +528,16 @@ async function runOne(
 		const finalOutput = await truncateFinalOutput(returnedResult ?? getFinalOutput(messages));
 		return {
 			prompt,
+			preset,
+			...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
+			...(timedOut ? { timedOut: true } : {}),
 			usage,
-			error: err?.message ?? String(err),
-			...(missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
+			error: timedOut ? getTimeoutError(timeoutMs) : (err?.message ?? String(err)),
+			...(!timedOut && missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
 			...finalOutput,
 		};
 	} finally {
+		clearTimeoutHandle();
 		signal?.removeEventListener("abort", abortListener);
 		unsub();
 		session.dispose();
@@ -626,6 +730,19 @@ export default function (pi: ExtensionAPI) {
 				description:
 					"Self-contained task for the subagent. Include file paths, code snippets, expected output format.",
 			}),
+			preset: Type.Optional(
+				StringEnum(SPAWN_PRESETS, {
+					description:
+						"Optional lightweight guidance preset. Supported values in v1: scout, planner, reviewer.",
+				}),
+			),
+			timeout: Type.Optional(
+				Type.Number({
+					exclusiveMinimum: 0,
+					description:
+						"Optional per-call timeout for this spawn in milliseconds. If omitted, no default timeout is introduced.",
+				}),
+			),
 			thinking: Type.Optional(
 				StringEnum(["off", "minimal", "low", "medium", "high", "xhigh"] as const, {
 					description: "Override thinking level for this subagent. Defaults to the parent's current thinking level.",
@@ -641,6 +758,9 @@ export default function (pi: ExtensionAPI) {
 		async execute(toolCallId, params, signal, onUpdate, ctx) {
 			const thinking: ThinkingLevel = params.thinking ?? pi.getThinkingLevel();
 			const strictResult = params.strictResult ?? false;
+			const preset = params.preset;
+			const timeout = params.timeout;
+			const sessionPrompt = buildSessionPrompt(params.prompt, preset);
 			const parentModel = ctx.model;
 			const modelRegistry = ctx.modelRegistry;
 			const cwd = ctx.cwd;
@@ -680,6 +800,8 @@ export default function (pi: ExtensionAPI) {
 						mode: "spawn",
 						results: [{
 							prompt: params.prompt,
+							preset,
+							...(timeout !== undefined ? { timeout } : {}),
 							output: streamPreview,
 							streamPreview,
 							streamPreviewTruncated: lastStreamPreviewTruncated,
@@ -701,6 +823,9 @@ export default function (pi: ExtensionAPI) {
 			try {
 				const result = await runOne(
 					params.prompt,
+					sessionPrompt,
+					preset,
+					timeout,
 					parentModel,
 					modelRegistry,
 					thinking,
@@ -713,7 +838,11 @@ export default function (pi: ExtensionAPI) {
 				flushStreamingUpdate(true);
 
 				if (result.error) {
-					throw new Error(formatToolError(result));
+					return {
+						content: [{ type: "text", text: formatToolError(result) }],
+						details: { mode: "spawn", results: [result] } as SpawnDetails,
+						isError: true,
+					};
 				}
 
 				return {
@@ -728,9 +857,11 @@ export default function (pi: ExtensionAPI) {
 		renderCall(args, theme, context) {
 			const comp = (context.lastComponent as SpawnCallComponent | undefined) ?? new SpawnCallComponent();
 			const prompt = (args.prompt ?? "...") as string;
+			const preset = args.preset as SpawnPreset | undefined;
 			const { shown, remaining } = getPromptPreview(prompt);
 			let text = theme.fg("muted", "◦") + " " + theme.fg("toolTitle", theme.bold("spawn"));
 			text += " " + theme.fg("dim", "queued");
+			text += formatPresetBadge(theme, preset);
 			if (args.thinking) text += theme.fg("dim", ` [${args.thinking as string}]`);
 			if (args.strictResult) text += theme.fg("warning", " [strict-result]");
 			if (context.expanded) {
@@ -761,6 +892,7 @@ export default function (pi: ExtensionAPI) {
 				const streamPreviewTruncated = partial?.streamPreviewTruncated ?? false;
 				let text = theme.fg("accent", "●") + " " + theme.fg("toolTitle", theme.bold("spawn"));
 				text += " " + theme.fg("accent", "running");
+				text += formatPresetBadge(theme, partial?.preset);
 				text += "\n" + theme.fg("dim", `⎿ ${streamPreview}`);
 				if (streamPreviewTruncated) {
 					text += "\n" + theme.fg("warning", "[stream truncated]");
@@ -790,6 +922,7 @@ export default function (pi: ExtensionAPI) {
 			const hasTruncation = !!r.truncation?.truncated;
 			const hasOutput = getMeaningfulLines(r.output).length > 0;
 			const isFallback = !!r.missingReturnResult;
+			const isTimedOut = !!r.timedOut;
 			const isEmpty = !hasOutput && !r.error;
 			const statusText = r.error
 				? "error"
@@ -817,7 +950,10 @@ export default function (pi: ExtensionAPI) {
 						? theme.fg("muted", "○")
 						: theme.fg("success", "✓");
 			const mdTheme = getMarkdownTheme();
+			const presetSummary = r.preset ? getPresetSummary(r.preset) : undefined;
 			const badges: string[] = [];
+			if (r.preset) badges.push(theme.fg("accent", `[preset: ${r.preset}]`));
+			if (isTimedOut) badges.push(theme.fg("warning", "[timeout]"));
 			if (isFallback) badges.push(theme.fg("warning", "[no return_result]"));
 			if (hasWarning && !isFallback) badges.push(theme.fg("warning", "[warning]"));
 			if (hasTruncation) badges.push(theme.fg("warning", "[truncated]"));
@@ -828,12 +964,25 @@ export default function (pi: ExtensionAPI) {
 			if (expanded) {
 				const container = new Container();
 				container.addChild(new Text(`${icon} ${theme.fg("toolTitle", theme.bold("spawn"))} ${theme.fg(statusTone, statusText)}${badgesText}`, 0, 0));
+				if (presetSummary && r.preset) {
+					container.addChild(new Spacer(1));
+					container.addChild(new Text(theme.fg("muted", "─── Preset ───"), 0, 0));
+					container.addChild(new Text(theme.fg("accent", `Preset: ${r.preset}`), 0, 0));
+					container.addChild(new Text(theme.fg("dim", `Intent: ${presetSummary.intent}`), 0, 0));
+					container.addChild(new Text(theme.fg("dim", `Default output shape: ${presetSummary.defaultShape}`), 0, 0));
+				}
 				container.addChild(new Spacer(1));
 				container.addChild(new Text(theme.fg("muted", "─── Task ───"), 0, 0));
 				container.addChild(new Text(theme.fg("dim", r.prompt), 0, 0));
 				container.addChild(new Spacer(1));
 				if (r.error) {
 					container.addChild(new Text(theme.fg("error", "Error: " + r.error), 0, 0));
+					if (r.timedOut) {
+						const timeoutText = r.timeout !== undefined
+							? `Timeout: spawn timed out after ${r.timeout} ms`
+							: "Timeout: spawn timed out";
+						container.addChild(new Text(theme.fg("warning", timeoutText), 0, 0));
+					}
 				} else if (r.output) {
 					container.addChild(new Text(theme.fg("muted", "─── Output ───"), 0, 0));
 					container.addChild(new Markdown(r.output.trim(), 0, 0, mdTheme));
@@ -861,7 +1010,7 @@ export default function (pi: ExtensionAPI) {
 			const preview = r.error ? truncatePreviewLine(r.error) : getResultPreview(r);
 			text += "\n" + theme.fg(r.error ? "error" : isFallback ? "warning" : "dim", `⎿ ${preview}`);
 			const hasMoreDetail =
-				getMeaningfulLines(r.output).length > 1 || !!r.warning || !!r.fullOutputPath || !!r.error || isFallback || hasTruncation;
+				getMeaningfulLines(r.output).length > 1 || !!r.warning || !!r.fullOutputPath || !!r.error || isFallback || hasTruncation || !!r.preset;
 			if (hasMoreDetail) {
 				text += "\n" + theme.fg("muted", `(${keyHint("app.tools.expand", "to expand")})`);
 			}

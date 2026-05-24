@@ -172,6 +172,86 @@ Important nuance:
 Detailed validation artifact:
 - `docs/prototype/spawn-inheritance-validation.md`
 
+## Preset validation snapshot (`ISSUE-012`)
+This section is the lightweight validation handoff for the narrow `preset` follow-up on branch `exp/pi-spawn`.
+
+### What was checked
+- non-preset compatibility
+- default-shape behavior for `scout`, `planner`, and `reviewer`
+- explicit output-format override behavior
+- invalid preset handling
+- preset UI transparency via render-path inspection
+- quick non-regression/perf spot check
+
+### Results
+- **Non-preset compatibility:** confirmed by a live JSON-mode smoke run where `spawn` was called without `preset` and returned `plain-ok`; the tool call args contained only `prompt` and the usual fallback warning surface remained unchanged.
+- **`scout` default shape:** confirmed by a live JSON-mode smoke run over `AGENTS.md`; the child returned `## Summary`, `## Evidence`, and `## Open questions`.
+- **`planner` default shape:** confirmed by a live JSON-mode smoke run over `docs/issues.md`; the child returned `## Objective`, `## Likely files`, `## Risks`, and `## Recommended next step`.
+- **`reviewer` default shape:** confirmed by a live JSON-mode smoke run reviewing whether `ISSUE-012` was ready to start; the child returned `## Verdict`, `## Evidence`, and `## Follow-ups`.
+- **Explicit format override:** confirmed by live JSON-mode smoke runs for all three presets where the child prompt was `Respond with exactly: ok.`; each preset returned just `ok`, so the user format request still won.
+- **Invalid preset handling:** confirmed by forcing a raw tool call with `{"prompt":"Respond with exactly: invalid-ok.","preset":"writer"}`; Pi returned `Validation failed for tool "spawn": preset: must be equal to one of the allowed values`.
+- **UI transparency:** confirmed by source inspection in `.pi/extensions/spawn/index.ts`:
+  - `buildSessionPrompt(...)` prepends preset guidance before the user task at lines `237-240`
+  - queued-call badging uses `formatPresetBadge(...)` at lines `243-246` and is rendered in `renderCall(...)` at lines `815-822`
+  - expanded detail shows only preset name, intent, and default output shape at lines `923-928`
+  - collapsed results stay expandable when `preset` exists at lines `957-964`
+- **Quick non-regression/perf spot check:** a trivial no-preset smoke run completed in about `8079 ms`; a comparable trivial preset run (`reviewer`) completed in about `9776 ms`. Both completed in one child turn and preserved the same degraded-success warning surface, so this pass found no obvious material regression against the current replacement baseline.
+
+### Limitations
+- This repo still has no automated TUI render or screenshot harness.
+- UI transparency was validated through render-path source inspection plus live tool-detail smoke runs, not pixel-level visual assertions.
+- The perf check was a lightweight spot check, not a statistically rigorous benchmark.
+
+### Handoff to `ISSUE-013`
+Use this snapshot together with `docs/issues.md` and `docs/prd.md` to decide whether preset support is transparent, useful, and still within the repo's minimal `spawn` boundary.
+
+## Timeout validation snapshot (`ISSUE-017`)
+This section records the completed lightweight validation handoff for the timeout follow-up on branch `exp/pi-spawn`.
+
+### What was checked
+- no-timeout compatibility
+- bounded success with an explicit `timeout`
+- timeout-triggered hard failure
+- invalid timeout input handling
+- whether timeout-specific UI copy is actually reachable on the live failure path
+- quick spot-check durations for non-regression context
+
+### Results
+- **No-timeout compatibility:** confirmed by a live JSON-mode smoke run where `spawn` was called with only `prompt` and returned `plain-ok`; the usual degraded-success warning surface remained unchanged.
+- **Bounded success:** confirmed by live JSON-mode smoke runs where `spawn` was called with `timeout: 10000` and returned `quick-ok`; the result stayed on the normal structured non-error path and preserved the existing degraded-success warning surface when the child skipped `return_result`.
+- **Timeout-triggered hard fail:** confirmed by live JSON-mode smoke runs where the child was instructed to run `sleep 1` and the parent called `spawn` with `timeout: 100`; Pi returned `Subagent failed: subagent timed out after 100 ms.`
+- **Invalid timeout input:** confirmed by a live JSON-mode smoke run where `spawn` was called with `timeout: 0`; Pi returned `Validation failed for tool "spawn": timeout: must be > 0`.
+- **Timeout error visibility:** confirmed by the post-fix live timeout result now carrying structured spawn details instead of `details:{}`:
+  - `tool_execution_end.result.details.mode: "spawn"`
+  - `tool_execution_end.result.details.results[0].timedOut: true`
+  - `tool_execution_end.result.details.results[0].timeout: 100`
+  - `tool_execution_end.result.isError: true`
+  - visible error text remained `Subagent failed: subagent timed out after 100 ms.`
+- **Renderer-path confirmation:** source inspection in `.pi/extensions/spawn/index.ts` shows:
+  - `execute(...)` now returns `content + details + isError: true` for `result.error`, preserving timeout metadata for rendering
+  - the normal detailed renderer still adds the `[timeout]` badge when `r.timedOut` is true
+  - the expanded renderer still adds `Timeout: spawn timed out after ... ms` when `r.timedOut` is true
+- **Quick non-regression/perf spot check:**
+  - earlier pass: about `8232 ms` (no-timeout), `8266 ms` (bounded success), `7599 ms` (forced timeout), `6256 ms` (invalid input)
+  - final pass after the reopen fix: about `10920 ms` (no-timeout), `13247 ms` (bounded success), `7025 ms` (forced timeout), `6605 ms` (invalid input)
+  - these lightweight spot checks were noisy, but they remained in the same rough range and showed no obvious timeout-specific material regression beyond normal run-to-run variance.
+
+### Validation story
+- The first timeout validation pass found a real blocker: live timeout failures were falling through the thrown no-details tool-error path, so the timeout-specific expanded detail was not actually reachable.
+- That blocker correctly reopened `ISSUE-016` rather than being silently patched inside `ISSUE-017`.
+- After the `ISSUE-016` reopen fix, the live timeout failure path preserved structured details again, making the timeout-specific expanded renderer path reachable from the real failure case that mattered.
+
+### Current verdict
+- Runtime timeout behavior looks real enough for continued branch use.
+- Timeout input validation looks real enough for continued branch use.
+- Timeout UI visibility now has both live-path and source-path evidence.
+- This is sufficient for the planned HITL review in `ISSUE-018`.
+
+### Limitations
+- This repo still has no automated TUI render or screenshot harness.
+- Validation used live JSON-mode smoke runs plus source inspection, not pixel-level visual assertions.
+- The perf comparison was a lightweight spot check, not a statistically rigorous benchmark.
+
 ## Where to look for deeper detail
 - `docs/prd.md`
 - `docs/issues.md`
