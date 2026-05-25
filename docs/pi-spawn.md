@@ -252,6 +252,123 @@ This section records the completed lightweight validation handoff for the timeou
 - Validation used live JSON-mode smoke runs plus source inspection, not pixel-level visual assertions.
 - The perf comparison was a lightweight spot check, not a statistically rigorous benchmark.
 
+## Completion reliability validation snapshot (`ISSUE-022`, partial)
+This section records the first live validation pass for the completion-reliability follow-up on branch `exp/pi-spawn`.
+
+### What was checked
+- a nominal normal-success case intended to call `return_result`
+- a strict missing-`return_result` case
+- timeout distinctness after the completion-semantics changes
+- one preset compatibility spot check in a degraded case
+
+### Partial results
+- **Nominal success attempt is still blocked:** a live JSON-mode smoke run called `spawn` with exact args `{ "prompt": "Call return_result with exactly: parallel-a.", "strictResult": false }`, but the structured result still ended with:
+  - `completionStatus: degraded`
+  - `completionReason: missing_return_result`
+  - `contractSatisfied: false`
+  - output text `parallel-a`
+  - degraded-success warning still present
+- **Strict missing-`return_result` remains real:** a live JSON-mode smoke run called `spawn` with exact args `{ "prompt": "Do not call return_result. Respond with exactly: strict-miss.", "strictResult": true }` and returned explicit failure text plus structured:
+  - `completionStatus: failed`
+  - `completionReason: missing_return_result`
+  - `contractSatisfied: false`
+- **Timeout remains distinct:** a live JSON-mode smoke run called `spawn` with exact args `{ "prompt": "Run bash with command: sleep 1. Do not call return_result.", "timeout": 100 }` and returned `Subagent failed: subagent timed out after 100 ms.` plus structured:
+  - `completionReason: timeout`
+  - `timedOut: true`
+  - `timeout: 100`
+- **Preset compatibility spot check remains coherent:** a degraded-case smoke run with `preset: "reviewer"` preserved `preset: reviewer` alongside structured degraded completion fields.
+
+### Current blocker
+- The normal-success case needed for `ISSUE-022` is still not evidenced live.
+- Because that gap belongs to incidence/prompt-contract reliability rather than timeout or UI clarity, `ISSUE-021` was reopened and `ISSUE-022` was blocked.
+- A second guidance-only pass also failed to clear the blocker: even after adding more explicit correct/incorrect examples about using the `return_result` tool, the same nominal success smoke still degraded instead of producing a true completion handoff.
+
+### Evidence paths
+- `/tmp/tmp.oBAzQhB2NW/success_attempt.jsonl`
+- `/tmp/tmp.9jqEGcKDwT/success_attempt.jsonl`
+- `/tmp/tmp.oBAzQhB2NW/strict_missing.jsonl`
+- `/tmp/tmp.oBAzQhB2NW/timeout_case.jsonl`
+- `/tmp/tmp.oBAzQhB2NW/preset_case.jsonl`
+
+### Interpretation
+- Completion-result classification and timeout distinctness appear to be working on the live path.
+- The option-C runtime refinement also appears to be working for impostor cases: text that merely looks like a final result no longer has any path to true success without observed tool evidence.
+- The remaining trust gap is now narrower but still real: the branch still does not yet have trustworthy live evidence of a child actually invoking `return_result` for a nominal success case.
+
+### Follow-up validation after option C
+- After the observed-tool-evidence runtime slice landed, a fresh validation pass confirmed that text-only impostor success is correctly degraded:
+  - `/tmp/tmp.wgcvkCokHy/text_only.jsonl` ended with `completionStatus=degraded`, `returnResultObserved=false`, and `returnResultCallCount=0`
+- Strict failure, timeout distinctness, and preset degraded compatibility still held in that same pass:
+  - `/tmp/tmp.wgcvkCokHy/strict_missing.jsonl`
+  - `/tmp/tmp.wgcvkCokHy/timeout_case.jsonl`
+  - `/tmp/tmp.wgcvkCokHy/preset_case.jsonl`
+- However, a second live success-focused probe set still did not produce a true success case:
+  - `/tmp/tmp.G0Q2D8zcxg/success_b.jsonl`
+  - `/tmp/tmp.G0Q2D8zcxg/success_c.jsonl`
+  - `/tmp/tmp.G0Q2D8zcxg/success_e.jsonl`
+- All three still ended with degraded completion and no observed `return_result` tool invocation.
+
+### Follow-up validation after bounded completion repair
+- A later runtime slice added one bounded internal completion-repair turn.
+- That slice did surface repair metadata in the live path, but the branch still did not reach a trustworthy true-success case.
+- Evidence from `/tmp/tmp.bJzt1FcT23/`:
+  - `degraded_non_strict.jsonl` still degraded and returned fallback text claiming `return_result` was unavailable in the child session
+  - `success_read.jsonl` and `success_simple.jsonl` timed out at `30000 ms` before any observed `return_result` success was recorded
+  - `strict_missing.jsonl` timed out after `completionRepairAttempted=True`, which means the repair path now risks destabilizing the previously clear strict-failure story under some probes
+  - `timeout_case.jsonl` still preserved timeout distinctness
+  - `preset_case.jsonl` timed out under the bounded repair path rather than cleanly demonstrating preset compatibility
+- Interpretation:
+  - the branch can now distinguish impostor success from true success more honestly than before
+  - but the new repair slice is not yet trustworthy enough to close validation, because it still lacks a live true-success case and may introduce timeout-related regressions on nominal success paths
+
+### Follow-up validation after repair stabilization
+- A later reopen fix narrowed repair to non-strict mode, preserved the original fallback output from the first child turn, and restored cleaner adjacent-path behavior.
+- Stable adjacent-path evidence after that fix:
+  - `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` showed non-strict repair attempted once and then preserved the original fallback output `degraded-ok`
+  - `/tmp/tmp.cxk02rV7B6/strict_missing.jsonl` showed strict mode skipping repair and remaining an explicit missing-`return_result` failure without timeout regression
+  - `/tmp/tmp.cxk02rV7B6/timeout_case.jsonl` showed timeout still bypassing repair and remaining distinct
+  - `/tmp/tmp.QMyKNdQxh6/preset_case.jsonl` showed degraded preset compatibility remained coherent again with `preset: reviewer`
+- However, the validation ticket was still blocked because repeated true-success probes continued to fail:
+  - `/tmp/tmp.IoRjEr5uWk/success_direct.jsonl`
+  - `/tmp/tmp.IoRjEr5uWk/success_with_example.jsonl`
+  - `/tmp/tmp.IoRjEr5uWk/success_read.jsonl`
+  - `/tmp/tmp.r1YugP01hk/success_full.jsonl`
+- All of those probes still ended with degraded completion, `returnResultObserved=false`, and `returnResultCallCount=0`.
+- The `gpt-5.4-mini` success probes also produced empty fallback output, so the branch still lacks trustworthy real-path evidence that the child session can actually invoke the custom `return_result` tool.
+- Interpretation:
+  - degraded fallback, strict failure, timeout distinctness, and preset coherence now look cleaner again
+  - but the core success path is still not validated live, so `ISSUE-022` remains blocked and the runtime-reliability slice had to be reopened again
+
+### Root-cause follow-up after the second `ISSUE-024` reopen
+- A later implementation pass identified a concrete SDK/runtime cause for the missing `return_result` success path.
+- The child session was registering `return_result` as a custom tool, but when `createAgentSession(...)` was called with an explicit `tools` list, Pi treated that list as the active-tool set.
+- Local SDK probe evidence:
+  - with `tools: ['read', 'bash']` and `customTools: [return_result]`, the active tools were only `['read', 'bash']`
+  - with `tools: ['read', 'bash', 'return_result']` and `customTools: [return_result]`, the active tools became `['read', 'bash', 'return_result']`
+- This matches SDK source behavior where `initialActiveToolNames = options.tools` when an explicit list is supplied.
+- The repo-local fix in `.pi/extensions/spawn/index.ts` now activates the tool explicitly with `tools: [...inheritedTools, returnResultTool.name]` when creating the child session.
+- Immediate live provider-backed revalidation was attempted, but the parent prompt hit provider quota exhaustion before the spawn tool ran:
+  - `/tmp/tmp.huhSgWMv8W/success_direct.jsonl` recorded parent-side `usage_limit_reached` / `429`
+- Interpretation:
+  - the missing-tool hypothesis is now grounded and fixed in code
+  - but final live true-success proof still belongs to `ISSUE-022` once provider-backed validation is available again
+
+### Final completion reliability validation snapshot (`ISSUE-022`)
+- A later provider-backed validation pass finally produced live true-success evidence after the child-tool activation fix.
+- Fresh live evidence:
+  - `/tmp/tmp.dosGigNeIu/success_direct.jsonl` showed a normal success with `completionStatus=success`, `completionReason=return_result`, `returnResultObserved=True`, and `returnResultCallCount=1`
+  - `/tmp/tmp.qdXlqxYP0R/non_tool_text.jsonl` showed one bounded repair turn succeeding inside the same spawn call with `completionRepairAttempted=True` and `completionRepairSucceeded=True`
+  - `/tmp/tmp.qdXlqxYP0R/strict_text.jsonl` showed strict missing-`return_result` still failing explicitly with `completionReason=missing_return_result`
+  - `/tmp/tmp.jE0v2UhSW3/timeout_case.jsonl` showed timeout still distinct with `completionReason=timeout`, `timedOut=True`, and `timeout=100`
+  - `/tmp/tmp.jE0v2UhSW3/preset_case.jsonl` showed preset compatibility remaining coherent with `preset=reviewer`
+- Retained degraded-fallback evidence still matters for the final matrix:
+  - `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` remains the direct live proof of a non-strict degraded fallback where repair was attempted once, still failed, and the original fallback output `degraded-ok` was preserved
+- Final interpretation:
+  - true success, degraded fallback, strict failure, and timeout are now all distinguishable with repo-local evidence
+  - the bounded repair behavior is evidenced as a single internal contract-repair step, not a generic retry system
+  - preset compatibility remains coherent under the refined completion semantics
+  - this is sufficient validation evidence for HITL review in `ISSUE-023`
+
 ## Where to look for deeper detail
 - `docs/prd.md`
 - `docs/issues.md`

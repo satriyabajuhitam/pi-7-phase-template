@@ -65,12 +65,21 @@ interface SubagentUsage {
 
 const SPAWN_PRESETS = ["scout", "planner", "reviewer"] as const;
 type SpawnPreset = (typeof SPAWN_PRESETS)[number];
+type CompletionStatus = "success" | "degraded" | "failed";
+type CompletionReason = "return_result" | "missing_return_result" | "timeout" | "runtime_error";
 
 interface TaskResult {
 	prompt: string;
 	preset?: SpawnPreset;
 	timeout?: number;
 	timedOut?: boolean;
+	completionStatus?: CompletionStatus;
+	completionReason?: CompletionReason;
+	contractSatisfied?: boolean;
+	returnResultObserved?: boolean;
+	returnResultCallCount?: number;
+	completionRepairAttempted?: boolean;
+	completionRepairSucceeded?: boolean;
 	output: string;
 	usage: SubagentUsage;
 	error?: string;
@@ -225,8 +234,8 @@ function getPromptPreview(prompt: string): { shown: string[]; remaining: number 
 function getResultPreview(r: TaskResult): string {
 	const firstLine = getMeaningfulLines(r.output)[0];
 	if (r.missingReturnResult) {
-		if (firstLine) return truncatePreviewLine(`No return_result — fallback output only. ${firstLine}`);
-		return "No return_result — fallback output only.";
+		if (firstLine) return truncatePreviewLine(`Degraded fallback — child did not call return_result. ${firstLine}`);
+		return "Degraded fallback — child did not call return_result.";
 	}
 	if (r.warning) {
 		if (firstLine) return truncatePreviewLine(firstLine);
@@ -236,10 +245,22 @@ function getResultPreview(r: TaskResult): string {
 	return "No output.";
 }
 
+const COMPLETION_CONTRACT_GUIDANCE = [
+	"Completion contract:",
+	"- The tool name is return_result. You must invoke that tool exactly once as the final handoff.",
+	"- Do not write return_result(...), JSON, or final-answer text in a plain assistant message; that does not count as completion.",
+	"- If the task asks for an exact final string or output format, put that exact content in return_result.result, not in assistant text.",
+	"- Correct example: use the return_result tool to submit result = parallel-a.",
+	"- Incorrect examples: assistant text parallel-a ; assistant text return_result(\"parallel-a\").",
+	"- If you are blocked, uncertain, or only partially complete, still call return_result with current findings and blockers.",
+	"- After calling return_result, stop instead of adding another assistant message.",
+].join("\n");
+
 function buildSessionPrompt(prompt: string, preset?: SpawnPreset): string {
-	if (!preset) return prompt;
-	const presetGuidance = PRESET_GUIDANCE[preset].guidance;
-	return [presetGuidance, "", "User task:", prompt].join("\n");
+	const sections = [COMPLETION_CONTRACT_GUIDANCE];
+	if (preset) sections.push(PRESET_GUIDANCE[preset].guidance);
+	sections.push("User task:", prompt);
+	return sections.join("\n\n");
 }
 
 function formatPresetBadge(theme: { fg: (color: string, text: string) => string }, preset?: SpawnPreset): string {
@@ -333,6 +354,88 @@ function getTimeoutError(timeoutMs: number | undefined): string {
 	return `subagent timed out after ${timeoutMs ?? 0} ms.`;
 }
 
+function classifyCompletionResult({
+	strictResult,
+	returnResultObserved,
+	returnResultCallCount,
+	completionRepairAttempted,
+	timedOut,
+	runtimeError,
+	timeoutMs,
+}: {
+	strictResult: boolean;
+	returnResultObserved: boolean;
+	returnResultCallCount: number;
+	completionRepairAttempted: boolean;
+	timedOut: boolean;
+	runtimeError?: string;
+	timeoutMs?: number;
+}): Pick<
+	TaskResult,
+	| "completionStatus"
+	| "completionReason"
+	| "contractSatisfied"
+	| "timedOut"
+	| "error"
+	| "warning"
+	| "missingReturnResult"
+	| "returnResultObserved"
+	| "returnResultCallCount"
+	| "completionRepairAttempted"
+	| "completionRepairSucceeded"
+> {
+	const missingReturnResult = !returnResultObserved;
+	const missingReturnResultWarning = strictResult ? MISSING_RETURN_RESULT_STRICT_WARNING : MISSING_RETURN_RESULT_WARNING;
+	const completionRepairSucceeded = completionRepairAttempted && returnResultObserved;
+	const observedFields = {
+		returnResultObserved,
+		returnResultCallCount,
+		completionRepairAttempted,
+		completionRepairSucceeded,
+	};
+
+	if (timedOut) {
+		return {
+			...observedFields,
+			completionStatus: "failed",
+			completionReason: "timeout",
+			contractSatisfied: false,
+			timedOut: true,
+			error: getTimeoutError(timeoutMs),
+		};
+	}
+
+	if (runtimeError !== undefined) {
+		return {
+			...observedFields,
+			completionStatus: "failed",
+			completionReason: "runtime_error",
+			contractSatisfied: false,
+			error: runtimeError,
+			...(missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
+		};
+	}
+
+	if (missingReturnResult) {
+		return {
+			...observedFields,
+			completionStatus: strictResult ? "failed" : "degraded",
+			completionReason: "missing_return_result",
+			contractSatisfied: false,
+			...(strictResult ? { error: MISSING_RETURN_RESULT_STRICT_ERROR } : {}),
+			missingReturnResult: true,
+			warning: missingReturnResultWarning,
+		};
+	}
+
+	return {
+		...observedFields,
+		completionStatus: "success",
+		completionReason: "return_result",
+		contractSatisfied: true,
+	};
+}
+
 function formatResultText(result: Pick<TaskResult, "output" | "warning">): string {
 	if (!result.warning) return result.output;
 	if (result.output) return `${result.output}\n\n[Warning: ${result.warning}]`;
@@ -345,18 +448,27 @@ function formatToolError(result: TaskResult): string {
 	return `Subagent failed: ${result.error}`;
 }
 
+const COMPLETION_REPAIR_PROMPT = [
+	"You have not yet invoked the tool named return_result.",
+	"The tool return_result is available in this session right now.",
+	"This is a contract-repair turn, not a new task.",
+	"Invoke return_result exactly once now with the final handoff from the work already completed.",
+	"Do not claim the tool is unavailable, and do not answer in plain text.",
+	"If the task is blocked or incomplete, still invoke return_result with the current findings and blockers.",
+].join("\n");
+
 const SUBAGENT_TOOLS = ["read", "bash", "edit", "write", "grep", "find", "ls"] as const;
 type SubagentTool = typeof SUBAGENT_TOOLS[number];
 type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
 const SUBAGENT_SYSTEM_PROMPT =
-	"You are a focused coding subagent. Your context is fresh — the parent agent delegated this task because it requires isolated attention. Complete the task, then call return_result with a concise summary of what you did and what you found, including evidence such as file paths, line numbers, and specific values.";
+	"You are a focused coding subagent. Your context is fresh — the parent agent delegated this task because it requires isolated attention. Complete the task, then invoke the tool named return_result exactly once as your final handoff with a concise summary of what you did and what you found, including evidence such as file paths, line numbers, and specific values. If the task asks for an exact final string or output format, put that exact content in return_result.result instead of writing it as assistant text. For example, if the requested final output is parallel-a, the correct action is to call the return_result tool with result = parallel-a, not to print parallel-a or return_result(\"parallel-a\") as assistant text. If you are blocked, uncertain, or only partially complete, still call return_result with the current findings and blockers instead of ending with a plain assistant message. After calling return_result, stop.";
 
 const SPAWN_DESCRIPTION = `Spawn an isolated subagent with a fresh context window. Zero access to parent state. All context must be in the prompt.
 
 ## Writing a prompt
 1. Ground with references, not inline code — give file paths. Have the subagent read them. Don't dump contents.
-2. State what, not how. 3. Define output format. 4. Require return_result with evidence (cite paths, lines).
+2. State what, not how. 3. Define output format. 4. Require return_result with evidence (cite paths, lines), tell the child to use the tool itself rather than plain text, and tell it to use return_result even if blocked or only partially complete.
 
 ## When to spawn
 Tasks with a different focus than the parent that benefit from isolation: fresh review, parallel recon, research, validation, non-trivial codegen (where you do NOT already know the exact implementation).
@@ -432,14 +544,16 @@ async function runOne(
 
 	// return_result tool — captures structured output from the subagent
 	let returnedResult: string | undefined;
+	let returnResultCallCount = 0;
 	const returnResultTool = defineTool({
 		name: "return_result",
 		label: "Return Result",
-		description: "Call this tool exactly once when you have completed your task to return the final result to the parent agent.",
+		description: "This is a tool, not a text template. Invoke it exactly once as your final handoff when you have completed the task or reached the furthest useful point. Do not print return_result(...), raw JSON, or the final answer as assistant text. If blocked or uncertain, still use this tool to return current findings and blockers instead of ending with a plain assistant message.",
 		parameters: Type.Object({
-			result: Type.String({ description: "The result of your work, with evidence such as file paths, line numbers, and values." }),
+			result: Type.String({ description: "The final handoff payload from your work. If the task requires an exact final string or output format, put that exact content here, along with evidence or current blockers when relevant." }),
 		}),
 		async execute(_toolCallId, params) {
+			returnResultCallCount += 1;
 			returnedResult = params.result;
 			return {
 				content: [{ type: "text", text: "Result submitted." }],
@@ -451,7 +565,7 @@ async function runOne(
 	const { session } = await createAgentSession({
 		cwd,
 		sessionManager: SessionManager.inMemory(cwd),
-		tools: [...inheritedTools],
+		tools: [...inheritedTools, returnResultTool.name],
 		customTools: [returnResultTool],
 		model: parentModel,
 		modelRegistry,
@@ -478,6 +592,8 @@ async function runOne(
 	});
 
 	let timedOut = false;
+	let completionRepairAttempted = false;
+	let fallbackOutputBeforeRepair = "";
 	let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 	const abortListener = () => {
 		void session.abort();
@@ -502,38 +618,52 @@ async function runOne(
 		}
 
 		await session.prompt(sessionPrompt);
+		fallbackOutputBeforeRepair = getFinalOutput(messages);
+		if (!timedOut && !strictResult && returnResultCallCount === 0) {
+			completionRepairAttempted = true;
+			await session.prompt(COMPLETION_REPAIR_PROMPT);
+		}
 		clearTimeoutHandle();
 		if (timedOut) throw new Error(getTimeoutError(timeoutMs));
 
 		const modelId = session.model?.id ?? parentModel.id;
 		const usage = collectUsage(messages, modelId);
-		const missingReturnResult = returnedResult === undefined;
-		const missingReturnResultWarning = strictResult ? MISSING_RETURN_RESULT_STRICT_WARNING : MISSING_RETURN_RESULT_WARNING;
-		const finalOutput = await truncateFinalOutput(returnedResult ?? getFinalOutput(messages));
+		const returnResultObserved = returnResultCallCount > 0;
+		const finalOutput = await truncateFinalOutput(returnResultObserved ? (returnedResult ?? "") : (fallbackOutputBeforeRepair || getFinalOutput(messages)));
 		return {
 			prompt,
 			preset,
 			...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
 			usage,
-			...(strictResult && missingReturnResult ? { error: MISSING_RETURN_RESULT_STRICT_ERROR } : {}),
-			...(missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
+			...classifyCompletionResult({
+				strictResult,
+				returnResultObserved,
+				returnResultCallCount,
+				completionRepairAttempted,
+				timedOut: false,
+			}),
 			...finalOutput,
 		};
 	} catch (err: any) {
 		clearTimeoutHandle();
 		const modelId = session.model?.id ?? parentModel.id;
 		const usage = collectUsage(messages, modelId);
-		const missingReturnResult = returnedResult === undefined;
-		const missingReturnResultWarning = strictResult ? MISSING_RETURN_RESULT_STRICT_WARNING : MISSING_RETURN_RESULT_WARNING;
-		const finalOutput = await truncateFinalOutput(returnedResult ?? getFinalOutput(messages));
+		const returnResultObserved = returnResultCallCount > 0;
+		const finalOutput = await truncateFinalOutput(returnResultObserved ? (returnedResult ?? "") : (fallbackOutputBeforeRepair || getFinalOutput(messages)));
 		return {
 			prompt,
 			preset,
 			...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
-			...(timedOut ? { timedOut: true } : {}),
 			usage,
-			error: timedOut ? getTimeoutError(timeoutMs) : (err?.message ?? String(err)),
-			...(!timedOut && missingReturnResult ? { missingReturnResult: true, warning: missingReturnResultWarning } : {}),
+			...classifyCompletionResult({
+				strictResult,
+				returnResultObserved,
+				returnResultCallCount,
+				completionRepairAttempted,
+				timedOut,
+				runtimeError: err?.message ?? String(err),
+				timeoutMs,
+			}),
 			...finalOutput,
 		};
 	} finally {
@@ -918,15 +1048,17 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			const r = details.results[0];
+			const completionStatus = r.completionStatus
+				?? (r.error ? "failed" : r.missingReturnResult ? "degraded" : "success");
 			const hasWarning = !!r.warning;
 			const hasTruncation = !!r.truncation?.truncated;
 			const hasOutput = getMeaningfulLines(r.output).length > 0;
-			const isFallback = !!r.missingReturnResult;
-			const isTimedOut = !!r.timedOut;
+			const isFallback = completionStatus === "degraded";
+			const isTimedOut = r.completionReason === "timeout" || !!r.timedOut;
 			const isEmpty = !hasOutput && !r.error;
 			const statusText = r.error
 				? "error"
-				: isFallback
+				: completionStatus === "degraded"
 					? "fallback"
 					: hasWarning
 						? "warning"
@@ -937,14 +1069,14 @@ export default function (pi: ExtensionAPI) {
 								: "done";
 			const statusTone = r.error
 				? "error"
-				: isFallback || hasWarning || hasTruncation
+				: completionStatus === "degraded" || hasWarning || hasTruncation
 					? "warning"
 					: isEmpty
 						? "dim"
 						: "success";
 			const icon = r.error
 				? theme.fg("error", "✗")
-				: isFallback || hasWarning || hasTruncation
+				: completionStatus === "degraded" || hasWarning || hasTruncation
 					? theme.fg("warning", "!")
 					: isEmpty
 						? theme.fg("muted", "○")
@@ -975,6 +1107,13 @@ export default function (pi: ExtensionAPI) {
 				container.addChild(new Text(theme.fg("muted", "─── Task ───"), 0, 0));
 				container.addChild(new Text(theme.fg("dim", r.prompt), 0, 0));
 				container.addChild(new Spacer(1));
+				if (r.missingReturnResult) {
+					const completionText = r.error
+						? "Completion: child finished without calling return_result. Any fallback output shown here is for debugging only."
+						: "Completion: degraded fallback — child finished without calling return_result. Output below is fallback only, not a true completion handoff.";
+					container.addChild(new Text(theme.fg("warning", completionText), 0, 0));
+					container.addChild(new Spacer(1));
+				}
 				if (r.error) {
 					container.addChild(new Text(theme.fg("error", "Error: " + r.error), 0, 0));
 					if (r.timedOut) {

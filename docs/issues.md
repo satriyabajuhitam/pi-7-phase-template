@@ -2,28 +2,38 @@
 
 ## Planning assumptions
 - Source PRD: `docs/prd.md`
-- Planning scope: narrow `spawn` timeout follow-up only, on top of the already-approved replacement `spawn` UX and the completed preset follow-up
+- Planning scope: narrow `spawn` completion-reliability follow-up only, on top of the already-approved replacement `spawn` UX, completed preset follow-up, and completed timeout follow-up
 - Prior completed cycles preserved as context:
   - `ISSUE-001` through `ISSUE-006` delivered the repo-local replacement `spawn`, inline status cards, active widget, validation flow, HITL verdict, and perf follow-up
   - `ISSUE-007` through `ISSUE-013` delivered the `preset` follow-up and the branch-level HITL verdict that preset support is ready for continued use on `exp/pi-spawn`
+  - `ISSUE-014` through `ISSUE-018` delivered the `timeout` follow-up and the branch-level HITL verdict that timeout support is ready for continued use on `exp/pi-spawn`
 - Prototype winner: none; a separate prototype phase was judged unnecessary for this narrow follow-up
+- Evidence-driven planning changes:
+  - guidance-only tightening was tried twice and did not produce a trustworthy live true-success case
+  - observed-tool-evidence classification is now implemented and correctly prevents text-only impostor success
+  - the remaining gap is actual live `return_result` tool invocation success under nominal success prompts
+  - chosen PRD refinement: keep true success tied to observed `return_result` tool evidence, and allow at most one bounded internal completion-repair turn inside the same spawn call
 - Key constraints:
   - keep `spawn` as a minimal focused delegation primitive
-  - add only one lightweight public API addition in this phase: `timeout`
-  - `timeout` must be explicit, per-call, and expressed in milliseconds
-  - calls that omit `timeout` must remain compatible and unbounded in this phase
-  - timeout breaches must fail clearly rather than returning degraded-success
-  - timeout visibility should reuse existing error/result surfaces rather than introducing a new persistent UI mode
-  - preserve the current readability and perceived-performance gains from the replacement `spawn` work
-  - do not drift into retries, queueing, bounded parallelism, or orchestration behavior
+  - improve trust around missing `return_result` without turning `spawn` into a workflow engine, job-control UX, or broader subagent platform
+  - preserve the distinction between true success, degraded fallback, and hard failure
+  - keep existing `preset`, `timeout`, and `strictResult` behavior coherent with the refined completion story
+  - preserve ordinary success-path compatibility and avoid making normal spawn results materially noisier
+  - do not drift into retries, queueing, scheduling, bounded parallelism, worker pools, chain/fan-in behavior, or persistent management UI
+  - allow only one bounded internal completion-repair turn; do not grow a generic retry system
+  - keep validation lightweight and repo-local; no new full internal TUI harness is required for this phase
+  - avoid new public API surface unless a future blocker proves there is no smaller path
 
 ## Dependency rules
-- The shared `timeout` parameter contract must land before downstream timeout behavior, UI, and validation slices can be trusted.
-- The runtime timeout behavior slice must establish per-call bounded execution and hard-fail semantics before UI-specific timeout surfacing is validated.
-- Timeout UI clarity depends on timeout failures being exposed distinctly enough in the result path to render as normal explicit errors.
-- Validation should happen only after the timeout contract, runtime behavior, and timeout UI slices are complete.
-- Human review is required for the final judgment that timeout support is useful, clear, and still within the repo's minimal `spawn` boundary.
-- No ticket in this plan should introduce global default timeout policy, retries, queueing, bounded parallelism, or orchestration behavior.
+- Completion-result classification must be settled before downstream UI clarity and validation slices can be trusted.
+- UI-specific degraded-state surfacing should depend on the refined result semantics so wording, badges, and expanded detail all reflect the same contract.
+- True-success behavior depends on two internal/runtime slices together:
+  - observed `return_result` tool evidence as the success gate
+  - one bounded internal completion-repair turn to try to convert a nominal success attempt into an actual observed tool invocation
+- The completion-repair slice must preserve degraded fallback, strict failure, timeout distinctness, and preset coherence rather than replacing them.
+- Validation should happen only after completion semantics, degraded-state UI clarity, observed-tool-evidence handling, and bounded completion-repair behavior are complete enough to assess together.
+- Human review is required for the final judgment that completion reliability is trustworthy, transparent, and still safely within the repo's minimal `spawn` boundary.
+- No ticket in this plan should introduce generic retries, queueing, bounded parallelism, chain/fan-in behavior, workflow orchestration, or persistent job-control surfaces.
 
 ## Ticket conventions
 - `Status`: `todo`, `in-progress`, `blocked`, `done`
@@ -35,185 +45,242 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-014` — add the shared `timeout` contract to `spawn`
+- `ISSUE-024` — add one bounded internal completion-repair turn for missing observed `return_result`
 
 Blocked until prerequisites complete:
-- `ISSUE-015` waits on `ISSUE-014`
-- `ISSUE-016` waits on `ISSUE-015`
-- `ISSUE-017` waits on `ISSUE-014`, `ISSUE-015`, and `ISSUE-016`
-- `ISSUE-018` waits on `ISSUE-017`
+- `ISSUE-022` waits on `ISSUE-019`, `ISSUE-020`, `ISSUE-021`, and `ISSUE-024`
+- `ISSUE-023` waits on `ISSUE-022`
 
 Suggested lanes:
-- Lane A: timeout contract + bounded runtime behavior
-- Lane B: timeout error visibility + validation
-- Lane C: HITL verdict
+- Lane A: completion semantics foundation
+- Lane B: degraded-state UX clarity
+- Lane C: actual tool-invocation success + validation + HITL verdict
 
 ## Tickets
 
-### ISSUE-014 — Add the shared `timeout` contract to `spawn`
+### ISSUE-019 — Tighten completion-result classification for missing `return_result`
 - Status: done
 - Type: AFK
-- Goal: make `spawn` accept one explicit optional `timeout` parameter with the agreed v2 boundary and preserve compatibility for calls that omit it.
-- Why it exists: every later timeout slice depends on one stable contract for units, optionality, invalid-input behavior, and the rule that omitted `timeout` does not introduce a new default bound.
+- Goal: make normal `spawn` success mean the child actually satisfied the intended completion contract, while keeping non-strict missing-`return_result` cases visibly degraded and strict cases explicitly failed.
+- Why it exists: this is the foundation of the new PRD and the main trust improvement promised by the follow-up.
 - Depends on: none
-- Blocks: ISSUE-015, ISSUE-017
-- Parallelizable: no
-- Source requirements:
-  - PRD Functional requirements 1, 2, 3, 9, 11
-  - PRD Scope
-  - PRD Non-goals
-  - PRD Constraints
-- Scope:
-  - add one optional `timeout` parameter to `spawn`
-  - define the public timeout input in milliseconds
-  - keep `prompt` required when `timeout` is present
-  - preserve the compatible unbounded path for calls that omit `timeout`
-  - fail clearly on invalid timeout inputs rather than silently ignoring or coercing them
-- Acceptance criteria:
-  - [x] `spawn` accepts calls with no `timeout` and behaves compatibly with the current replacement flow
-  - [x] `spawn` accepts explicit timeout input in milliseconds
-  - [x] invalid timeout inputs fail clearly
-  - [x] no hidden default timeout is introduced for calls that omit `timeout`
-- Notes / risks:
-  - implemented in `.pi/extensions/spawn/index.ts:705-715` by adding `timeout` as an optional tool parameter using `Type.Number({ exclusiveMinimum: 0, ... })` with contract text that explicitly says the value is in milliseconds and that omitting it introduces no default timeout
-  - the execute path still does not assign any `params.timeout ?? ...` default and `runOne(...)` still has no timeout argument in this ticket, so the contract remains compatible and intentionally stops short of runtime enforcement; that behavior slice is reserved for `ISSUE-015`
-  - invalid input now fails through the existing Pi tool-schema validation path instead of being silently ignored or coerced because the new parameter is schema-checked at the tool boundary
-  - validation for this contract slice used source inspection plus two context-offloaded `spawn` review passes (`scout` for insertion-point mapping and `reviewer` for boundary verification), which kept exploratory detail out of the parent while still returning evidence-backed summaries
-  - keep this ticket narrow; do not sneak runtime timeout enforcement or UI wording into the contract ticket
-  - simplest acceptable validation posture is a clear positive millisecond input shape, but the critical product requirement is explicit invalid-input failure rather than silent coercion
-  - ambiguity here will multiply downstream, so the contract should stay easy to explain and inspect
-
-### ISSUE-015 — Ship timeout-bounded `spawn` behavior end-to-end
-- Status: done
-- Type: AFK
-- Goal: deliver the core timeout behavior so a bounded `spawn` call either completes within the requested limit or fails explicitly when the limit is exceeded.
-- Why it exists: this is the main user-visible reliability outcome promised by the PRD.
-- Depends on: ISSUE-014
-- Blocks: ISSUE-016, ISSUE-017
+- Blocks: ISSUE-020, ISSUE-021, ISSUE-022, ISSUE-024
 - Parallelizable: no
 - Source requirements:
   - PRD Desired outcome
-  - PRD Functional requirements 3, 4, 5, 6, 10, 11
-  - PRD Edge cases
-  - PRD Acceptance criteria 2, 3, 4, 8, 9
+  - PRD User experience and behavior
+  - PRD Functional requirements 1, 4, 6, 10, 11
+  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6
 - Scope:
-  - apply timeout only to the individual spawn call that requested it
-  - preserve normal successful behavior when a bounded child run completes within the requested limit
-  - treat timeout breaches as hard failures rather than degraded-success, even if partial output exists
-  - preserve existing non-timeout error paths for runs that fail for other reasons
+  - refine result classification so true success is reserved for runs that satisfy the intended completion contract
+  - preserve degraded fallback as a distinct state when a child finishes without `return_result` in non-strict mode
+  - preserve explicit failure when `strictResult` is enabled and the child finishes without `return_result`
+  - keep timeout failures and other non-contract errors distinct from missing-`return_result` degraded fallback
 - Acceptance criteria:
-  - [x] a timeout-bounded spawn call that finishes within the limit behaves like a normal successful spawn call
-  - [x] a timeout-bounded spawn call that exceeds the limit fails explicitly
-  - [x] a timeout breach is not surfaced as degraded-success, even when partial output exists
-  - [x] calls that omit `timeout` remain behaviorally compatible with the current replacement flow
+  - [x] a normal successful `spawn` result is clearly distinct from a non-strict missing-`return_result` degraded fallback case
+  - [x] strict missing-`return_result` behavior remains an explicit failure
+  - [x] timeout failures remain distinct from missing-`return_result` degraded fallback
+  - [x] ordinary successful `spawn` calls remain behaviorally compatible
 - Notes / risks:
-  - implemented in `.pi/extensions/spawn/index.ts` by extending `runOne(...)` to accept `timeoutMs`, arming a per-call timer only when `timeout` is present, aborting the child session on timeout, and converting that path into an explicit error via `getTimeoutError(...)`
-  - the no-timeout path remains compatible because the execute path still reads `const timeout = params.timeout;` without introducing any default and only arms the timer when `timeout !== undefined`
-  - timeout failures are kept distinct from degraded-success: the timed-out error path now sets `error` plus `timedOut: true` and deliberately suppresses the existing `missingReturnResult` fallback warning/badge path, even if partial output was collected before abort
-  - no retry, queueing, or orchestration behavior was added; this remains one spawn call, one session, one optional timer
-  - validation for this ticket used source inspection plus two context-offloaded `spawn` review passes (`scout` for runtime-boundary mapping and `reviewer` for post-change verification) to keep exploratory detail out of the parent while still producing evidence-backed checks
-  - a full repo-local live timeout smoke matrix is still reserved for `ISSUE-017`; a quick non-interactive CLI probe in this environment did not yield a trustworthy enough signal to treat as primary evidence for this ticket
-  - this ticket should not grow into retry logic, queue management, or broader job-control behavior
-  - the branch currently relies on in-process child execution, so the timeout behavior should stay focused on bounded completion semantics rather than architectural rewrites
-  - preserving the distinction between timeout failure and missing-`return_result` degraded-success is important for user trust
+  - implemented canonical completion fields and shared classification logic
+  - this ticket established success vs degraded vs failure semantics, but did not itself make live true-success reliably happen
 
-### ISSUE-016 — Show timeout failures clearly in `spawn` UI
+### ISSUE-020 — Surface degraded missing-`return_result` states clearly in `spawn` UI
 - Status: done
 - Type: AFK
-- Goal: make timeout failures obvious in the existing collapsed and expanded `spawn` surfaces without introducing a new persistent timeout mode.
-- Why it exists: timeout support is only useful if users can understand what happened from the normal result UI.
-- Depends on: ISSUE-015
-- Blocks: ISSUE-017
-- Parallelizable: no
+- Goal: make collapsed and expanded `spawn` surfaces clearly communicate when fallback output came from a contract miss rather than a true success.
+- Why it exists: users need to be able to understand degraded fallback at a glance instead of mistaking it for a normal success.
+- Depends on: ISSUE-019
+- Blocks: ISSUE-022
+- Parallelizable: yes
 - Source requirements:
   - PRD User experience and behavior
-  - PRD Functional requirements 7, 8, 10
-  - PRD Acceptance criteria 6, 7, 9
+  - PRD Functional requirements 4, 5, 9, 10
+  - PRD Acceptance criteria 1, 2, 5, 6
 - Scope:
-  - make collapsed result previews show timeout failures as clear errors
-  - make expanded detail explicitly state that the spawn timed out and include the timeout value
-  - preserve readability of existing warning, truncation, and non-timeout error states
-  - avoid adding a new persistent timeout badge, dashboard, or status mode
+  - improve collapsed result clarity for degraded missing-`return_result` outcomes
+  - improve expanded detail so the contract miss is explicit even when fallback output exists
+  - preserve readability of normal success, timeout failure, and other existing result states
+  - avoid adding a new persistent dashboard, mode, or heavy UI chrome
 - Acceptance criteria:
-  - [x] in collapsed UI, a timeout failure is visibly understandable as an error
-  - [x] in expanded UI, a timeout failure clearly states that the spawn timed out and includes the timeout value
-  - [x] timeout UI stays within the existing result/error surfaces rather than adding a new persistent mode
-  - [x] normal success and non-timeout error readability are preserved
+  - [x] in collapsed UI, degraded missing-`return_result` results are visibly distinguishable from true success
+  - [x] in expanded UI, users can clearly see that fallback output came from a missed `return_result` contract
+  - [x] timeout and non-timeout error readability remain intact
+  - [x] normal successful results do not become materially noisier
 - Notes / risks:
-  - implemented in `.pi/extensions/spawn/index.ts` by keeping timeout within the existing result renderer: timeout results now add a compact `[timeout]` badge in the normal badge row and expanded error detail now adds an explicit `Timeout: spawn timed out after ... ms` line when `r.timedOut` is true
-  - **Reopen fix completed:** `execute(...)` no longer throws away structured timeout details when `runOne(...)` returns an error; it now returns `content + details + isError: true`, so live timeout failures keep `timedOut`, `timeout`, and `error` on the normal spawn result path
-  - live JSON-mode smoke revalidation confirmed the timeout failure path now ends with structured details instead of `details:{}`: `tool_execution_end` returned `result.details.mode:"spawn"`, `results[0].timedOut:true`, `results[0].timeout:100`, and `result.isError:true` while the content still read `Subagent failed: subagent timed out after 100 ms.`
-  - a bounded-success smoke recheck still returned the normal structured non-error path with `timeout:10000`, `output:"quick-ok"`, and the existing degraded-success warning surface, so this reopen fix did not introduce an obvious success-path regression
-  - no persistent timeout mode was added; the change stays entirely inside existing result/error surfaces and simply preserves structured error details for the renderer that already existed
-  - normal success, fallback, warning, truncation, and empty-state readability remain intact because the existing status calculation and non-timeout badges were preserved; timeout only adds one extra result badge when relevant
-  - keep the timeout message explicit and short; do not drown out more important surrounding result state
-  - avoid solving this with extra UI chrome that would make all spawn results heavier
+  - degraded fallback copy now explicitly says the child did not call `return_result`
+  - expanded results now explicitly frame fallback output as debugging output rather than a true completion handoff
 
-### ISSUE-017 — Validate timeout behavior and non-regression
+### ISSUE-021 — Require observed `return_result` tool evidence for true success
 - Status: done
 - Type: AFK
-- Goal: create one lightweight validation pass that proves timeout support works, stays clear, and does not materially regress the current replacement spawn baseline.
-- Why it exists: the timeout follow-up changes contract, runtime behavior, and error surfacing, so the branch needs concrete evidence before a human sign-off.
-- Depends on: ISSUE-014, ISSUE-015, ISSUE-016
-- Blocks: ISSUE-018
+- Goal: make true `spawn` success depend on observed `return_result` tool invocation on the child run, so assistant text that merely looks like a result or tool call cannot count as success.
+- Why it exists: live validation showed that guidance-only tightening was not enough; a nominal success prompt could still degrade even when the child printed the expected final text.
+- Depends on: ISSUE-019
+- Blocks: ISSUE-022, ISSUE-024
+- Parallelizable: no
+- Source requirements:
+  - PRD Scope
+  - PRD User experience and behavior
+  - PRD Functional requirements 1, 2, 4, 6, 7, 11
+  - PRD Edge cases
+  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6
+- Scope:
+  - require observed `return_result` tool evidence before classifying a child run as true success
+  - ensure assistant text such as the exact final string or `return_result(...)` text does not count as success without real tool invocation
+  - preserve degraded fallback when no observed `return_result` exists in non-strict mode
+  - preserve explicit failure when no observed `return_result` exists in strict mode
+  - preserve timeout distinctness and existing preset compatibility
+  - stay within the current public `spawn` surface; no new caller-facing API in this slice
+- Acceptance criteria:
+  - [x] a child run is treated as true success only when runtime-observed evidence shows the `return_result` tool was actually invoked
+  - [x] assistant text that merely resembles a final answer or `return_result(...)` call does not count as true success
+  - [x] non-strict runs without observed `return_result` still degrade rather than becoming true success
+  - [x] strict runs without observed `return_result` still fail explicitly
+  - [x] timeout and preset behavior remain coherent after this refinement
+- Notes / risks:
+  - implemented runtime-observed completion evidence fields on `TaskResult` (`returnResultObserved`, `returnResultCallCount`)
+  - `classifyCompletionResult(...)` now depends on actual observed tool invocation rather than inferred success from assistant text alone
+  - live evidence after this slice:
+    - `/tmp/tmp.wgcvkCokHy/text_only.jsonl`
+    - `/tmp/tmp.wgcvkCokHy/strict_missing.jsonl`
+    - `/tmp/tmp.wgcvkCokHy/timeout_case.jsonl`
+    - `/tmp/tmp.wgcvkCokHy/preset_case.jsonl`
+  - this solved false-success detection, but not yet actual live tool-invocation success
+
+### ISSUE-024 — Add one bounded internal completion-repair turn for nominal success attempts
+- Status: done
+- Type: AFK
+- Goal: when a child appears to finish without observed `return_result` tool invocation and no timeout/runtime failure has already decided the outcome, perform at most one narrow internal repair turn that asks the child to submit the actual `return_result` tool handoff.
+- Why it exists: after `ISSUE-021`, text-only impostor success is correctly blocked, but the branch still lacks live true-success evidence because nominal success prompts still end without real tool invocation.
+- Depends on: ISSUE-021
+- Blocks: ISSUE-022
+- Parallelizable: no
+- Source requirements:
+  - PRD Scope
+  - PRD User experience and behavior
+  - PRD Functional requirements 2, 3, 4, 6, 7, 11, 12
+  - PRD Edge cases
+  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6, 8
+- Scope:
+  - add at most one bounded internal completion-repair turn inside the same spawn call when the child appears to finish without observed `return_result`
+  - keep the repair turn narrowly focused on requesting actual tool handoff, not broad re-solving of the task
+  - treat the run as true success only if observed `return_result` tool invocation happens after that repair turn
+  - preserve degraded fallback when repair still does not produce observed `return_result` in non-strict mode
+  - preserve explicit failure when repair still does not produce observed `return_result` in strict mode
+  - preserve timeout distinctness, preset coherence, and the current minimal public surface
+- Acceptance criteria:
+  - [x] at most one internal completion-repair turn is attempted for a missing-observed-`return_result` nominal success case
+  - [x] a repair turn that produces observed `return_result` converts the run into true success
+  - [x] a repair turn that still does not produce observed `return_result` leaves non-strict runs degraded and strict runs failed
+  - [x] timeout behavior remains distinct and is not replaced by repair behavior
+  - [x] the slice does not introduce generic retries, queueing, or broader orchestration behavior
+- Notes / risks:
+  - implementation remains in `.pi/extensions/spawn/index.ts` with `COMPLETION_REPAIR_PROMPT`, `completionRepairAttempted`, and `completionRepairSucceeded`, and the latest reopen fix still keeps repair non-strict-only while preserving the original fallback output from the first child turn
+  - **Root cause found and fixed:** the child session registered `return_result` as a custom tool but did not activate it when `createAgentSession(...)` was called with `tools: [...inheritedTools]`. SDK-level evidence now shows the behavior directly:
+    - local SDK probe with `tools: ['read','bash']` + `customTools: [return_result]` produced active tools `['read','bash']`
+    - local SDK probe with `tools: ['read','bash','return_result']` + `customTools: [return_result]` produced active tools `['read','bash','return_result']`
+    - this matches Pi SDK behavior where `initialActiveToolNames = options.tools`, so custom tools are registered but not automatically active when an explicit tool list is supplied
+  - implementation fix: `runOne(...)` now calls `createAgentSession(...)` with `tools: [...inheritedTools, returnResultTool.name]`, ensuring the child session can actually see and invoke `return_result`
+  - source evidence:
+    - `.pi/extensions/spawn/index.ts:568` now activates `return_result` explicitly in the child tool list
+    - `/home/satriya/.nvm/versions/node/v24.15.0/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/sdk.js` shows `initialActiveToolNames = options.tools`
+  - retained adjacent-path evidence after the reopen fix still holds:
+    - `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` shows non-strict repair attempted once, failed cleanly, and preserved the original fallback output `degraded-ok`
+    - `/tmp/tmp.cxk02rV7B6/strict_missing.jsonl` shows strict mode now skips repair and remains an explicit failure without timeout regression
+    - `/tmp/tmp.cxk02rV7B6/timeout_case.jsonl` shows timeout still bypasses repair and remains distinct
+  - live provider-backed revalidation of the true-success path was attempted immediately after the fix but was blocked by provider quota exhaustion rather than by the spawn runtime itself. Evidence:
+    - `/tmp/tmp.huhSgWMv8W/success_direct.jsonl` shows parent-side `usage_limit_reached` / `429`, so no spawn tool execution occurred in that run
+  - proving the repaired true-success path on the real provider-backed flow remains the responsibility of `ISSUE-022`
+  - keep this slice narrow: it is a single contract-repair step, not a general retry system
+  - earlier live blocker evidence that drove this ticket remains relevant context:
+    - `/tmp/tmp.G0Q2D8zcxg/success_b.jsonl`
+    - `/tmp/tmp.G0Q2D8zcxg/success_c.jsonl`
+    - `/tmp/tmp.G0Q2D8zcxg/success_e.jsonl`
+  - be careful not to create a path where timeout or runtime error outcomes are silently reclassified as repairable success attempts
+
+### ISSUE-022 — Validate completion semantics and compatibility
+- Status: done
+- Type: AFK
+- Goal: produce one lightweight repo-local validation pass that proves the new completion semantics are trustworthy and remain compatible with existing timeout/preset behavior.
+- Why it exists: this follow-up changes success semantics and degraded fallback visibility, so the branch needs concrete evidence before human sign-off.
+- Depends on: ISSUE-019, ISSUE-020, ISSUE-021, ISSUE-024
+- Blocks: ISSUE-023
 - Parallelizable: no
 - Source requirements:
   - PRD Acceptance criteria
   - PRD Constraints
   - PRD Recommended next step
 - Scope:
-  - validate calls with no `timeout`
-  - validate a bounded call that finishes successfully within the requested limit
-  - validate a bounded call that exceeds the requested limit and fails explicitly
-  - validate invalid timeout input handling
-  - validate collapsed and expanded timeout error visibility
-  - record whether timeout support preserves readability and does not introduce obvious perceived-performance regression
+  - validate a normal successful `spawn` run that correctly calls `return_result` and is backed by observed tool evidence
+  - validate a non-strict child run that finishes without `return_result`
+  - validate a strict child run that finishes without `return_result`
+  - validate compatibility with existing timeout behavior
+  - validate compatibility with existing preset behavior where relevant
+  - validate the bounded completion-repair behavior without building a larger harness
+  - record whether result distinctions remain clear without obvious readability/performance regression
 - Acceptance criteria:
-  - [x] one repo-local validation pass covers no-timeout compatibility, normal bounded success, timeout-triggered hard fail, invalid input, and timeout error visibility
-  - [x] validation evidence shows timeout support does not materially regress the current replacement spawn readability/performance guardrails
+  - [x] one repo-local validation pass covers normal success, non-strict missing-`return_result`, strict missing-`return_result`, bounded completion repair, and compatibility with existing timeout behavior
+  - [x] validation evidence shows true success, degraded fallback, and hard failure are distinguishable in the real result path
   - [x] findings are captured clearly enough for HITL review
 - Notes / risks:
-  - final validation used one lightweight repo-local pass built from live JSON-mode Pi smoke runs against a `spawn-mode`-enabled session plus source inspection; no new screenshot/TUI harness was introduced
-  - validated cases and outcomes:
-    - no-timeout compatibility passed: `spawn` called with only `prompt` returned `plain-ok` and preserved the existing degraded-success warning surface
-    - bounded success passed: `spawn` called with `timeout: 10000` returned `quick-ok` on the normal structured non-error path and preserved the existing degraded-success warning surface when the child skipped `return_result`
-    - timeout-triggered hard fail passed: `spawn` called with a child `bash` sleep and `timeout: 100` returned `Subagent failed: subagent timed out after 100 ms.` on a structured error path carrying `result.details.mode:"spawn"`, `results[0].timedOut:true`, and `results[0].timeout:100`
-    - invalid input passed: `timeout: 0` failed clearly with `Validation failed for tool "spawn": timeout: must be > 0`
-  - timeout visibility is now evidenced both live and in source:
-    - live timeout failures no longer collapse to `details:{}` after the ISSUE-016 reopen fix
-    - `.pi/extensions/spawn/index.ts` now returns `content + details + isError: true` for error results in `execute(...)`, preserving timeout metadata for rendering
-    - `.pi/extensions/spawn/index.ts` still renders timeout failures in the existing result surfaces via the `[timeout]` badge and expanded `Timeout: spawn timed out after ... ms` detail when `r.timedOut` is true
-  - quick spot-check durations in the final pass were roughly `10920 ms` for no-timeout, `13247 ms` for bounded success, `7025 ms` for the forced timeout case, and `6605 ms` for invalid input handling; combined with the earlier spot check, this remained a lightweight/noisy signal but showed no obvious timeout-specific material regression beyond normal run-to-run variance
-  - the earlier first-pass blocker was real and correctly reopened ISSUE-016 rather than being silently patched inside ISSUE-017; after the reopen fix, the live timeout failure path now reaches the renderer data it needs
-  - validation should continue to be read as lightweight smoke evidence, not a deterministic performance benchmark or pixel-level TUI proof
-  - the branch should keep distinguishing timeout failure from degraded-success caused by missing `return_result`
+  - keep validation lightweight: source inspection plus repo-local smoke evidence is sufficient for this phase
+  - do not treat this ticket as a reason to build a large new test or screenshot harness
+  - final validation evidence used for this ticket:
+    - **true success with observed tool evidence:** `/tmp/tmp.dosGigNeIu/success_direct.jsonl` shows `completionStatus=success`, `completionReason=return_result`, `returnResultObserved=True`, `returnResultCallCount=1`
+    - **bounded repair success inside one spawn call:** `/tmp/tmp.qdXlqxYP0R/non_tool_text.jsonl` shows the first child turn skipped the tool, then the single repair turn succeeded with `completionRepairAttempted=True`, `completionRepairSucceeded=True`, and final `completionStatus=success`
+    - **strict missing-\`return_result\` remains explicit failure:** `/tmp/tmp.qdXlqxYP0R/strict_text.jsonl` shows `completionStatus=failed`, `completionReason=missing_return_result`, `returnResultObserved=False`, and the strict failure warning/error copy
+    - **timeout remains distinct:** `/tmp/tmp.jE0v2UhSW3/timeout_case.jsonl` shows `completionReason=timeout`, `timedOut=True`, and `timeout=100`
+    - **preset compatibility remains coherent:** `/tmp/tmp.jE0v2UhSW3/preset_case.jsonl` preserves `preset=reviewer` alongside successful observed completion fields
+    - **retained degraded non-strict fallback evidence:** `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` remains the last direct live proof of the degraded fallback path with `completionRepairAttempted=True`, `completionRepairSucceeded=False`, and original fallback output preserved as `degraded-ok`
+  - interpretation:
+    - after the `ISSUE-024` root-cause fix, true success is now evidenced live on the real provider-backed path
+    - bounded repair is now evidenced live as a single-turn recovery inside the same spawn call rather than a general retry system
+    - strict failure and timeout remain clearly distinct from true success
+    - preset behavior remains coherent under the refined completion semantics
+    - the degraded fallback path is still evidenced repo-locally and remains distinguishable from true success and hard failure
+  - this is sufficient to hand off to `ISSUE-023` for HITL review
 
-### ISSUE-018 — Review whether timeout support is ready to keep using on this branch
+### ISSUE-023 — Review whether completion reliability is ready to keep using on this branch
 - Status: done
 - Type: HITL
-- Goal: make a human decision on whether the timeout addition is useful, transparent, and still safely within the repo's minimal `spawn` boundary.
-- Why it exists: the final judgment about “helpful reliability control without becoming job-control UX” is a product decision that should not be silently auto-approved.
-- Depends on: ISSUE-017
+- Goal: make a human decision on whether the completion-reliability follow-up is useful, transparent, and still safely within the repo's minimal `spawn` boundary.
+- Why it exists: the final judgment about “more trustworthy completion semantics without becoming platform-like” is a product decision that should not be silently auto-approved.
+- Depends on: ISSUE-022
 - Blocks:
 - Parallelizable: no
 - Source requirements:
   - PRD Desired outcome
   - PRD Non-goals
   - PRD Acceptance criteria
-  - validation evidence produced by `ISSUE-017`
+  - validation evidence produced by `ISSUE-022`
 - Scope:
   - review the recorded validation findings
-  - decide whether timeout support is ready for continued branch use
-  - explicitly address reliability gain, transparency, and boundary-drift risk
+  - decide whether the completion-reliability follow-up is ready for continued branch use
+  - explicitly address trust gain, transparency, and boundary-drift risk
 - Acceptance criteria:
-  - [x] a human verdict is recorded on whether the timeout follow-up is ready to continue
-  - [x] the verdict explicitly addresses whether timeout support still feels minimal rather than job-control or platform-like
+  - [x] a human verdict is recorded on whether the completion-reliability follow-up is ready to continue
+  - [x] the verdict explicitly addresses whether the refined completion semantics still feel minimal rather than workflow- or platform-like
   - [x] if the result is not ready, the blocking reason is recorded clearly enough to reopen the right AFK ticket
+- HITL verdict:
+  - Decision: ready for continued branch use
+  - Branch: `exp/pi-spawn`
+- Trust gain:
+  - true success sekarang dibuktikan dengan observed `return_result` tool invocation
+  - degraded fallback, strict failure, dan timeout failure sekarang dapat dibedakan dengan jelas
+  - bounded repair sudah terbukti berjalan sebagai satu langkah internal yang sempit, bukan retry umum
+- Boundary judgment:
+  - completion reliability ini masih terasa minimal
+  - alasan singkat: perubahan tetap berada di dalam kontrak `spawn` yang ada, tanpa menambah surface orchestration, queueing, retry system umum, atau mode kontrol baru
+- Evidence reviewed:
+  - true success: `/tmp/tmp.dosGigNeIu/success_direct.jsonl`
+  - bounded repair success: `/tmp/tmp.qdXlqxYP0R/non_tool_text.jsonl`
+  - strict failure: `/tmp/tmp.qdXlqxYP0R/strict_text.jsonl`
+  - timeout distinctness: `/tmp/tmp.jE0v2UhSW3/timeout_case.jsonl`
+  - preset coherence: `/tmp/tmp.jE0v2UhSW3/preset_case.jsonl`
+  - degraded fallback retained: `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl`
+- Final note:
+  - Ready for continued branch use on `exp/pi-spawn`, but not approval to merge to `main`.
 - Notes / risks:
-  - **HITL verdict:** ready for continued branch use on `exp/pi-spawn`, but **not** approval to merge to `main`
-  - reliability gain looks real enough to justify keeping the feature on this branch: callers can now set an explicit per-call millisecond timeout, successful bounded calls still behave like normal spawn results, and timeout breaches now fail clearly instead of degrading into the missing-`return_result` fallback path
-  - transparency looks good enough for continued branch use: live JSON-mode smoke validation now shows structured timeout error details on the real failure path, and the existing renderer path still exposes timeout through the normal error surfaces rather than hiding it behind internal-only state
-  - boundary-drift risk remains acceptable for this phase: the public addition is still only `timeout`, the bound stays explicit and per-call, and the branch did not grow retries, queueing, bounded parallelism, scheduling, or broader orchestration behavior
-  - this still feels like a minimal reliability control on one focused delegation primitive rather than job-control UX or a subagent platform feature set
-  - do not broaden post-verdict follow-up into retries, concurrency controls, or new reliability-feature ideation unless a future ticket explicitly reopens scope
-  - no blocking reason remains from the timeout follow-up itself; any further work should be treated as a new scoped follow-up rather than hidden cleanup inside this verdict ticket
+  - do not broaden this ticket into retries, concurrency controls, or new reliability-feature ideation
+  - because the result is positive, the next default handoff should be execution of the first ready AFK ticket

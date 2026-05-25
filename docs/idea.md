@@ -1,172 +1,118 @@
 # Idea
 
 ## Problem statement
-Current `pi-spawn` feels too minimal on the UI/UX side and may leave performance optimizations unexplored for real-world spawn workflows.
+The repo-local `spawn` replacement on `exp/pi-spawn` now has improved UI/UX, guidance-only presets, and explicit per-call timeout support. The most visible remaining trust gap is completion reliability: child runs still sometimes finish without calling `return_result`, which forces the parent into the current degraded-success fallback path.
 
-A second emerging problem is delegation quality drift: users must repeatedly hand-write similar `spawn` prompts for reconnaissance, planning, and review work, which creates boilerplate and inconsistent output quality.
+That fallback is useful for debugging, but it weakens confidence because a run can appear operationally successful while still violating the intended completion contract.
 
 ## Desired outcome
-Create a replacement for `spawn` that keeps the same tool contract but delivers a clearly better user experience first, then targeted performance improvements.
+Add one narrow follow-up that makes `spawn` completion more trustworthy by reducing or clarifying missing-`return_result` cases without changing the minimal mental model of one tool, one focused delegation task.
 
-As a possible follow-up on top of that replacement, add a very small preset layer that makes common read-only delegation patterns faster and more consistent without turning `spawn` into a full subagent platform.
+After this follow-up:
+- missing-`return_result` cases should happen less often, or be more clearly framed when they do happen
+- normal successful runs should still feel lightweight and compatible
+- the branch should preserve the distinction between true success, degraded-success fallback, and hard failure
+- `spawn` should still feel like a focused delegation primitive, not a workflow engine or job-control UI
 
 ## Scope
-- Replace the current `spawn` implementation directly
-- Keep the tool name and parameter contract compatible with existing `pi-spawn`
-- Improve inline UI/UX first
-- Improve measurable performance second
-- Explore a minimal v1 preset layer for common read-only delegation patterns
+- improve completion reliability around `return_result`
+- keep the current `spawn` public shape minimal unless a very small explicit surface change becomes clearly necessary
+- preserve the existing timeout behavior and preset behavior
+- improve trust in result classification and completion semantics
+- validate with lightweight repo-local evidence
 
 ## Non-goals
-- Turning `spawn` into a full subagent platform
-- Changing the public tool API in v1 beyond a possibly single lightweight preset parameter if explicitly approved
-- Adding broad lifecycle/registry complexity unless later justified
-- Adding an overlay conversation viewer in v1
-- Adding persistent spawn history or a spawn registry in v1
-- Adding a new background completion notification system in v1
-- Adding chain, fan-in, custom agent catalogs, or project-agent trust workflows as part of preset v1
-- Adding implementation-oriented presets in preset v1
+- turning `spawn` into a full subagent platform
+- adding retries, queueing, scheduling, bounded parallelism, or worker pools
+- adding chain, fan-in, aggregator, or multi-step orchestration behavior
+- adding a persistent completion dashboard, task history, or job-control mode
+- solving broader long-session memory or compaction continuity problems
+- introducing implementation-oriented presets or specialist-agent catalogs
 
 ## Constraints
-- Must remain compatible with current `spawn` usage
-- Should preserve the minimal mental model of one tool, one focused task
-- Should be safer to adopt than a brand-new incompatible system
-- Any preset v1 should remain read-only by default
-- Any preset v1 should feel like prompt guidance, not a durable agent system
+- preserve the minimal `spawn` mental model
+- preserve compatibility for ordinary successful calls
+- keep the feature narrow enough for a small PRD follow-up
+- avoid hidden global runtime-policy changes unless explicitly justified
+- keep validation lightweight; this repo still has no stable harness for full internal `spawn`/TUI assertions
 
 ## Assumptions
-- The current pain is more visible in UX than in raw runtime cost
-- A better `spawn` can be built without abandoning the minimal model
-- Direct replacement is acceptable if behavior stays compatible
-- A tiny preset layer can improve delegation consistency without pushing the product over the line into a subagent platform
+- the biggest remaining user-trust problem is degraded-success caused by missing `return_result`, not lack of another orchestration feature
+- improving completion reliability is higher value than adding new delegation modes right now
+- this can likely be improved without adding a second major public API knob
+- timeout support already covers the main "run too long/hung" reliability case, so the next best step is completion-discipline reliability
 
 ## Decision map
-- Product boundary: minimal replacement vs richer subagent platform
-- Compatibility: preserve current `spawn` contract or not
-- Priority: UI/UX first vs performance first
-- UX surface: inline render only vs widget/status/overlay
-- Performance target: actual bottlenecks vs speculative optimization
-- Preset surface: invisible convention vs one lightweight explicit parameter
-- Preset scope: read-only guidance vs implementation-capable roles
-- Preset set: which small set of built-in intents earns its keep in v1
+- Contract posture: improve behavior only vs add a tiny explicit contract/control surface
+- Runtime posture: stronger completion discipline vs permissive fallback-first behavior
+- UX posture: clarify degraded-success more vs try to hide it
+- Validation posture: lightweight smoke/source evidence vs new harness investment
+- Scope boundary: completion reliability only vs broader reliability/platform expansion
 
 ## Questions asked
-- Should this remain a minimal spawn primitive or become a richer subagent platform?
-- Should it be a side-by-side experiment or directly replace `spawn`?
-- Should the tool contract remain compatible?
-- Which should be prioritized first: UI/UX or performance?
-- Which UI surfaces are in scope for v1?
-- Should lightweight widget/status UI appear only while spawns are active or persist all the time?
-- Should collapsed inline results stay terse or become status-card style?
-- Which signals are mandatory in the collapsed card versus optional?
-- Should the lightweight widget list individual active spawns or only show a summary count?
-- How many individual active spawns should the widget show before collapsing into overflow?
-- Which UX improvement matters most in v1?
-- What concrete baseline proves parallel-spawn readability is better?
-- What should the v1 performance goal actually be?
-- How much transient state is acceptable before the design stops feeling minimal?
-- Is a small prototype needed before PRD?
-- Which anti-drift non-goals must be explicit in v1?
-- What lightweight validation method should be used before PRD?
-- Should a future preset layer stay invisible at the API level or use one lightweight explicit parameter?
-- Which presets are worth adding in v1?
-- Should preset v1 remain read-only or support implementation?
+- After presets and timeout, what is the highest-value next improvement that still fits the minimal `spawn` boundary?
+- Is the remaining pain primarily timeout-related, orchestration-related, or completion-contract-related?
+- Should the next version focus on adding more capabilities or making current success semantics more trustworthy?
+- Does fixing missing-`return_result` behavior stay within the intended product boundary?
 
 ## Decisions made
-- Keep the minimal `spawn` mental model
-- Replace `spawn` directly rather than shipping a parallel tool first
-- Preserve 100% tool-contract compatibility in v1
-- Prioritize UI/UX first, then performance
-- Limit v1 UI surfaces to improved inline render plus lightweight active-spawn widget/status
-- Do not add an overlay viewer in v1
-- Show widget/status only while spawns are active, then hide automatically
-- Use an informative status-card style collapsed render rather than a plain text dump
-- Make status/icon, activity-or-short-result preview, and warning/truncation flags mandatory in the collapsed card
-- Keep token/turn stats optional and visually secondary
-- Use a hybrid active-spawn widget: show individual active spawns first, then summarize the rest as overflow
-- Cap the widget at 3 individual active spawns before using overflow
-- Prioritize parallel-spawn readability as the main UX win for v1
-- Use this UX baseline for v1 success: with 3 parallel spawns, the user can tell which spawn is still running, which has an error/warning, and which has completed without expanding every result one by one
-- Use this v1 performance guardrail: the replacement must not feel visibly slower than current `pi-spawn` in a 3-parallel-spawn scenario
-- Keep transient state in memory only for active spawns, then discard it on completion in v1
-- Do not require a separate prototype before PRD; the concept is concrete enough to specify directly
-- Make these anti-drift non-goals explicit in v1: no overlay conversation viewer, no persistent spawn history/registry, no new background completion notification system, and no API change to `spawn`
-- Validate v1 with a lightweight side-by-side manual comparison against current `pi-spawn`, using the same 3-parallel-spawn scenario and comparing readability, error/warning visibility, completion clarity, and whether the new version feels slower
-- If a preset layer is added later, keep it small and intent-based rather than becoming a full agent catalog
-- The only preset candidates currently worth considering for v1 are `scout`, `planner`, and `reviewer`
-- Preset v1 should remain read-only; no implementation-oriented preset in v1
-- If preset support is added, it should be explicit rather than hidden; user-visible behavior should not depend on invisible prompt conventions
-- Preset v1 should be guidance-only; it should shape prompt and expected output, not silently alter tools, model selection, or runtime policy
-- The explicit parameter name should be `preset`, not `mode`, because it signals a lightweight template rather than a runtime behavior switch
-- Preset guidance should be prepended before the user prompt so the preset establishes the working frame and the user prompt supplies task-specific context
-- Preset usage should be visible in the UI or debug surface so users can tell when `preset` affected a `spawn` call
-- If the user prompt conflicts with preset guidance, the user prompt should win; preset v1 is assistive guidance, not enforced policy
-- Preset visibility in v1 should use a lightweight badge in collapsed UI plus expanded detail that reveals the preset guidance when needed
-- Preset v1 should use a fixed enum surface limited to `scout`, `planner`, and `reviewer`
-- `prompt` should remain required even when `preset` is present; v1 should not introduce preset-only default tasks
-- Each preset should contribute a fairly opinionated default output shape so the feature delivers real consistency gains instead of acting as a weak label
-- Expanded detail should show a clean summary of what the preset adds rather than dumping the literal internal guidance text
-- Each preset in v1 should have one fixed default output shape so the feature is easy to explain, test, and validate
-- If the user explicitly asks for a different output format, that request should fully override the preset's fixed default shape because the user prompt remains authoritative
-- Expanded preset detail in v1 should stay compact: show the preset intent and default output shape, but not broader conflict/policy text
+- the next version should focus on completion reliability rather than new orchestration features
+- the main target is missing-`return_result` degraded-success behavior
+- preserving the distinction between true success, degraded-success fallback, and hard failure is important for user trust
+- this follow-up should stay narrow and should not expand into retries, queueing, bounded parallelism, or chain/fan-in behavior
+- the repo should stay with lightweight validation rather than building a large new harness for this step
+- the next phase should be PRD once the narrow boundary is captured clearly enough
 
 ## Open questions
-- What exact PRD wording best captures the replacement-vs-minimality balance?
-- What implementation slices should later be planned first after PRD?
+- should the follow-up remain fully behavior-only, or is one tiny explicit user-facing control justified if fallback handling needs sharper caller intent?
+- is the better path to reduce missing-`return_result` incidence, tighten result classification, improve prompting discipline, or some combination of the three?
+- should strictness remain opt-in only, or does the current degraded-success default need a narrower refinement?
 
 ## Need research?
-Maybe. Need targeted code and package inspection, not broad external research, unless benchmarking or compatibility constraints require it.
+No external research is currently needed. The problem is local to the repo's current `spawn` behavior and can be specified from existing branch artifacts plus targeted code inspection.
 
 ## Need prototype?
-No. The v1 concept is narrow and concrete enough to go straight to PRD without a separate prototype.
+No. This follow-up is narrow enough to go directly to PRD once the behavior boundary is written clearly.
 
 ## Biggest risk
-The project may quietly drift from a minimal spawn replacement into a heavier subagent runtime if future preset additions expand beyond the current narrow guidance-only boundary.
+The project could overreact to degraded-success pain by adding heavier reliability controls that push `spawn` toward platform-like workflow management instead of simply making completion semantics more trustworthy.
 
 ## Recommended next step
-Move to PRD follow-up and specify the narrow `timeout` addition as the next small extension of the current `spawn` design.
+Move to PRD follow-up for a narrow completion-reliability improvement centered on missing-`return_result` behavior.
 
-## V2 follow-up seed — timeout
-- Selected direction: add `timeout` next, ahead of broader v2 ideas.
-- Why this one: it is the highest-value reliability improvement that still fits the current minimal `spawn` boundary.
-- Refined problem statement: long or hung child runs currently rely on provider/session behavior rather than an explicit caller-controlled bound.
-- Refined desired outcome: callers can bound a `spawn` run explicitly without changing the core mental model of one focused delegation task.
+## V3 follow-up seed — completion reliability
+- Selected direction: improve completion reliability next, ahead of bounded parallelism or any broader orchestration idea.
+- Why this one: it addresses the most visible remaining trust gap while still fitting the repo's minimal `spawn` boundary.
+- Refined problem statement: child runs still sometimes finish without calling `return_result`, which forces the parent into a degraded-success fallback path that is useful for debugging but weakens confidence in result semantics.
+- Refined desired outcome: `spawn` results should more reliably reflect whether the child actually completed the intended contract, while still preserving a small, practical debugging fallback when appropriate.
 - Constraints:
   - keep `spawn` minimal rather than platform-like
-  - preserve compatibility for normal calls that omit `timeout`
-  - do not bundle this with chain/fan-in/orchestration work
-  - avoid hidden runtime-policy changes beyond the explicit parameter
+  - preserve compatibility for normal successful calls
+  - do not bundle this with retries, queueing, concurrency controls, or orchestration work
+  - avoid inventing a broad new public control surface unless clearly necessary
 - Decision map:
-  - API surface: optional `timeout` parameter vs config-only behavior
-  - Semantics: hard fail on timeout vs degraded/fallback return
-  - Units/default: milliseconds vs seconds, and whether there is any default bound
-  - UI: where timeout state should appear without cluttering normal results
-  - Scope boundary: single-call timeout only vs broader concurrency/queue controls
-- Decisions made:
-  - `timeout` should be an explicit optional per-call `spawn` parameter
-  - hitting `timeout` should be treated as a hard failure, not degraded-success
-  - the public unit should be milliseconds
-  - calls that omit `timeout` should remain compatible and unbounded in v2
-  - timeout should surface as a normal explicit error, not a new persistent badge or status mode
-  - validation can stay lightweight and repo-local: smoke validation only, covering no-timeout compatibility, timeout-triggered hard fail, UI/error text inspection, and normal non-timeout success behavior
+  - runtime discipline: stronger prompt/contract enforcement vs current permissive fallback posture
+  - result semantics: when degraded-success is still acceptable vs when failure should be explicit
+  - caller control: no new control surface vs one tiny explicit strictness refinement
+  - UX: how clearly fallback state should be shown without making all results heavier
+- Initial decisions:
+  - keep the focus on missing-`return_result` reliability, not on new delegation modes
+  - preserve the distinction between degraded-success fallback and true success
+  - keep any solution narrow enough to validate with repo-local smoke evidence and source inspection
+  - treat bigger orchestration or concurrency ideas as separate future work, not as part of this follow-up
 - Open questions:
-  - none at the idea stage
-- Current status: Phase 1 idea refinement for the timeout follow-up is ready for PRD.
+  - what is the smallest safe behavior change that improves trust without breaking normal usage expectations?
+  - should the default degraded-success posture stay as-is, become narrower, or become easier for callers to opt out of?
+- Current status: Phase 1 idea refinement for the completion-reliability follow-up is ready for PRD drafting.
 
 ## Handoff to PRD
-- [x] V1 UX surfaces are explicitly chosen
-- [x] Active-spawn widget behavior is explicitly chosen
-- [x] Success criteria for UI/UX are written down
-- [x] Performance goals are measurable and secondary
-- [x] Non-goals prevent drift into a full subagent platform
-- [x] Lightweight validation approach is defined
-- [x] Preset surface decision is resolved
-- [x] Preset contract and override behavior are explicit enough to specify
-- [x] Timeout API shape is explicitly chosen
-- [x] Timeout failure semantics are explicitly chosen
-- [x] Timeout default/compatibility behavior is explicitly chosen
-- [x] Timeout UI visibility is explicitly chosen
-- [x] Timeout validation approach is defined
+- [x] The next problem focus is explicit
+- [x] The desired outcome is explicit
+- [x] Scope boundaries are explicit
+- [x] Non-goals prevent drift into orchestration or job-control behavior
+- [x] Constraints are visible enough to shape a narrow PRD
+- [x] Research is not required before PRD
+- [x] Prototyping is not required before PRD
 
 Ready for next phase: yes
 Primary blocker: none
