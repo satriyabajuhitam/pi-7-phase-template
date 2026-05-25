@@ -36,6 +36,7 @@ While this skill is active:
 - Do not rewrite the plan unless a real blocker forces a status update
 - You may update `docs/issues.md`
 - You may edit implementation files needed for the selected ticket
+- Do not claim a ticket is `done`, `fixed`, `pass`, or `ready` without fresh verification evidence from the current run
 - Do not commit by default; only commit if the user explicitly asks for commit-per-ticket behavior
 
 ### 1. Validate readiness
@@ -123,12 +124,14 @@ Execution rules:
 - if a prerequisite is actually missing, stop and mark the ticket blocked
 - if the ticket text is too ambiguous to implement safely, ask a targeted question or mark it blocked
 - if the selected work is really a diagnosis problem rather than a clear execution task, mark it blocked and recommend `diagnose-me`
-- when the ticket changes behavior and is testable through a public interface, prefer TDD via a vertical red-green-refactor loop
-- in TDD mode, write one failing test for one behavior, implement the minimum code to pass it, then repeat
+- when the ticket changes observable behavior and a practical public-interface test exists, default to TDD via a vertical red-green-refactor loop rather than implementation-first work
+- in TDD mode, write one failing test for one behavior, run it and confirm the expected failure, implement the minimum code to pass it, then repeat
 - do not write all tests up front before implementation; avoid horizontal slicing
-- if TDD is not a good fit for this ticket, say so explicitly and use the smallest trustworthy validation instead
+- if TDD is not a good fit for an otherwise testable behavior change, say so explicitly, explain why, and use the smallest trustworthy validation instead
 
 ### 7. Validate before marking done
+
+Before any `done`, `fixed`, `pass`, or `ready` claim, gather fresh verification evidence from the current run.
 
 Run the most relevant validation available, such as:
 - targeted tests
@@ -137,10 +140,22 @@ Run the most relevant validation available, such as:
 - typecheck
 - focused manual verification when no automation exists
 
-Do not mark the ticket done unless the acceptance criteria are plausibly satisfied and you have some validation evidence.
+Do not mark the ticket done unless the acceptance criteria are plausibly satisfied and you have fresh validation evidence.
+
+If the ticket is risky, add an independent review pass before final completion judgment.
+
+Review is **required or strongly preferred** when one or more of these are true:
+- the change spans multiple files and affects observable behavior
+- the change touches a shared contract, shared prompt/policy surface, or other behavior used by multiple flows
+- the change is readiness-sensitive, such as release, merge, safety, or workflow-governance behavior
+- the parent would otherwise be relying too heavily on its own implementation judgment
+
+When independent review is used, review in this order:
+1. requirement fit — does the change satisfy the ticket acceptance criteria and PRD intent without underbuilding or overbuilding?
+2. code quality / boundary drift — is the implementation clean enough, and did it avoid unnecessary expansion or collateral change?
 
 If validation fails and you cannot resolve it within the selected ticket's scope, mark the ticket `blocked` and explain why.
-If TDD was appropriate but skipped, explain the reason briefly in your report.
+If TDD was practical but skipped, explain the reason briefly in your report.
 
 ### 8. Update `docs/issues.md`
 
@@ -158,6 +173,15 @@ Close with one of these outcomes:
 - selected ticket blocked on HITL decision
 - all ready AFK tickets complete
 - execution should return to planning or PRD refinement
+
+If the selected ticket is complete, include a minimum completion-evidence bundle:
+- `Ticket`
+- `Files changed`
+- `Validation commands`
+- `Validation summary`
+- `TDD used: yes/no`
+- `If no, why`
+- `Remaining risks` or `none`
 
 If the repo now needs broader release-style verification, recommend `qa-me` explicitly rather than treating that as part of the same execution run.
 
@@ -182,11 +206,12 @@ If `docs/issues.md` is inconsistent or unclear about dependencies, stop and surf
 ## Validation rules
 
 - Prefer the smallest validation that gives trustworthy evidence.
-- When a behavior change is testable through a public interface, prefer test-first validation with a red-green-refactor loop.
+- Fresh evidence from the current run is required before any `done`, `fixed`, `pass`, or `ready` claim.
+- When a behavior change has a practical public-interface test, default to test-first validation with a red-green-refactor loop rather than implementation-first work.
 - If a ticket affects behavior already covered by tests, run those tests.
 - If you added tests during execution, run the new tests plus any nearby relevant tests.
 - If a ticket affects shared contracts or types, include typechecking.
-- If TDD is not practical for the ticket, say so explicitly and describe the alternative validation used.
+- If TDD is not practical for the ticket, say so explicitly, explain why, and describe the alternative validation used.
 - If no automated validation exists, say that explicitly and describe the manual checks performed.
 - Validation is part of the ticket, not optional cleanup.
 

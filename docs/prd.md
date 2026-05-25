@@ -1,189 +1,211 @@
 # PRD
 
 ## Overview
-Add one narrow follow-up that determines whether the repo-local `spawn` experiment on `exp/pi-spawn` is actually ready to merge into `main`.
+Harden this repository’s Pi-native 7-phase workflow with a third reliability slice focused on **workflow assurance**, **wording-drift control**, and **bounded policy clarification** for the planning/closeout rules introduced in v2.
 
-This follow-up is not about adding more `spawn` capability. It is about producing a trustworthy merge-readiness decision packet that distinguishes:
-- ready for continued branch use
-- ready for merge to `main`
-
-The packet should combine fresh validation, branch-vs-main delta review, rollback/blast-radius assessment, and a dedicated HITL verdict.
+This PRD builds on reliability hardening v1 and v2. It does not reopen the already-landed execution, diagnosis, planning, or closeout behaviors except where the current guidance still needs one tighter definition or a lightweight assurance layer. The goal is not to add a heavy governance system. The goal is to make the current hardened workflow easier to trust, easier to keep in sync, and less likely to drift across skills, prompts, docs, and future template repos.
 
 ## Problem statement
-The branch now has completed follow-ups for presets, timeout support, completion reliability, and operational hardening. It also has branch-level verdicts that the work is ready for continued use on `exp/pi-spawn`.
+Reliability hardening v1 and v2 improved the workflow materially, but the current repo still has a few trust gaps:
+- validation is still mostly artifact-centric and review-driven rather than supported by a lightweight assurance layer for the newer planning and closeout behaviors
+- the new rules now span many surfaces, so wording drift across skills, prompts, repo policy, and operator docs is a real maintenance risk
+- three policy questions are still intentionally unresolved in v2:
+  - when optional execution briefs should appear by default
+  - whether `/finish` should inspect a lightweight repo-state checklist
+  - how explicit PRD approval should be for very small projects
+- the repo now has more guardrails, but some of them still rely on implied interpretation rather than one canonical lightweight recording format
 
-However, those verdicts are not the same as merge readiness. The repo still lacks a dedicated review artifact that answers the default-path question clearly enough for `main`.
-
-Today, three practical gaps remain:
-- there is no explicit branch-vs-main summary that tells reviewers exactly what would change if `exp/pi-spawn` became the default path
-- there is no dedicated merge-readiness packet tying validation evidence, retained artifacts, and rollback posture into one decision surface
-- there is no dedicated HITL verdict that says either `ready for merge to main` or `not ready`, with specific blockers if not ready
+As a result, the repo is still vulnerable to avoidable failures such as:
+- two surfaces teaching slightly different planning or closeout rules
+- optional execution briefs drifting into expected ceremony
+- `/finish` slowly growing beyond a lightweight recommendation helper
+- future maintainers trusting wording that looks aligned while the actual rules have drifted
+- hardening changes being declared “ready” mainly through manual review rather than one narrower reusable assurance path
 
 ## Desired outcome
-After this follow-up is complete:
-- maintainers can review one concise merge-readiness packet for `exp/pi-spawn`
-- the packet explains what changed relative to `main`, what risks remain, and what evidence supports a merge decision
-- the packet makes rollback and blast-radius posture explicit
-- the final HITL verdict clearly says either `ready for merge to main` or `not ready`
-- if the branch is still not ready, the blocking reasons are concrete enough to reopen or create the smallest correct follow-up ticket
+After this hardening slice is complete:
+- the planning gate introduced in v2 has one canonical lightweight approval format that is easy to recognize and validate
+- the optional execution-brief rule is explicit enough that planners know when to use it and when not to
+- `/finish` has a bounded definition of what repo-state signals it may inspect without drifting into release-management ceremony
+- the current hardened planning/closeout rules have a lightweight assurance layer beyond ad hoc reviewer memory
+- the workflow remains Pi-native, artifact-driven, and lightweight rather than turning into a broad compliance or orchestration framework
 
 ## Users and actors
 - Primary users:
-  - repository maintainers deciding whether `exp/pi-spawn` should become the default path on `main`
-  - human reviewers who need a clear yes/no merge decision with evidence
+  - maintainers using this repo as a Pi workflow template
+  - operators who run `/prd`, `/issues`, `/qa`, and `/finish` in downstream repos
 - Secondary users:
-  - future agents or maintainers who need a compact explanation of what separated branch-use approval from merge approval
-  - reviewers validating rollback and compatibility posture before merge
+  - future agents working from fresh context windows that need clearer, more stable guidance
+  - reviewers who need one compact way to assess whether the hardened workflow is still internally consistent
 - Internal actors or systems involved:
-  - the repo-local replacement `spawn` extension/runtime
-  - repo-local validation scripts and tests
-  - repo docs that capture branch status and merge criteria
-  - Git history and branch-vs-main diff context
+  - project-local skills under `.pi/skills/`
+  - project-local prompts under `.pi/prompts/`
+  - repo-local artifacts such as `docs/prd.md`, `docs/issues.md`, and `docs/qa.md`
+  - lightweight validation or audit surfaces already used by this repo
+  - `spawn` only where selective review/context offloading already fits current repo doctrine
 
 ## Scope
 - In scope:
-  - produce a branch-vs-main delta summary for the `spawn` experiment and related repo-policy/doc changes
-  - rerun the main repo-local validation commands needed for a merge decision
-  - capture the current rollback, blast-radius, and compatibility posture
-  - record a dedicated HITL merge-readiness verdict
-  - map any blocking gap to the smallest correct follow-up ticket if the branch is still not ready
+  - define one canonical lightweight recording format for PRD review/approval in `## Handoff to Issues`
+  - define a bounded rule for when optional execution briefs should be added to non-trivial tickets
+  - define a bounded rule for what repo-state checks `/finish` may inspect when they materially affect closeout judgment
+  - add a lightweight assurance layer for the current planning/closeout hardening so maintainers do not rely only on ad hoc manual wording review
+  - align the affected skills, prompts, docs, and validation guidance with the clarified rules
 - Included workflows:
-  - reviewer checks the current branch against the merge checklist in `docs/pi-spawn.md`
-  - maintainer reruns repo-local validation and regression commands for the merge candidate
-  - maintainer reviews branch-vs-main impact and rollback posture
-  - HITL records a merge-ready or not-ready verdict
+  - `/prd` when preparing handoff into `/issues`
+  - `/issues` when creating or reviewing execution-ready planning artifacts
+  - `/finish` when recommending the next closeout action after execution and/or QA
+  - lightweight repo validation or audit behavior for the currently hardened workflow surfaces
 - Included surfaces or entry points:
-  - `docs/pi-spawn.md`
-  - `docs/issues.md`
-  - repo-local validation command output
-  - repo-local regression test output
-  - branch diff / git review context
+  - `AGENTS.md`
+  - `.pi/skills/prd-me/SKILL.md`
+  - `.pi/prompts/prd.md`
+  - `.pi/skills/issues-me/SKILL.md`
+  - `.pi/prompts/issues.md`
+  - `.pi/skills/issues-me/assets/issues-template.md`
+  - `.pi/skills/finish-me/SKILL.md`
+  - `.pi/prompts/finish.md`
+  - `README.md`
+  - `GUIDE.md`
+  - existing validation guidance or validator surfaces if needed
 
 ## Non-goals
 - Explicitly out of scope for this phase:
-  - adding new `spawn` features or new public API surface
-  - silently fixing unrelated implementation issues during the merge review
-  - building a new test harness or release system
-  - broadening the repo into a subagent platform or orchestration product
-  - automatically merging to `main` as part of this follow-up
+  - replacing the 7-phase workflow with the full Superpowers stack
+  - adding a full live end-to-end workflow simulation harness for every prompt
+  - introducing mandatory worktrees, branch choreography, or release automation
+  - introducing blanket reviewer requirements for all small repos or trivial tickets
+  - converting `/finish` into a merge engine, branch manager, or release checklist system
+  - broadening `spawn` into a general orchestration runtime
 - Nice-to-have but deferred:
-  - broader provider/model matrix automation
-  - a richer release checklist beyond this branch-specific merge gate
-  - new validation infrastructure beyond what is needed for the current merge decision
+  - richer severity taxonomies for review or closeout decisions
+  - broader execution/diagnosis hardening beyond v1
+  - a larger workflow policy engine covering every phase
 - Related problems not solved here:
-  - all provider instability
-  - all future spawn roadmap questions
-  - long-term maintenance policy beyond the current branch decision
+  - provider/model reliability unrelated to local workflow guidance
+  - every possible wording-drift risk across the entire repo
+  - full CI enforcement of all workflow behavior beyond the narrow hardened slice
 
 ## User experience and behavior
-This follow-up is reviewer-facing, not end-user-facing.
+This work is operator-facing and maintainer-facing rather than end-user-facing.
 
 Expected behavior:
-- a maintainer should be able to inspect one compact merge-readiness packet instead of reconstructing the decision from multiple past tickets
-- the packet should state clearly what is different on `exp/pi-spawn` versus `main`
-- the packet should state clearly whether current validation is strong enough for default-path adoption
-- rollback and blast-radius should be understandable without deep archaeology
-- the final HITL verdict should be explicit and unambiguous
+- when a PRD is ready for planning, the handoff includes one explicit, recognizable lightweight approval signal rather than a vague implication
+- when a ticket is non-trivial, planners can tell whether an optional execution brief should be added based on a bounded rule rather than taste alone
+- when `/finish` inspects repo state, it does so only for a small bounded set of signals that materially affect the recommendation
+- maintainers have one lightweight way to check whether the current hardening rules are still aligned across core workflow surfaces
+- the workflow still feels concise and Pi-native, not like a compliance framework
+
+Entry points:
+- `/prd`
+- `/issues`
+- `/finish`
+- lightweight validator or audit entry points already used in the repo
 
 Main flow:
-1. A maintainer reviews the merge checklist in `docs/pi-spawn.md`.
-2. Fresh validation and regression evidence is gathered for the current branch state.
-3. Branch-vs-main impact, rollback posture, and remaining risks are summarized.
-4. A human reviewer records a dedicated merge-readiness verdict.
-5. If the verdict is negative, the blocker is routed to the smallest correct follow-up ticket.
+1. Operator writes or refines a PRD.
+2. Before `/issues`, the PRD handoff records one explicit lightweight approval signal in a standard form.
+3. Operator runs `/issues` and uses optional execution briefs only when the ticket crosses the named threshold.
+4. After execution and/or QA, operator runs `/finish`, which may inspect a bounded set of repo-state signals if they materially affect closeout judgment.
+5. Maintainer or reviewer uses the lightweight assurance path to verify that the hardened planning/closeout rules remain aligned.
 
 Empty states:
-- if a required validation run or review artifact is missing, the packet must say what is missing rather than implying readiness
+- if the PRD handoff does not carry the required approval signal, planning must stop and say so clearly
+- if a ticket is simple enough not to need an execution brief, the workflow should say nothing more and remain lightweight
+- if repo-state signals are irrelevant to the closeout decision, `/finish` should not force them into the review
 
 Loading states:
-- this phase does not add a new runtime or UI loading state
+- no new runtime UI is required
+- the behavior should stay inside existing prompt/skill flows and lightweight validation surfaces
 
 Error states:
-- validation limitations such as quota or provider unavailability must be recorded explicitly
-- if branch-vs-main review reveals a blocker, the packet must name it clearly
+- if the approval signal is missing or malformed, `/issues` should not pretend the PRD is review-ready
+- if execution-brief usage is ambiguous, the workflow should push toward the lighter default unless the ticket clearly crosses the threshold
+- if `/finish` lacks the evidence or repo-state signals needed for a stronger recommendation, it should downgrade the recommendation explicitly
 
 Success states:
-- the branch is explicitly marked either ready for merge to `main` or not ready
-- if ready, the evidence and rollback posture are still preserved in the packet
+- the planning gate is easier to recognize and validate
+- execution briefs stay helpful rather than ceremonial
+- `/finish` stays bounded and predictable
+- maintainers have more confidence that the hardened rules remain aligned across surfaces
 
 Permissions or visibility rules:
-- this phase does not change runtime permissions or end-user visibility rules
-- it only changes the documentation and review posture around merge readiness
+- this slice does not add new runtime permissions or product capabilities
+- it changes repo-local workflow behavior, artifact expectations, and lightweight validation posture only
 
 ## Functional requirements
-1. The repository must provide one explicit merge-readiness packet that distinguishes branch-use approval from merge-to-main approval.
-2. The packet must summarize the meaningful branch-vs-main delta for `spawn`, related docs/policy, and any user-visible behavior changes.
-3. The packet must include fresh evidence from the repo-local validation command and deterministic regression test, or explicitly record why a required run is unavailable.
-4. The packet must record rollback, blast-radius, and compatibility posture clearly enough for a main-merge decision.
-5. The packet must record a dedicated HITL verdict of either `ready for merge to main` or `not ready`.
-6. If the verdict is `not ready`, the packet must identify concrete blockers and route them to the smallest correct follow-up ticket rather than leaving them vague.
-7. This follow-up must not add new `spawn` capabilities or broaden the public API.
-8. This follow-up must preserve the distinction between branch-level continued-use approval and main-merge approval.
+1. The workflow must define one explicit lightweight recording format in `## Handoff to Issues` that signals the PRD has been reviewed for correctness and scope before planning proceeds.
+2. The planning workflow must define a bounded rule for when an optional execution brief should be added to a non-trivial ticket and when it should be omitted.
+3. The `/finish` workflow must define a bounded set of repo-state signals it may inspect when they materially affect closeout judgment, and it must not imply broader branch-management or release-management duties.
+4. The repository must provide a lightweight assurance path for the currently hardened planning/closeout rules so maintainers can verify alignment without relying only on ad hoc reviewer memory.
+5. The clarified planning and closeout rules must remain aligned across the affected skills, prompts, repo policy, and operator docs.
+6. This hardening slice must preserve the existing 7-phase structure, narrow `spawn` doctrine, and one-ticket-per-run execution model.
 
 ## Edge cases
 - Invalid input:
-  - if the current branch state is dirty, the packet must note that when it affects merge confidence
+  - a ticket may look non-trivial at first glance but still be simple enough that adding an execution brief would be pure ceremony
 - Partial failure:
-  - if some validation passes but a comparison or rollback review is incomplete, the packet must not flatten that into readiness
+  - the approval format may exist while another planning blocker still makes `/issues` unsafe; the workflow must not confuse one satisfied check with full readiness
 - External dependency failure:
-  - provider quota or model availability issues may limit fresh validation; those limitations must be recorded explicitly and judged as either acceptable or blocking
+  - closeout recommendations may still depend on unavailable environments, external review, or missing QA evidence; `/finish` must keep those limits explicit
 - Timeouts / retries:
-  - this follow-up does not add new retry behavior; it only evaluates the already-defined timeout behavior as part of merge confidence
+  - this slice does not add new runtime retry behavior; it only affects workflow policy and lightweight validation
 - Permissions / access issues:
-  - merge review should stay possible with normal repo-local access and existing validation commands
+  - if the operator cannot inspect the repo-state signals relevant to `/finish`, the helper must downgrade confidence rather than imply certainty
 - Duplicate or repeated actions:
-  - repeated merge-readiness runs should remain safe; they may produce fresh artifacts or updated summaries without changing runtime semantics
+  - repeated validation or audit runs should remain safe and should improve confidence rather than add scope creep
 - Empty or missing data:
-  - if a needed branch-vs-main summary, rollback note, or validation artifact is missing, the final verdict must remain `not ready` or explicitly conditional
+  - if the PRD handoff, planning artifact, or closeout evidence is incomplete, the workflow must say what is missing rather than inferring approval or readiness
 
 ## Acceptance criteria
-- [ ] A merge-readiness packet exists that clearly distinguishes branch-use approval from merge-to-main approval.
-- [ ] The packet includes a branch-vs-main delta summary plus rollback/blast-radius posture.
-- [ ] The packet includes fresh validation evidence from `node scripts/validate-spawn-hardening.mjs` and `node --test tests/spawn-return-result-activation.test.mjs`, or explicit limitations if a run is unavailable.
-- [ ] A dedicated HITL verdict is recorded as either `ready for merge to main` or `not ready`, with explicit blockers if not ready.
-- [ ] The follow-up does not expand `spawn` scope or silently turn the merge review into more feature work.
+- [ ] The repo now has one explicit, lightweight PRD approval signal format in `## Handoff to Issues` that is taught and enforced consistently.
+- [ ] The optional execution-brief rule is explicit enough that non-trivial tickets can use it without making trivial tickets heavier.
+- [ ] `/finish` now has a bounded repo-state-check posture that stays recommendation-oriented and lightweight.
+- [ ] A lightweight assurance path now exists for the hardened planning/closeout slice beyond ad hoc manual review alone.
+- [ ] The clarified rules remain Pi-native and aligned across skills, prompts, docs, and repo policy.
 
 ## Constraints
 - Business constraints:
-  - the branch should only merge to `main` if default-path trust is materially higher than the remaining risk
+  - the workflow should become easier to trust without becoming expensive or annoying enough that maintainers stop using it consistently
 - Legal or compliance constraints:
-  - none identified for this repo-local follow-up
+  - none identified for this repo-local hardening slice
 - Technical constraints that affect behavior:
-  - the merge review depends on current repo-local validation tooling rather than a large new harness
-  - branch-vs-main review must account for runtime behavior, docs/policy changes, and rollback practicality
-  - the current distinction between success, repaired success, degraded fallback, strict failure, and timeout must stay intact during review
+  - changes should primarily land in local skills, prompts, docs, and narrow validation surfaces rather than new runtime systems
+  - `spawn` must remain a narrow context-offloading tool under existing doctrine
+  - one-ticket-per-run execution must remain intact as the default execution model
 - Timeline or rollout constraints:
-  - keep this follow-up narrow; if a real blocker appears, stop and route it rather than quietly expanding scope
+  - keep this slice focused on assurance and clarification for the planning/closeout hardening rather than reopening broader workflow redesign
 
 ## Dependencies
 - Relevant external services:
-  - optional provider-backed Pi execution for the current validation command
+  - none required for the PRD itself
 - Upstream or downstream systems:
-  - the repo-local replacement `spawn` extension/runtime
-  - repo-local validation scripts and tests
-  - Git branch diff and branch status context
+  - project-local skills and prompts
+  - repo-local `docs/` artifacts
+  - any existing validator or audit surfaces already used in this template
+  - downstream project repos that adopt this template
 - Required research findings:
-  - no new external research is required
+  - `docs/research.md` findings on PRD approval, self-review checklists, optional execution briefs, and lightweight closeout guidance
 - Prototype decisions being promoted:
-  - none; prototyping is unnecessary for this merge-readiness review
+  - none; prototyping is unnecessary for this hardening slice
 
 ## Open questions
-- will the branch-vs-main delta reveal any default-path risk that was acceptable on the experiment branch but not on `main`?
-- are any current environment/provider limitations acceptable for a main merge, or do they still weaken confidence too much?
-- should a positive merge verdict also update the top-level status language in `docs/pi-spawn.md` immediately, or only after the actual merge?
+- Should the lightweight assurance path be expressed mainly as a validator extension, a smoke-test checklist, or a small combination of both?
+- Should `/finish` inspect dirty-working-tree status by default when relevant, or only when the user explicitly asks for a stronger closeout judgment?
 
 ## Recommended next step
 - Suggested next phase:
   - Phase 5 — implementation planning in `docs/issues.md`
 - Why that is the right next step:
-  - the merge-readiness work is now concrete enough to plan as a small evidence-and-verdict follow-up
+  - the remaining v3 hardening work is now concrete enough to slice into a small assurance/clarification plan without reopening the broader workflow
 - What should happen immediately after this PRD is accepted:
-  - break the follow-up into small tickets for branch-vs-main delta review, fresh merge-candidate validation, rollback/compatibility assessment, and the final HITL verdict
+  - break this PRD into a small set of AFK/HITL tickets starting with rule clarification, then lightweight assurance, then final validation and HITL judgment
 
 ## Source artifacts
-- `docs/idea.md`
-- `docs/pi-spawn.md`
+- `docs/research.md`
+- `docs/prd.reliability-hardening-v2.md`
 - `docs/issues.md`
+- `CHANGELOG.md`
 
 ## Handoff to Issues
 - [x] Main user flows are clear
@@ -192,9 +214,10 @@ Permissions or visibility rules:
 - [x] Dependencies and constraints that affect slicing are visible
 - [x] Material ambiguities that could break ticket breakdown are explicitly listed
 
+Planning approval: approved for issues planning (correctness and scope)
 Ready for next phase: yes
 Primary blocker: none
 Notes:
-- Keep this follow-up focused on merge readiness, not new `spawn` capability.
-- If a blocker appears, route it to the smallest correct follow-up ticket rather than expanding this review silently.
-- A positive verdict here should still remain a human decision, not an automatic merge.
+- Keep this PRD narrowly focused on workflow assurance and bounded policy clarification.
+- Preserve the repo’s lightweight and Pi-native character.
+- Do not reopen v1 or v2 behavior broadly unless the clarification is necessary to keep the hardened slice coherent.

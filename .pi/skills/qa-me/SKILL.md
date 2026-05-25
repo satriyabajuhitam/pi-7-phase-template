@@ -34,6 +34,7 @@ While this skill is active:
 - Do not implement new feature work unless the user explicitly asks to switch modes
 - You may create or update `docs/qa.md`
 - You may update `docs/issues.md` only to capture clear follow-up work, blockers, or reopened tickets
+- Do not claim work is ready, passed, signed off, or safe to release without fresh evidence from the current run
 - Focus on verification, findings, and next-step recommendation
 
 ### 1. Validate readiness
@@ -104,6 +105,10 @@ Distinguish clearly between:
 
 If no automated checks exist, say so explicitly.
 
+When review is readiness-sensitive or affects shared behavior, keep the review order clear:
+1. requirement fit — does the current implementation satisfy the intended behavior and acceptance criteria?
+2. quality / boundary drift — is the result clean enough, and did the change avoid unnecessary expansion or collateral behavior drift?
+
 ### 6. Capture findings when evidence exists
 
 If the current run includes actual QA execution or evidence from tests and inspection, record findings under:
@@ -112,6 +117,7 @@ If the current run includes actual QA execution or evidence from tests and inspe
 - `Uncertain`
 
 If this run is planning-only, leave findings framed as pending verification rather than pretending they were executed.
+Do not turn implementation completion alone into a success or sign-off claim without fresh evidence from the current run.
 
 ### 7. Feed findings back into the loop
 
@@ -150,6 +156,9 @@ Close by stating which next step is best:
 - more research
 - HITL review
 
+If the current run supports a positive readiness or sign-off claim, name the fresh evidence that supports it.
+If it does not, say so explicitly instead of implying confidence from implementation status alone.
+
 Prefer `execute-me` when QA reveals clear AFK follow-up work, `diagnose-me` when a failure is still ambiguous, and explicit HITL review when human judgment or approval is the real blocker.
 
 Be specific about why.
@@ -173,6 +182,7 @@ Use this order as a starting point:
 
 - Do not confuse QA planning with feature implementation.
 - Do not claim findings were verified if you only drafted a plan.
+- Do not claim release readiness, sign-off, or success from implementation completion alone without fresh evidence.
 - Do not ignore human-review needs just because tests pass.
 - Do not leave important failures without a follow-up path.
 - Do not update unrelated tickets in `docs/issues.md` casually.

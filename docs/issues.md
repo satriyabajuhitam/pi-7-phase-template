@@ -2,28 +2,32 @@
 
 ## Planning assumptions
 - Source PRD: `docs/prd.md`
-- Planning scope: narrow merge-readiness follow-up for deciding whether `exp/pi-spawn` is ready to merge into `main`
+- Planning scope: reliability hardening v3 for the Pi-native 7-phase workflow, focused on workflow assurance, wording-drift control, and bounded policy clarification for the planning/closeout rules introduced in v2
 - Prior completed cycles preserved as context:
-  - `ISSUE-001` through `ISSUE-006` delivered the repo-local replacement `spawn`, inline status cards, active widget, validation flow, HITL verdict, and perf follow-up
-  - `ISSUE-007` through `ISSUE-013` delivered the `preset` follow-up and the branch-level HITL verdict that preset support is ready for continued use on `exp/pi-spawn`
-  - `ISSUE-014` through `ISSUE-018` delivered the `timeout` follow-up and the branch-level HITL verdict that timeout support is ready for continued use on `exp/pi-spawn`
-  - `ISSUE-019` through `ISSUE-024` delivered the completion-reliability follow-up and the branch-level HITL verdict that completion reliability is ready for continued use on `exp/pi-spawn`
-  - `ISSUE-025` through `ISSUE-029` delivered the operational-hardening follow-up and the branch-level HITL verdict that the branch is ready for continued use on `exp/pi-spawn`
-- Prototype winner: none; a separate prototype phase is unnecessary for this merge-readiness follow-up
+  - reliability hardening v2 planning has been preserved at `docs/issues.reliability-hardening-v2.md`
+  - reliability hardening v2 PRD has been preserved at `docs/prd.reliability-hardening-v2.md`
+  - reliability hardening v1 planning has been preserved at `docs/issues.reliability-hardening-v1.md`
+  - reliability hardening v1 PRD has been preserved at `docs/prd.reliability-hardening-v1.md`
+  - earlier merge-readiness planning has been preserved at `docs/issues.spawn-merge-readiness.md`
+  - earlier merge-readiness PRD has been preserved at `docs/prd.spawn-merge-readiness.md`
+- Prototype winner: none; prototyping is unnecessary for this workflow-hardening slice
 - Key constraints:
-  - keep `spawn` as a minimal focused delegation primitive
-  - do not broaden this follow-up into new feature work unless fresh evidence proves a real blocker
-  - keep the distinction between continued branch use and merge-to-main approval explicit
-  - use the merge checklist already captured in `docs/pi-spawn.md`
-  - if a blocker appears, route it to the smallest correct follow-up ticket instead of silently fixing unrelated work here
-  - avoid inventing a large new harness or release system for this branch-specific decision
+  - preserve the existing 7-phase structure and prompt entry points
+  - keep `spawn` as a narrow context-offloading tool rather than a full orchestration runtime
+  - keep one-ticket-per-run execution intact
+  - prefer changes to existing local skills, prompts, docs, templates, and narrow validation surfaces over new runtime systems
+  - keep this slice focused on assurance and bounded rule clarification rather than reopening broad v1/v2 behavior
+  - keep `/finish` recommendation-oriented and lightweight rather than turning it into branch or release automation
+  - improve trust without creating enough ceremony that maintainers stop using the workflow consistently
 
 ## Dependency rules
-- Branch-vs-main delta review should land before the final merge verdict so reviewers know what would actually change on `main`.
-- Fresh merge-candidate validation should land before the final merge verdict so the decision is not based only on stale retained evidence.
-- Rollback, blast-radius, and compatibility assessment should consume both the branch-delta summary and the latest validation picture.
-- Human review is required for the actual merge decision; no AFK ticket should auto-approve merge to `main`.
-- If validation or branch review uncovers a real blocker, execution must stop and route that blocker explicitly rather than smuggling implementation work into the merge-review tickets.
+- The canonical PRD approval signal format should land before downstream assurance or repo-wide docs alignment so later checks target one stable rule.
+- The optional execution-brief threshold should be clarified before template and operator docs are updated, otherwise the lighter default may drift again.
+- The bounded `/finish` repo-state posture should land before repo-wide docs alignment and final validation so closeout guidance is reviewed against the final scope.
+- The assurance path should follow rule clarification so it validates the intended stable rules rather than temporary wording.
+- Repo-level docs and policy wording should wait until the clarified rules and assurance path are settled.
+- Final workflow validation should wait until the clarification, assurance, and docs-alignment tickets are complete.
+- Human judgment is required before declaring the v3 slice ready for template use across future repos.
 
 ## Ticket conventions
 - `Status`: `todo`, `in-progress`, `blocked`, `done`
@@ -35,182 +39,322 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-030` — build a merge-readiness branch-vs-main delta summary
-- `ISSUE-031` — gather fresh merge-candidate validation evidence
+- `ISSUE-045` — canonicalize the PRD approval signal format and `/issues` gate wording
+- `ISSUE-047` — bound `/finish` repo-state checks and downgrade posture
 
 Blocked until prerequisites complete:
-- `ISSUE-032` waits on `ISSUE-030` and `ISSUE-031`
-- `ISSUE-033` waits on `ISSUE-032`
+- `ISSUE-046` waits on `ISSUE-045`
+- `ISSUE-048` waits on `ISSUE-045`, `ISSUE-046`, and `ISSUE-047`
+- `ISSUE-049` waits on `ISSUE-045`, `ISSUE-046`, `ISSUE-047`, and `ISSUE-048`
+- `ISSUE-050` waits on `ISSUE-045`, `ISSUE-046`, `ISSUE-047`, `ISSUE-048`, and `ISSUE-049`
+- `ISSUE-051` waits on `ISSUE-050`
 
 Suggested lanes:
-- Lane A: branch-vs-main review
-- Lane B: fresh validation evidence
-- Lane C: merge-risk assessment + HITL verdict
+- Lane A: planning-gate and execution-brief clarification
+- Lane B: bounded `/finish` clarification
+- Lane C: assurance, docs alignment, final validation, and HITL verdict
 
 ## Tickets
 
-### ISSUE-030 — Build a merge-readiness branch-vs-main delta summary
+### ISSUE-045 — Canonicalize the PRD approval signal format and `/issues` gate wording
 - Status: done
 - Type: AFK
-- Goal: produce one concise summary of what would materially change if `exp/pi-spawn` merged into `main`.
-- Why it exists: the repo still lacks a clean reviewer-facing summary of branch-vs-main impact, which is required for a real merge decision.
+- Goal: make the PRD handoff into `/issues` use one explicit, recognizable approval signal format that is easy to teach, detect, and keep consistent.
+- Why it exists: v2 added a lightweight review/approval gate, but the current rule is still vulnerable to wording drift and implied interpretation across PRD, skill, prompt, and repo-policy surfaces.
 - Depends on: none
-- Blocks: ISSUE-032
+- Blocks: ISSUE-046, ISSUE-048, ISSUE-049, ISSUE-050
 - Parallelizable: yes
 - Source requirements:
-  - PRD Problem statement
-  - PRD Desired outcome
-  - PRD Scope
-  - PRD Functional requirements 1, 2, 8
-  - `docs/pi-spawn.md` merge-to-main checklist
-- Scope:
-  - review branch-vs-main changes for `spawn` behavior, public API surface, completion semantics, validation posture, and repo-policy/doc changes
-  - separate user-visible changes from internal implementation changes
-  - record any branch-only assumption that still matters for `main`
-  - keep the summary concise enough for HITL review
-- Acceptance criteria:
-  - [x] one concise branch-vs-main delta summary exists
-  - [x] the summary distinguishes public/user-visible impact from internal/runtime-only changes
-  - [x] the summary names any remaining branch-only assumption relevant to merge readiness
-- Notes / risks:
-  - delta summary recorded in `docs/pi-spawn.md` under `## Branch-vs-main delta snapshot (ISSUE-030)`
-  - reviewer-facing findings captured there include:
-    - public/user-visible impact: repo-local replacement `spawn`, `/spawn-mode` guardrails, preset/timeout/completion semantics, and updated delegation doctrine
-    - internal-only impact: spawn-domain implementation files, validation script, deterministic regression test, and experiment-documentation footprint
-    - branch-only assumptions still relevant to merge readiness: experiment-branch status language, opt-in `/spawn-mode`, partial provider-backed validation dependence, and the intentional choice whether to keep the full documentation/prototype trail on `main`
-  - evidence used for the summary:
-    - `git log --oneline --reverse origin/main..HEAD`
-    - `git diff --stat origin/main...HEAD`
-    - `git diff --name-status origin/main...HEAD`
-    - `git diff --unified=0 origin/main...HEAD -- AGENTS.md .gitignore .pi/settings.json`
-    - source inspection of `.pi/extensions/spawn/index.ts`, `.pi/extensions/spawn/mode.ts`, and `.pi/extensions/spawn/shared.ts`
-  - do not broaden this into speculative roadmap writing
-  - if the review finds a real correctness blocker, record it explicitly instead of quietly fixing code inside this ticket
-  - prefer reviewer-facing language over raw diff dumping
-
-### ISSUE-031 — Gather fresh merge-candidate validation evidence
-- Status: done
-- Type: AFK
-- Goal: rerun the current repo-local validation commands on the latest branch state and record evidence specifically for a merge decision.
-- Why it exists: merge readiness should not rely only on older branch-use evidence.
-- Depends on: none
-- Blocks: ISSUE-032
-- Parallelizable: yes
-- Source requirements:
-  - PRD Desired outcome
+  - PRD Functional requirements 1, 5, 6
   - PRD User experience and behavior
-  - PRD Functional requirements 3, 8
-  - latest validation conventions already recorded in `docs/pi-spawn.md`
+  - PRD Edge cases for partial failure and empty or missing data
 - Scope:
-  - run `node scripts/validate-spawn-hardening.mjs`
-  - run `node --test tests/spawn-return-result-activation.test.mjs`
-  - record artifact paths, pass/fail state, and any explicit environment/provider limitation
-  - keep the evidence concise and merge-decision oriented
+  - update `.pi/skills/prd-me/SKILL.md`
+  - update `.pi/prompts/prd.md`
+  - update `.pi/skills/issues-me/SKILL.md`
+  - update `.pi/prompts/issues.md`
+  - update `AGENTS.md` wording where needed for consistency
+  - define one canonical lightweight PRD approval signal format inside `## Handoff to Issues`
+  - make `/issues` stop clearly when that approval signal is missing or malformed
+  - keep the rule lightweight enough for small repos while still being explicit
 - Acceptance criteria:
-  - [x] fresh validation evidence exists for the main validation command
-  - [x] fresh validation evidence exists for the deterministic regression test
-  - [x] any environment/provider limitation is recorded explicitly rather than hidden
+  - [x] one canonical PRD approval signal format is defined for `## Handoff to Issues`
+  - [x] `/issues` guidance now distinguishes structural readiness from explicit review/approval clearly
+  - [x] repo-level policy wording stays aligned with the canonical approval-signal rule
 - Notes / risks:
-  - fresh merge-candidate evidence recorded in `docs/pi-spawn.md` under `## Merge-candidate validation snapshot (ISSUE-031)`
-  - fresh command evidence from this execution:
-    - `node scripts/validate-spawn-hardening.mjs`
-    - artifacts: `/tmp/pi-spawn-validate-z5wDgR/`
-    - machine-readable summary: `/tmp/pi-spawn-validate-z5wDgR/summary.json`
-    - all current cases passed in this run
-    - this run had no provider/env `UNAVAILABLE` limitation
-    - nuance worth carrying into `ISSUE-032`: `preset_success` passed, but it passed via repaired success (`completionRepairAttempted=True`, `completionRepairSucceeded=True`) rather than an unrepaired direct success
-    - `node --test tests/spawn-return-result-activation.test.mjs`
-    - result: `pass 2`, `fail 0`
-  - do not silently reinterpret `UNAVAILABLE` as success
-  - if fresh validation reveals a new blocker, record it and stop rather than stretching this ticket into implementation
-  - prefer artifact-backed summaries over long raw transcripts
+  - do not turn this into a multi-step approval chain
+  - do not confuse one satisfied approval signal with full planning readiness if other blockers remain
+  - keep the format recognizable enough for later lightweight validation
+  - completed by updating `.pi/skills/prd-me/SKILL.md`, `.pi/prompts/prd.md`, `.pi/skills/issues-me/SKILL.md`, `.pi/prompts/issues.md`, `AGENTS.md`, and the live `docs/prd.md` handoff example
+  - canonical approval signal for `## Handoff to Issues`: `Planning approval: approved for issues planning (correctness and scope)`
+  - validation used `node scripts/validate-readiness-gates.mjs`, targeted `rg` inspection, and one independent reviewer pass (`pass-with-concerns` resolved by making malformed approval variants an explicit stop condition in `/issues` guidance)
+  - no automated workflow-simulation harness exists in this repo for live `/prd` -> `/issues` behavior; stronger assurance for this signal is intentionally deferred to `ISSUE-048`
 
-### ISSUE-032 — Record rollback, compatibility, and blast-radius posture for main merge
+### ISSUE-046 — Clarify the optional execution-brief threshold and ticket shape
 - Status: done
 - Type: AFK
-- Goal: document whether the current branch is operationally safe enough to become the default path on `main`, including rollback practicality.
-- Why it exists: even a validated branch can still be a poor main-merge candidate if rollback or compatibility posture is unclear.
-- Depends on: ISSUE-030, ISSUE-031
-- Blocks: ISSUE-033
+- Goal: define when a non-trivial ticket should carry an optional execution brief and when the lighter default should be preserved.
+- Why it exists: v2 introduced optional execution briefs, but the current guidance still leaves too much room for taste-driven drift into either under-specification or unnecessary ceremony.
+- Depends on: ISSUE-045
+- Blocks: ISSUE-048, ISSUE-049, ISSUE-050
 - Parallelizable: no
 - Source requirements:
-  - PRD Desired outcome
-  - PRD Functional requirements 4, 6
-  - PRD Constraints
-  - outputs of ISSUE-030 and ISSUE-031
-  - `docs/pi-spawn.md` merge-to-main checklist
+  - PRD Functional requirements 2, 5, 6
+  - PRD User experience and behavior
+  - PRD Edge cases for invalid input and duplicate or repeated actions
+  - outputs of ISSUE-045
 - Scope:
-  - assess rollback simplicity, blast radius, and compatibility assumptions
-  - decide whether any known limitation is acceptable for `main` or still branch-only
-  - write a concise merge-risk summary suitable for final HITL review
-  - if the answer is still negative, identify the smallest correct follow-up ticket shape
+  - update `.pi/skills/issues-me/SKILL.md`
+  - update `.pi/prompts/issues.md`
+  - update `.pi/skills/issues-me/assets/issues-template.md`
+  - update `AGENTS.md` Phase 5 wording where needed for consistency
+  - define a bounded threshold for when optional execution briefs should be added
+  - define the default lighter posture for tickets that do not cross that threshold
+  - keep execution briefs short and focused on ambiguity reduction rather than micro-planning
 - Acceptance criteria:
-  - [x] rollback posture is explicitly documented
-  - [x] blast radius and compatibility assumptions are explicitly documented
-  - [x] any remaining blocker is concrete enough to route to a small follow-up if needed
+  - [x] the optional execution-brief rule now states when to use it and when to omit it
+  - [x] the planning template supports the clarified rule without making trivial tickets heavier
+  - [x] Phase 5 repo-level wording remains aligned with the clarified threshold
 - Notes / risks:
-  - assessment recorded in `docs/pi-spawn.md` under `## Rollback, compatibility, and blast-radius snapshot (ISSUE-032)`
-  - AFK assessment from this execution:
-    - no hard rollback or compatibility blocker was found that automatically disqualifies the branch from future merge consideration
-    - rollback remains straightforward because the branch is file-based and repo-local, with no schema/data migration and no broad package-install surface
-    - blast radius is meaningful for maintainer/agent workflow, but bounded because delegation remains opt-in through `/spawn-mode`
-    - compatibility remains broadly healthy under fresh validation, but one nuance should remain visible for HITL: the latest `preset_success` case passed via repaired success rather than unrepaired direct success
-  - remaining likely blocker shapes if HITL says `not ready`:
-    - a docs/cleanup ticket for experiment-status language and main-branch packaging/footprint
-    - or a narrow runtime-confidence ticket if repaired preset success is judged too soft for the default path
-  - procedural caveat: the working tree is currently dirty because merge-readiness artifacts are still being authored; that is not a runtime blocker, but it must be cleaned before any actual merge
-  - keep the assessment grounded in current branch evidence, not generic release-process theory
-  - do not blur `continued branch use` into `merge readiness`
-  - avoid turning this ticket into a broad governance or roadmap essay
+  - keep the default biased toward the lighter path unless a ticket clearly benefits from a brief
+  - do not drift into `writing-plans` style giant step lists
+  - wording should be concrete enough for downstream audits without becoming rigid bureaucracy
+  - completed by updating `.pi/skills/issues-me/SKILL.md`, `.pi/prompts/issues.md`, `.pi/skills/issues-me/assets/issues-template.md`, and `AGENTS.md`
+  - bounded execution-brief threshold: add the brief only when a ticket is non-trivial and at least one of these is true — likely multi-surface boundary drift, non-obvious validation/acceptance focus, or one short out-of-scope guardrail would materially reduce ticket creep
+  - default lighter posture: if goal, scope, and acceptance criteria are already enough for safe execution, omit the execution brief entirely and remove the empty section rather than leaving placeholder ceremony in trivial tickets
+  - validation used targeted `rg` inspection plus one independent reviewer pass (`pass-with-concerns` resolved by tightening the template and prompt so trivial tickets delete the whole section instead of inheriting an empty execution-brief placeholder)
+  - no automated workflow-simulation harness exists in this repo for live `/issues` planning behavior; stronger assurance remains intentionally deferred to `ISSUE-048`
 
-### ISSUE-033 — Decide whether `exp/pi-spawn` is ready to merge into `main`
+### ISSUE-047 — Bound `/finish` repo-state checks and downgrade posture
+- Status: done
+- Type: AFK
+- Goal: define the small set of repo-state signals `/finish` may inspect when they materially affect closeout judgment, and make downgrade behavior explicit when that evidence is missing.
+- Why it exists: v2 intentionally kept `/finish` lightweight, but the repo still has an open question about how much repo-state inspection is appropriate before the helper starts to creep into release-management territory.
+- Depends on: none
+- Blocks: ISSUE-048, ISSUE-049, ISSUE-050
+- Parallelizable: yes
+- Source requirements:
+  - PRD Functional requirements 3, 5, 6
+  - PRD User experience and behavior
+  - PRD Edge cases for permissions/access issues, external dependency failure, and empty or missing data
+- Scope:
+  - update `.pi/skills/finish-me/SKILL.md`
+  - update `.pi/prompts/finish.md`
+  - update `AGENTS.md` closeout wording where needed for consistency
+  - define a bounded repo-state-check posture for `/finish`
+  - define how the helper should downgrade confidence when repo-state signals or evidence are unavailable
+  - keep the helper recommendation-oriented rather than procedural or automated
+- Acceptance criteria:
+  - [x] `/finish` guidance names a bounded set of repo-state signals it may inspect when relevant
+  - [x] `/finish` guidance explicitly says how missing repo-state evidence downgrades the recommendation
+  - [x] repo-level closeout wording stays aligned with the bounded `/finish` posture
+- Notes / risks:
+  - do not let this ticket expand into branch choreography, git automation, or merge checklists
+  - keep repo-state checks optional and relevance-driven rather than mandatory ceremony
+  - maintain a clear separation between implementation state and closeout readiness state
+  - completed by updating `.pi/skills/finish-me/SKILL.md`, `.pi/prompts/finish.md`, and `AGENTS.md`
+  - bounded default repo-state signals for `/finish`: dirty vs clean working tree, presence vs absence of key workflow artifacts/evidence, and current branch/HEAD context only when PR prep or merge judgment is the actual question
+  - downgrade posture now explicitly requires naming relevant unavailable/unverified repo-state signals and weakening the recommendation rather than inferring a safe or merge-ready state
+  - validation used targeted `rg` inspection plus one independent reviewer pass (`pass-with-concerns` resolved by tightening the `/finish` prompt wording from open-ended examples to an explicit bounded default set)
+  - no automated workflow-simulation harness exists in this repo for live `/finish` behavior; stronger assurance remains intentionally deferred to `ISSUE-048`
+
+### ISSUE-048 — Add a lightweight assurance path for the v3 planning/closeout rules
+- Status: done
+- Type: AFK
+- Goal: provide one small reusable assurance path so maintainers can verify the clarified v3 rules without relying only on ad hoc wording review.
+- Why it exists: the main remaining trust gap after rule clarification is not just what the rules say, but how maintainers can re-check them cheaply as the repo evolves.
+- Depends on: ISSUE-045, ISSUE-046, ISSUE-047
+- Blocks: ISSUE-049, ISSUE-050
+- Parallelizable: no
+- Source requirements:
+  - PRD Functional requirements 1, 4, 5, 6
+  - PRD Desired outcome
+  - PRD Open questions on validator extension vs checklist combination
+  - outputs of ISSUE-045, ISSUE-046, and ISSUE-047
+- Scope:
+  - update `scripts/validate-readiness-gates.mjs` if the canonical approval format should be machine-checked there
+  - update `.github/workflows/readiness-gates.yml` only if the assurance path requires a narrow CI behavior change
+  - add one lightweight audit or smoke-check surface for the clarified execution-brief and `/finish` bounds if they are not fully machine-checkable
+  - document the assurance path where maintainers can realistically run or review it during future changes
+  - keep the assurance path narrow, cheap, and specific to the hardened planning/closeout slice
+- Execution brief (optional):
+  - Likely touchpoints: `scripts/validate-readiness-gates.mjs`, `.github/workflows/readiness-gates.yml`, and one compact documentation or checklist surface tied to the clarified rules.
+  - Validation focus: prove the path catches approval-signal drift and gives maintainers a practical way to audit the execution-brief and `/finish` bounds without simulating the full workflow.
+  - Out of scope: a full live workflow-simulation harness or a broad policy engine for every phase.
+- Acceptance criteria:
+  - [x] one lightweight assurance path exists for the v3 planning/closeout slice beyond ad hoc manual review alone
+  - [x] the assurance path is narrow enough to preserve the repo’s lightweight model
+  - [x] maintainers can tell what is machine-checked versus manually audited in the assurance path
+- Notes / risks:
+  - keep CI scope narrow if it changes at all
+  - do not claim more enforcement than the assurance path really provides
+  - avoid coupling this ticket to broad workflow redesign
+  - completed by updating `scripts/validate-readiness-gates.mjs` and adding `scripts/validate-planning-closeout-guidance.mjs` plus `docs/workflow-assurance-v3.md`
+  - the readiness validator now machine-checks the exact PRD approval signal `Planning approval: approved for issues planning (correctness and scope)` when an active PRD says `Ready for next phase: yes`
+  - the new planning/closeout guidance assurance script machine-checks the current execution-brief and bounded `/finish` wording anchors across the core skill, prompt, template, and repo-policy surfaces
+  - the assurance path stays intentionally narrow: no new CI workflow was added, the existing `.github/workflows/readiness-gates.yml` remains unchanged and blocking only for readiness-gate validation, and the new guidance audit stays local/advisory to avoid broadening ceremony
+  - `docs/workflow-assurance-v3.md` now documents what is machine-checked versus what still needs manual review, so maintainers have one compact reference for future drift checks
+  - validation used `node scripts/validate-readiness-gates.mjs`, `node scripts/validate-planning-closeout-guidance.mjs`, targeted temp-file cases for missing/malformed PRD planning approval, and one independent reviewer pass (`pass-with-concerns`; no code change needed because keeping the new audit local/advisory was judged the lighter fit for this ticket)
+
+### ISSUE-049 — Align repo docs and policy with the clarified v3 rules
+- Status: done
+- Type: AFK
+- Goal: teach the canonical approval signal, execution-brief threshold, bounded `/finish` posture, and assurance path consistently across operator-facing docs and repo policy.
+- Why it exists: clarification is incomplete if the local skills and prompts say one thing while `README.md`, `GUIDE.md`, and repo policy still imply older or looser rules.
+- Depends on: ISSUE-045, ISSUE-046, ISSUE-047, ISSUE-048
+- Blocks: ISSUE-050
+- Parallelizable: no
+- Source requirements:
+  - PRD Functional requirements 1, 2, 3, 4, 5, 6
+  - PRD User experience and behavior
+  - outputs of ISSUE-045, ISSUE-046, ISSUE-047, and ISSUE-048
+- Scope:
+  - update `AGENTS.md`
+  - update `README.md`
+  - update `GUIDE.md`
+  - update any nearby template or operator-facing doc surface that now teaches the affected rules directly
+  - document the canonical PRD approval signal format
+  - document the bounded execution-brief rule and lighter default
+  - document the bounded `/finish` repo-state-check posture and the assurance path at the right level of detail
+- Acceptance criteria:
+  - [x] operator-facing docs consistently describe the clarified PRD approval signal format
+  - [x] docs explain the execution-brief threshold without implying heavy planning is now expected everywhere
+  - [x] docs describe `/finish` and the assurance path in a way that stays Pi-native and lightweight
+- Notes / risks:
+  - keep examples concise and artifact-driven
+  - avoid duplicating full skill text into docs
+  - wording drift remains a real risk, so this ticket should be treated as explicit cross-surface sync work
+  - completed by updating `README.md`, `GUIDE.md`, `AGENTS.md`, and `MASTER_TEMPLATE.md`
+  - docs now teach the exact PRD approval signal `Planning approval: approved for issues planning (correctness and scope)` instead of a looser approval description
+  - docs now teach the bounded execution-brief threshold: use only for non-trivial tickets when it materially reduces ambiguity, otherwise omit the section entirely and keep trivial tickets light
+  - docs now teach `/finish` as a bounded, recommendation-oriented closeout helper and point maintainers to `docs/workflow-assurance-v3.md` plus `node scripts/validate-planning-closeout-guidance.mjs` for the narrow v3 assurance path
+  - validation used targeted `rg` inspection plus `node scripts/validate-readiness-gates.mjs` and `node scripts/validate-planning-closeout-guidance.mjs`
+  - one independent reviewer pass initially found a `MASTER_TEMPLATE.md` sync gap around `/finish` and the assurance surfaces; that concern was resolved by updating the template inventory and maintainer checklist
+  - a follow-up reviewer re-check was attempted twice but did not return a usable result from the subagent tool; final closeout judgment therefore relies on the resolved first review concern plus fresh parent-side validation evidence from this run
+
+### ISSUE-050 — Validate v3 hardening against the repo’s intended lightweight model
+- Status: done
+- Type: AFK
+- Goal: review the clarified rules and assurance path to confirm they are internally consistent, bounded, and still fit the repo’s Pi-native lightweight model.
+- Why it exists: this slice changes workflow policy again, so the repo needs one compact validation pass before asking for a final human verdict.
+- Depends on: ISSUE-045, ISSUE-046, ISSUE-047, ISSUE-048, ISSUE-049
+- Blocks: ISSUE-051
+- Parallelizable: no
+- Source requirements:
+  - PRD Acceptance criteria
+  - PRD Constraints
+  - outputs of ISSUE-045, ISSUE-046, ISSUE-047, ISSUE-048, and ISSUE-049
+  - updated skills, prompts, docs, and assurance surfaces
+- Scope:
+  - review changed workflow artifacts for consistency
+  - verify the clarified rules preserve the 7-phase structure, narrow `spawn` doctrine, and one-ticket-per-run execution model
+  - verify the assurance path is honest about what it checks and does not add broad ceremony
+  - produce one concise validation summary suitable for final HITL review
+- Execution brief (optional):
+  - Likely touchpoints: `docs/prd.md`, `docs/issues.md`, updated skill/prompt files, `AGENTS.md`, `README.md`, `GUIDE.md`, and any validator/audit surfaces changed in `ISSUE-048`.
+  - Validation focus: approval-signal consistency, execution-brief threshold clarity, bounded `/finish` scope, assurance-path honesty, and lightweight-model fit.
+  - Out of scope: inventing new workflow scope instead of validating the implemented v3 slice.
+- Acceptance criteria:
+  - [x] one concise validation summary exists for the v3 hardening slice
+  - [x] the summary explicitly checks acceptance-criteria coverage against the updated artifacts
+  - [x] the summary explicitly calls out any remaining ambiguity, wording-drift risk, or over-ceremony risk
+  - [x] the summary is concise enough to support a final human decision
+- Notes / risks:
+  - this ticket should validate guidance, not reopen implementation scope
+  - if a blocker is found, route it clearly instead of silently editing unrelated behavior here
+  - validation may still be partly artifact-centric, but it should now be stronger than pure reviewer memory alone
+  - validation summary for `ISSUE-051`:
+    - verdict: `pass-with-concerns`
+    - acceptance-criteria coverage: the canonical PRD approval signal is now present in the active PRD handoff and taught consistently across PRD/planning skills, prompts, repo docs, and policy; the execution-brief rule is bounded and lighter-by-default across the planning skill, prompt, template, and repo policy; `/finish` is bounded and recommendation-oriented across closeout skill, prompt, docs, and policy; and a lightweight assurance path now exists through `scripts/validate-readiness-gates.mjs`, `scripts/validate-planning-closeout-guidance.mjs`, and `docs/workflow-assurance-v3.md`
+    - lightweight-model fit: the 7-phase structure remains intact, `spawn` remains narrow and context-offloading-first, one-ticket-per-run execution remains explicit, and the assurance path is honest about what it checks while keeping only readiness-gate validation in blocking CI
+    - remaining ambiguity / over-ceremony risk:
+      - the planning/closeout guidance audit is intentionally anchor-string-based and advisory, so it detects wording drift cheaply but does not prove live `/issues` or `/finish` behavior end-to-end
+      - only readiness gates are blocking in CI; HITL should explicitly judge whether advisory-only planning/closeout assurance is the right long-term tradeoff for template use
+      - the same clarified rules now span many surfaces, so wording drift remains a maintenance risk even with the new anchor checks
+  - evidence reviewed included `docs/prd.md`, `AGENTS.md`, `README.md`, `GUIDE.md`, `MASTER_TEMPLATE.md`, `docs/workflow-assurance-v3.md`, `.pi/skills/prd-me/SKILL.md`, `.pi/prompts/prd.md`, `.pi/skills/issues-me/SKILL.md`, `.pi/prompts/issues.md`, `.pi/skills/issues-me/assets/issues-template.md`, `.pi/skills/finish-me/SKILL.md`, `.pi/prompts/finish.md`, `scripts/validate-readiness-gates.mjs`, `scripts/validate-planning-closeout-guidance.mjs`, and `.github/workflows/readiness-gates.yml`
+  - validation used `node scripts/validate-readiness-gates.mjs`, `node scripts/validate-planning-closeout-guidance.mjs`, targeted cross-surface `rg` inspection, and one independent reviewer pass (`pass-with-concerns`)
+
+### ISSUE-051 — Decide whether reliability hardening v3 is ready for template use
 - Status: done
 - Type: HITL
-- Goal: make a dedicated human decision on whether this branch is ready to become the default path on `main`.
-- Why it exists: merge approval is a separate judgment from continued branch use and should not be auto-approved.
-- Depends on: ISSUE-032
+- Goal: make a dedicated human decision on whether this third hardening slice is good enough to become part of the repo’s intended default workflow behavior.
+- Why it exists: the workflow changes are repo-shaping and should not be auto-approved by AFK execution alone.
+- Depends on: ISSUE-050
 - Blocks:
 - Parallelizable: no
 - Source requirements:
   - PRD Desired outcome
   - PRD Acceptance criteria
-  - outputs of ISSUE-030, ISSUE-031, and ISSUE-032
-  - `docs/pi-spawn.md` merge-to-main checklist
+  - outputs of ISSUE-045, ISSUE-046, ISSUE-047, ISSUE-048, `ISSUE-049`, and `ISSUE-050`
 - Scope:
-  - review the merge-readiness packet
-  - decide whether the branch is ready for merge to `main`
-  - explicitly address trust gain, remaining risk, boundary drift, and default-path operability
-  - if not ready, record the blocker clearly enough to reopen or create the right AFK follow-up
+  - review the v3 planning/closeout assurance packet
+  - decide whether the slice is ready for template use as the default local workflow behavior
+  - explicitly address reliability gain, ceremony cost, Pi-native fit, and any remaining risk
+  - if not ready, identify the smallest correct follow-up ticket shape
 - Acceptance criteria:
-  - [x] a dedicated HITL merge-readiness verdict is recorded
-  - [x] the verdict explicitly says `ready for merge to main` or `not ready`
-  - [x] if the verdict is negative, the blocking reason is specific enough to route the next AFK ticket correctly
+  - [x] a dedicated HITL verdict is recorded
+  - [x] the verdict explicitly says `ready` or `not ready` for template use
+  - [x] if the verdict is negative, the blocker is specific enough to route the next AFK follow-up correctly
+- HITL review packet:
+  - Requested decision: `ready` or `not ready` for template use
+  - Review question: is the v3 planning/closeout hardening slice now reliable enough to become the default local workflow behavior without adding too much ceremony?
+  - Reliability gain:
+    - `PRD -> issues` now uses one canonical approval signal: `Planning approval: approved for issues planning (correctness and scope)`
+    - optional execution briefs are now bounded by an explicit non-triviality threshold and omitted entirely for straightforward tickets
+    - `/finish` now has a bounded repo-state-check posture and explicit downgrade behavior when relevant signals are unavailable or unverified
+    - the repo now has a lightweight assurance path beyond ad hoc wording review through `scripts/validate-readiness-gates.mjs`, `scripts/validate-planning-closeout-guidance.mjs`, and `docs/workflow-assurance-v3.md`
+  - Pi-native fit:
+    - the 7-phase structure remains unchanged
+    - `spawn` remains narrow and context-offloading-first rather than expanding into a general orchestration runtime
+    - one-ticket-per-run execution remains explicit
+    - the new assurance path stays narrow and mostly local/advisory rather than becoming a broad release-management system
+  - Validation state:
+    - `ISSUE-050` reviewer verdict: `pass-with-concerns`
+    - `node scripts/validate-readiness-gates.mjs` passes on the active artifacts
+    - `node scripts/validate-planning-closeout-guidance.mjs` passes on the expected planning/closeout surfaces
+  - Remaining acceptable risks to judge explicitly:
+    - the planning/closeout audit is intentionally anchor-string-based and advisory, so it detects wording drift cheaply but does not prove live `/issues` or `/finish` behavior end-to-end
+    - only readiness gates are blocking in CI; planning/closeout assurance remains local/advisory unless a future slice chooses slightly more ceremony
+    - the same clarified rules now span many surfaces, so wording drift remains a maintenance risk even with the new anchor checks
+  - Evidence reviewed:
+    - `docs/prd.md`
+    - `docs/issues.md`
+    - `AGENTS.md`
+    - `README.md`
+    - `GUIDE.md`
+    - `MASTER_TEMPLATE.md`
+    - `docs/workflow-assurance-v3.md`
+    - `.pi/skills/prd-me/SKILL.md`
+    - `.pi/prompts/prd.md`
+    - `.pi/skills/issues-me/SKILL.md`
+    - `.pi/prompts/issues.md`
+    - `.pi/skills/issues-me/assets/issues-template.md`
+    - `.pi/skills/finish-me/SKILL.md`
+    - `.pi/prompts/finish.md`
+    - `scripts/validate-readiness-gates.mjs`
+    - `scripts/validate-planning-closeout-guidance.mjs`
+    - `.github/workflows/readiness-gates.yml`
 - HITL verdict:
-  - Decision: ready for merge to `main`
-  - Branch: `exp/pi-spawn`
-- Trust gain:
-  - the branch now has a clear repo-local replacement `spawn` workflow with explicit status semantics, bounded repair behavior, and transparent success/failure distinctions
-  - the main reliability matrix has fresh merge-candidate evidence from `node scripts/validate-spawn-hardening.mjs`
-  - the critical `return_result` activation bug has deterministic local regression coverage through `node --test tests/spawn-return-result-activation.test.mjs`
-  - branch-vs-main impact, rollback posture, blast radius, and compatibility assumptions are now documented explicitly enough for a default-path decision
+  - Decision: ready for template use
+- Reliability gain:
+  - `PRD -> issues` now uses one canonical approval signal: `Planning approval: approved for issues planning (correctness and scope)`
+  - optional execution briefs now have a bounded non-triviality threshold and are omitted entirely for straightforward tickets
+  - `/finish` now uses a bounded repo-state-check posture and explicit downgrade behavior when relevant signals are unavailable or unverified
+  - the repo now has a lightweight planning/closeout assurance path through `scripts/validate-readiness-gates.mjs`, `scripts/validate-planning-closeout-guidance.mjs`, and `docs/workflow-assurance-v3.md`
+- Pi-native fit:
+  - the 7-phase structure remains unchanged
+  - `spawn` remains narrow and context-offloading-first rather than becoming a general orchestration runtime
+  - one-ticket-per-run execution remains explicit
+  - the assurance path remains narrow and mostly local/advisory rather than becoming a broad release-management system
 - Boundary judgment:
-  - this branch still feels minimal enough to merge
-  - alasan singkat: the branch adds a focused delegation primitive, opt-in `/spawn-mode` guardrails, narrow public API additions (`preset`, `timeout`), and operational confidence tooling without turning the repo into a subagent platform, retry/orchestration framework, or dashboarded job system
+  - this slice still feels lightweight enough for template use
+  - alasan singkat: it improves planning/closeout trust and drift detection without adding full workflow simulation, mandatory worktree flow, broad CI ceremony, or release automation
 - Remaining acceptable caveats:
-  - merge should be accompanied by a deliberate cleanup of experiment-branch status language in `docs/pi-spawn.md`
-  - the merge-readiness artifact edits should be committed so the working tree is clean before the actual merge step
-  - the current preset-success repair nuance is acceptable for `main` because preset coherence still passed and repaired success remains explicit rather than hidden
-- Evidence reviewed:
-  - `docs/pi-spawn.md` snapshots for `ISSUE-022`, `ISSUE-028`, `ISSUE-030`, `ISSUE-031`, and `ISSUE-032`
-  - fresh merge-candidate validation: `/tmp/pi-spawn-validate-z5wDgR/summary.json`
-  - fresh validation artifacts: `/tmp/pi-spawn-validate-z5wDgR/`
-  - deterministic regression test: `node --test tests/spawn-return-result-activation.test.mjs`
-  - branch-vs-main review evidence:
-    - `git log --oneline --reverse origin/main..HEAD`
-    - `git diff --stat origin/main...HEAD`
-    - `git diff --name-status origin/main...HEAD`
+  - the planning/closeout guidance audit is intentionally anchor-string-based and advisory, so it detects wording drift cheaply but does not prove live `/issues` or `/finish` behavior end-to-end
+  - only readiness gates are blocking in CI; planning/closeout assurance remains local/advisory unless a future slice chooses slightly more ceremony
+  - the same clarified rules now span many surfaces, so wording drift remains a maintenance risk even with the new anchor checks
 - Final note:
-  - Ready for merge to `main` once the current documentation updates are committed and the merge step is performed intentionally.
+  - Ready for template use as the default local workflow behavior for this v3 planning/closeout hardening slice, with the current residual risks documented rather than treated as blockers.
 - Notes / risks:
-  - do not broaden this ticket into further feature ideation or implementation
-  - this ticket records the merge-readiness decision; the actual merge is still a separate deliberate git step
+  - do not broaden this ticket into a new roadmap discussion
+  - keep the decision focused on this PRD slice only

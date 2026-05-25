@@ -13,6 +13,7 @@ It is a reusable workflow starter that provides:
 - prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
 - a local readiness validator under `scripts/validate-readiness-gates.mjs`
+- a local planning/closeout guidance audit under `scripts/validate-planning-closeout-guidance.mjs`
 - a CI readiness-check workflow under `.github/workflows/readiness-gates.yml`
 - `GUIDE.md` as the usage guide
 
@@ -35,6 +36,7 @@ If you want to **maintain or republish** the template itself, this file is the r
 ### Optional helpers
 - Local intake / triage via `/triage`
 - Local diagnosis via `/diagnose`
+- Local closeout recommendation via `/finish`
 
 ### Project-local skills
 - `triage-me`
@@ -47,6 +49,7 @@ If you want to **maintain or republish** the template itself, this file is the r
 - `issues-me`
 - `execute-me`
 - `qa-me`
+- `finish-me`
 
 ### Prompt templates
 - `/triage` (optional helper)
@@ -58,6 +61,7 @@ If you want to **maintain or republish** the template itself, this file is the r
 - `/issues`
 - `/execute`
 - `/qa`
+- `/finish` (optional helper)
 
 ### Artifact files
 - `docs/idea.md`
@@ -65,6 +69,7 @@ If you want to **maintain or republish** the template itself, this file is the r
 - `docs/prd.md`
 - `docs/issues.md`
 - `docs/qa.md`
+- `docs/workflow-assurance-v3.md`
 - `docs/prototype/`
 
 ---
@@ -112,10 +117,15 @@ This master template should stay clean:
 - keep maintainer-only notes out of `README.md` unless they are also useful to end users
 - prefer project-local skills and prompts so the template stays portable
 - keep readiness validation compatible with empty template-state artifacts
+- keep the planning/closeout assurance path narrow and advisory unless there is a deliberate decision to add more ceremony
 
 Current readiness-validation scope for this template:
-- covered now: `idea -> PRD` and `PRD -> issues`
+- covered now: `idea -> PRD` and `PRD -> issues`, including the exact PRD planning-approval signal when an active PRD is ready for planning
 - not covered yet: downstream handoffs such as `issues -> execute`, `execute -> QA`, or `QA -> release`
+
+Current planning/closeout-assurance scope for this template:
+- covered now: execution-brief threshold anchors and bounded `/finish` posture anchors across the core skill/prompt/template/policy surfaces
+- still manual: live `/issues` behavior, live `/finish` behavior, and broader workflow-fit judgment
 
 ### Maintainer checklist before publish
 
@@ -124,6 +134,7 @@ Current readiness-validation scope for this template:
 - confirm no disposable sandbox/example output remains
 - confirm readiness validator still skips empty template-state artifacts
 - confirm `.github/workflows/readiness-gates.yml` and `scripts/validate-readiness-gates.mjs` still match the documented behavior
+- confirm `scripts/validate-planning-closeout-guidance.mjs` and `docs/workflow-assurance-v3.md` still match the documented bounded assurance behavior
 - confirm new skills and prompts are documented in `README.md`, `GUIDE.md`, and `AGENTS.md` when relevant
 - confirm template instructions still point to the GitHub template flow as the default path
 

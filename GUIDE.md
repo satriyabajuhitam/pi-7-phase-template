@@ -38,6 +38,7 @@ Urutan command yang tersedia:
 Tambahan opsional untuk project yang sudah berjalan:
 - `/triage` untuk bug report, feature request, refactor proposal, atau QA finding yang belum jelas harus masuk ke fase mana
 - `/diagnose` untuk bug, regression, flaky failure, atau QA finding yang butuh repro dan isolasi sebelum dieksekusi
+- `/finish` untuk closeout review ringan setelah execution dan/atau QA ketika pertanyaannya adalah “apa langkah berikutnya untuk state saat ini?”
 
 Artifact utama yang dihasilkan:
 - `docs/idea.md`
@@ -132,6 +133,7 @@ Jalankan dulu:
 Lalu pastikan prompt template ini tersedia:
 - `/triage` (opsional helper)
 - `/diagnose` (opsional helper)
+- `/finish` (opsional helper)
 - `/idea`
 - `/research`
 - `/prototype`
@@ -288,6 +290,7 @@ PRD yang baik biasanya menjelaskan:
 ### Kapan lanjut?
 Lanjut ke `/issues` hanya jika `docs/prd.md` juga sudah punya `## Handoff to Issues` yang memuat:
 - checklist handoff yang relevan
+- `Planning approval: approved for issues planning (correctness and scope)` jika review correctness+scope memang sudah selesai
 - `Ready for next phase: yes/no`
 - `Primary blocker` jika readiness masih `no`
 
@@ -303,11 +306,26 @@ node scripts/validate-readiness-gates.mjs
 
 Perilakunya:
 - hanya memeriksa `docs/idea.md` dan `docs/prd.md`
+- untuk PRD aktif yang `Ready for next phase: yes`, validator juga menuntut sinyal approval exact `Planning approval: approved for issues planning (correctness and scope)`
 - artifact kosong di-skip agar template tetap bersih
 - hasil lokal bersifat **advisory**
 - CI akan menjalankan validator yang sama sebagai **blocking check**
 
-Validator ini sengaja sempit scope-nya pada minor release ini. Ia belum memvalidasi handoff berikutnya seperti `issues -> execute` atau `execute -> QA`.
+Validator ini sengaja sempit scope-nya. Ia belum memvalidasi handoff berikutnya seperti `issues -> execute` atau `execute -> QA`.
+
+Untuk hardening v3, ada juga audit lokal tambahan untuk drift check pada planning/closeout guidance:
+
+```bash
+node scripts/validate-planning-closeout-guidance.mjs
+```
+
+Audit ini mengecek anchor wording untuk:
+- threshold `execution brief` di surface planning utama
+- bounded `/finish` posture di surface closeout utama
+
+Audit ini tetap **advisory** dan tidak mensimulasikan live `/issues` atau live `/finish`.
+
+Kalau Anda butuh ringkasan satu halaman tentang assurance path ini, lihat juga `docs/workflow-assurance-v3.md`.
 
 ---
 
@@ -337,6 +355,20 @@ Ticket harus:
 - punya acceptance criteria
 - punya dependency jelas
 
+Untuk ticket yang non-trivial, `docs/issues.md` boleh memuat **execution brief opsional** hanya jika memang perlu, misalnya ketika:
+- kemungkinan menyentuh beberapa surface/area yang rawan boundary drift
+- fokus validasi atau acceptance focus tidak cukup obvious
+- satu guardrail out-of-scope singkat akan mengurangi ticket creep
+
+Kalau goal, scope, dan acceptance criteria sudah cukup jelas untuk eksekusi aman, **omit execution brief** dan hapus section-nya sekalian.
+
+Kalau dipakai, isi execution brief tetap sangat singkat, misalnya:
+- touchpoint yang kemungkinan berubah
+- fokus validasi
+- guardrail out-of-scope
+
+Jangan ubah execution brief ini menjadi micro-plan panjang.
+
 ### Bukan ticket yang baik
 Hindari ticket seperti:
 - buat folder utils
@@ -347,7 +379,7 @@ Hindari ticket seperti:
 - `docs/issues.md`
 
 ### Kapan lanjut?
-Lanjut jika `docs/prd.md` handoff memang sudah siap dan hasil planning menghasilkan minimal satu ticket `AFK` yang ready.
+Lanjut jika `docs/prd.md` handoff memang sudah siap, ada review/approval pass ringan yang eksplisit di `## Handoff to Issues`, dan hasil planning menghasilkan minimal satu ticket `AFK` yang ready.
 
 Jika ingin cek ulang guardrail sebelum merge atau sebelum menyerahkan pekerjaan ke orang lain, jalankan lagi:
 
@@ -387,6 +419,8 @@ Agent akan:
 - update status ke `in-progress`
 - mengimplementasikan ticket itu saja
 - menjalankan validasi
+- hanya menandai `done` jika ada evidence validasi fresh dari run saat itu
+- melaporkan evidence minimum seperti file yang berubah, command validasi, hasil validasi, apakah TDD dipakai, dan risiko tersisa
 - update status ke `done` atau `blocked`
 
 ### Cara menjalankannya
@@ -405,24 +439,6 @@ Workflow kita mengambil pola Ralph seperti ini:
 - satu ticket per iterasi
 - validasi tiap iterasi
 - progress disimpan di `docs/issues.md`
-
-### Helper operator lokal untuk queue AFK
-Jika Anda ingin melihat berapa banyak ticket `AFK` yang bisa diproses sebelum memilih iteration cap untuk batch lokal, gunakan:
-
-```bash
-./runs-afk.sh --count
-```
-
-Jika Anda ingin preview yang lebih mudah dibaca manusia, termasuk urutan ticket yang bisa diproses dan ticket yang belum eligible, gunakan:
-
-```bash
-./runs-afk.sh --list
-```
-
-Kedua helper ini:
-- tidak menjalankan batch
-- tidak membuat artifact `.runs/`
-- hanya membantu inspeksi queue dari `docs/issues.md`
 
 ---
 
@@ -455,6 +471,11 @@ Isi utamanya biasanya:
 - follow-up issues
 - sign-off recommendation
 
+Catatan penting:
+- QA planning boleh bersifat pending verification
+- finding `Pass` / `Fail` / `Uncertain` sebaiknya hanya ditulis bila memang ada evidence fresh dari test, inspection, atau verifikasi aktual pada run tersebut
+- rekomendasi `ready` atau `sign-off` tidak boleh hanya bersandar pada fakta bahwa implementasi ticket sudah selesai
+
 ### Contoh hal yang diuji pada app Todo
 - menambah todo valid
 - menolak todo kosong
@@ -466,7 +487,28 @@ Isi utamanya biasanya:
 ### Fungsi QA dalam workflow ini
 QA bukan akhir mutlak. QA adalah loop:
 - jika ada masalah → kembali ke `/issues` atau `/execute`
-- jika aman → lanjut release/manual sign-off
+- jika evidence fresh cukup kuat dan review yang diperlukan sudah terpenuhi → lanjut release/manual sign-off
+
+### Setelah QA: optional closeout dengan `/finish`
+Jika pertanyaannya berubah dari “apa yang masih harus dibangun?” menjadi “apa langkah terbaik untuk state repo saat ini?”, jalankan:
+
+```txt
+/finish
+```
+
+Atau misalnya:
+
+```txt
+/finish Tinjau evidence implementasi dan QA saat ini lalu rekomendasikan apakah sebaiknya lanjut eksekusi, minta HITL review, prepare PR, merge, keep, atau discard
+```
+
+Yang diharapkan terjadi:
+- agent membedakan state implementasi vs state validasi vs state readiness
+- agent merangkum evidence reviewed, validation state, residual risks, dan missing blockers
+- agent memberi **satu rekomendasi closeout utama**
+- jika repo-state memang relevan, agent membatasi cek ke sinyal kecil seperti dirty/clean working tree, keberadaan artifact/evidence workflow yang relevan, atau branch/HEAD context saat pertanyaannya memang PR prep atau merge
+- jika sinyal repo-state yang relevan tidak tersedia atau tidak terverifikasi, agent harus downgrade rekomendasinya daripada mengasumsikan state aman/siap
+- helper ini **bukan** merge automation atau branch-management workflow
 
 ---
 
@@ -506,7 +548,9 @@ Workflow ini dianggap berjalan sehat jika:
 - `docs/prd.md` cukup konkret
 - `docs/issues.md` berisi ticket kecil yang executable
 - `/execute` tidak pernah mengambil dua ticket sekaligus
+- completion claim dari `/execute` didukung evidence validasi fresh
 - `docs/qa.md` memberi test plan yang jelas
+- QA tidak mengklaim `ready` atau `sign-off` tanpa evidence yang eksplisit
 
 ---
 
@@ -534,6 +578,7 @@ Untuk banyak app CRUD sederhana, Anda sering bisa langsung:
 - `/issues`
 - `/execute`
 - `/qa`
+- `/finish` bila Anda butuh closeout recommendation setelah implementasi dan QA
 
 ---
 
@@ -546,6 +591,7 @@ Untuk banyak app CRUD sederhana, Anda sering bisa langsung:
 ### Sebelum `/issues`
 - [ ] PRD cukup jelas
 - [ ] acceptance criteria ada
+- [ ] `## Handoff to Issues` sudah memuat `Planning approval: approved for issues planning (correctness and scope)`
 
 ### Sebelum `/execute`
 - [ ] ada ticket `AFK` ready
@@ -554,6 +600,10 @@ Untuk banyak app CRUD sederhana, Anda sering bisa langsung:
 ### Sebelum `/qa`
 - [ ] ada hasil implementasi yang meaningful
 - [ ] status issue sudah terbarui
+
+### Sebelum `/finish`
+- [ ] ada state eksekusi dan/atau QA yang memang layak dinilai
+- [ ] ada evidence fresh atau justru gap evidence yang jelas untuk dijadikan dasar rekomendasi
 
 ---
 
@@ -620,6 +670,7 @@ Untuk **membuat app sederhana dari nol**, workflow ini paling mudah dipahami jik
 /issues
 /execute
 /qa
+/finish
 ```
 
 ### Jalur lengkap bila perlu
@@ -631,6 +682,7 @@ Untuk **membuat app sederhana dari nol**, workflow ini paling mudah dipahami jik
 /issues
 /execute
 /qa
+/finish
 ```
 
 Mulai dari app kecil, biarkan agent mengisi artifact di `docs/`, lalu ulangi ritmenya sampai Anda nyaman.

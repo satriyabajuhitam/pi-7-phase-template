@@ -21,7 +21,6 @@ This repo is designed to be used as a **GitHub template repository** for startin
 - prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
 - `GUIDE.md` with a practical usage walkthrough
-- local harness operator docs for `runs-once.sh` and `runs-afk.sh`
 - `MASTER_TEMPLATE.md` explaining how to use this repo as a reusable master template
 
 Bundled project-local skills include:
@@ -35,6 +34,7 @@ Bundled project-local skills include:
 - `issues-me`
 - `execute-me`
 - `qa-me`
+- `finish-me`
 
 ---
 
@@ -54,6 +54,7 @@ Core 7-phase flow:
 Optional helpers:
 - `/triage`
 - `/diagnose`
+- `/finish`
 
 ---
 
@@ -124,8 +125,12 @@ The workflow uses these files as source of truth:
 - `docs/issues.md` is the execution source of truth
 - Execution follows a Ralph-style pattern: **one run, one ready AFK ticket**
 - QA feeds findings back into the execution loop when needed
+- oversized requests should be decomposed before they are forced into one PRD or one issue board
 - `docs/idea.md` should not hand off to PRD until `## Handoff to PRD` says `Ready for next phase: yes`
 - `docs/prd.md` should not hand off to Issues until `## Handoff to Issues` says `Ready for next phase: yes`
+- planning should not proceed from `docs/prd.md` unless `## Handoff to Issues` also records the exact approval signal `Planning approval: approved for issues planning (correctness and scope)`
+- non-trivial tickets should use an optional execution brief only when it actually reduces ambiguity: likely multi-surface boundary drift, non-obvious validation focus, or one short out-of-scope guardrail; otherwise omit the brief and keep the board light
+- `/finish` is a lightweight closeout helper for recommending the next action after execution and/or QA; repo-state checks stay bounded to small relevant signals such as dirty working tree, relevant workflow-artifact presence, or current branch context when PR/merge judgment is the actual question
 
 ---
 
@@ -145,6 +150,7 @@ What it checks for active (non-empty) artifacts:
 - required handoff section exists
 - `Ready for next phase: yes/no` exists
 - `Primary blocker` exists
+- active ready PRDs must also carry the exact signal `Planning approval: approved for issues planning (correctness and scope)`
 - readiness `no` cannot use an empty or placeholder blocker
 - readiness `yes` cannot leave handoff checklist items unchecked
 
@@ -152,15 +158,35 @@ Important behavior:
 - empty `docs/idea.md` and `docs/prd.md` are treated as clean template-state artifacts and are skipped
 - local runs are **advisory**
 - CI runs the same validator in **blocking** mode via `.github/workflows/readiness-gates.yml`
-- this minor release does **not** yet harden downstream handoffs such as `issues -> execute`, `execute -> QA`, or `QA -> release`
+- this validator is still intentionally narrow; it does **not** yet harden downstream handoffs such as `issues -> execute`, `execute -> QA`, or `QA -> release`
+
+---
+
+## Planning/closeout assurance
+
+This template also includes a second lightweight local assurance check for the v3 planning/closeout hardening slice:
+
+```bash
+node scripts/validate-planning-closeout-guidance.mjs
+```
+
+What it machine-checks:
+- the current execution-brief threshold anchors across `issues-me`, `/issues`, the issues template, and `AGENTS.md`
+- the current bounded `/finish` posture anchors across `finish-me`, `/finish`, and `AGENTS.md`
+
+What it does **not** prove:
+- live `/issues` behavior from a real planning run
+- live `/finish` behavior from a real closeout run
+- whether the wording is the best possible wording rather than just the current expected wording
+
+Use the assurance path as narrow drift detection, not as a full workflow simulation or release-management system.
 
 ---
 
 ## Read next
 
 - `GUIDE.md` — step-by-step usage guide with a simple from-scratch app example
-- `docs/runs-once.md` — operator guide for the one-ticket local harness
-- `docs/runs-afk.md` — operator guide for the bounded multi-iteration local harness, including `--count` and `--list`
+- `docs/workflow-assurance-v3.md` — compact reference for the current planning/closeout assurance path
 - `MASTER_TEMPLATE.md` — notes for using this repo as a reusable template base
 - `AGENTS.md` — repository workflow rules for agents
 

@@ -2,6 +2,8 @@
 
 import { readFile } from 'node:fs/promises';
 
+const PLANNING_APPROVAL_VALUE = 'approved for issues planning (correctness and scope)';
+
 const DEFAULT_TARGETS = [
   {
     kind: 'idea',
@@ -134,6 +136,18 @@ function validateActiveArtifact(target, content) {
     errors.push('missing field: Primary blocker');
   }
 
+  const planningApprovalRaw =
+    target.kind === 'prd' ? findField(handoffSection, 'Planning approval') : null;
+
+  if (target.kind === 'prd' && planningApprovalRaw !== null) {
+    const normalizedApproval = planningApprovalRaw.trim().toLowerCase();
+    if (normalizedApproval !== PLANNING_APPROVAL_VALUE) {
+      errors.push(
+        `invalid Planning approval value: ${planningApprovalRaw} (expected ${PLANNING_APPROVAL_VALUE})`,
+      );
+    }
+  }
+
   if (readinessRaw === null || blockerRaw === null) {
     return errors;
   }
@@ -150,6 +164,10 @@ function validateActiveArtifact(target, content) {
   }
 
   if (readiness === 'yes') {
+    if (target.kind === 'prd' && planningApprovalRaw === null) {
+      errors.push('readiness is yes, but missing field: Planning approval');
+    }
+
     const uncheckedItems = findUncheckedChecklistItems(handoffSection);
     if (uncheckedItems.length > 0) {
       errors.push(

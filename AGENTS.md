@@ -61,10 +61,12 @@ Prompt template:
 ### Optional helper — Diagnosis
 When a bug, regression, flaky failure, or QA finding is too ambiguous for direct execution:
 - Use the project-local `diagnose-me` skill.
-- Build a trustworthy feedback loop before theorizing or fixing.
+- Build a trustworthy feedback loop before theorizing, fixing, or routing to execution.
+- Check recent changes when they are likely to narrow the search quickly.
 - Reproduce the failure when possible, generate ranked hypotheses, and use focused probes.
+- When relevant, use backward tracing, boundary instrumentation, or condition-based waiting to improve diagnosis quality.
 - Route the outcome to the smallest useful artifact, usually `docs/issues.md` or `docs/qa.md`.
-- Recommend a concrete handoff such as `ready-for-execution`, `needs-info`, `needs-research`, or `hitl`.
+- Recommend a concrete handoff such as `ready-for-execution`, `needs-info`, `needs-research`, `hitl`, or `not reproduced`.
 
 Prompt template:
 - Use `/diagnose [bug-report-atau-finding-yang-perlu-didiagnosis]` to trigger the local diagnosis workflow via `.pi/prompts/diagnose.md`.
@@ -74,6 +76,7 @@ When the user wants to refine an idea before research, prototyping, or implement
 - Use the project-local `grill-me` skill.
 - Maintain `docs/idea.md` as the running artifact when requested, or when it is the obvious destination.
 - Keep the artifact concise and decision-oriented.
+- If the request is too broad for one coherent PRD, stop and decompose it before recommending Phase 4.
 - Before recommending Phase 4 PRD, update `## Handoff to PRD` in `docs/idea.md` with checklist status, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
 Preferred `docs/idea.md` structure:
@@ -153,7 +156,9 @@ When the user wants to define the destination clearly before planning or impleme
 - Focus on user-visible behavior and requirements, not implementation details.
 - Use the skill asset `assets/prd-template.md` as the default PRD structure.
 - Do not start the PRD while multiple prototype directions are still active; first choose one winner or explicitly decide that no prototype is needed.
-- Before recommending Phase 5 planning, update `## Handoff to Issues` in `docs/prd.md` with checklist status, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
+- If the request is too broad for one coherent PRD, stop and decompose it before drafting further.
+- Before recommending Phase 5 planning, run a short PRD self-review for ambiguity, contradiction, and materially missing edge cases.
+- Before recommending Phase 5 planning, update `## Handoff to Issues` in `docs/prd.md` with checklist status, `Planning approval: approved for issues planning (correctness and scope)` once that review is actually complete, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
 Prompt template:
 - Use `/prd [fokus-atau-klarifikasi-prd]` to trigger the Phase 4 PRD workflow via `.pi/prompts/prd.md`.
@@ -162,8 +167,11 @@ Prompt template:
 When the user wants to break a PRD into execution-ready tickets:
 - Use the project-local `issues-me` skill.
 - Capture the planning output in `docs/issues.md`.
+- Do not proceed unless `docs/prd.md` is not only structurally ready, but also has the explicit approval signal `Planning approval: approved for issues planning (correctness and scope)` in `## Handoff to Issues`.
 - Break the PRD into vertical slices, not horizontal technical layers.
+- Run a short planning self-review before finalizing: ticket granularity, PRD coverage, and avoidable ambiguity.
 - Make blockers, dependencies, AFK/HITL status, and parallelization explicit.
+- Allow short optional execution briefs only when a non-trivial ticket actually needs them: likely multi-surface boundary drift, non-obvious validation focus, or one short out-of-scope guardrail that would reduce ticket creep. If goal/scope/acceptance criteria are already enough, omit the brief and keep the board light.
 - Use the skill asset `assets/issues-template.md` as the default structure.
 
 `docs/issues.md` ticket conventions:
@@ -182,12 +190,14 @@ When the user wants to execute planned work Ralph-style:
 - Use the project-local `execute-me` skill.
 - Treat `docs/issues.md` as the task source for execution.
 - Execute exactly one ready `AFK` ticket per run.
-- Prefer test-first execution for behavior changes that are testable through a public interface.
-- Use red-green-refactor only when it fits the ticket and does not significantly expand the ticket scope.
-- Validate the change before marking the ticket done.
+- Default to test-first execution for behavior changes that are testable through a practical public interface.
+- Use a vertical red-green-refactor loop when test-first execution is practical and does not significantly expand the ticket scope.
+- If TDD is skipped for an otherwise testable behavior change, say why and use the smallest trustworthy alternative validation.
+- Do not claim a ticket is `done`, `fixed`, `pass`, or `ready` without fresh validation evidence from the current run.
+- When marking a ticket done, report minimum completion evidence: ticket ID, files changed, validation commands, validation summary, whether TDD was used, why not if skipped, and remaining risks or `none`.
+- Require or strongly prefer independent review when work is risky, multi-file, shared-contract changing, or otherwise readiness-sensitive; check requirement fit before code quality or boundary drift.
 - Update `docs/issues.md` with `in-progress`, `done`, or `blocked` status as appropriate.
 - Do not silently execute a second ticket in the same run.
-- If the user asks for local AFK queue inspection before running a batch, use `./runs-afk.sh --count` for a numeric estimate and `./runs-afk.sh --list` for a human-readable preview; neither command should be treated as execution.
 
 Prompt template:
 - Use `/execute [fokus-atau-klarifikasi-eksekusi]` to trigger the Phase 6 execution workflow via `.pi/prompts/execute.md`.
@@ -203,17 +213,31 @@ When the user wants structured verification before release or the next execution
 Prompt template:
 - Use `/qa [fokus-atau-klarifikasi-qa]` to trigger the Phase 7 QA workflow via `.pi/prompts/qa.md`.
 
+### Optional helper — Finish / closeout
+When the main question is what should happen next with the current execution or QA state rather than what to build next:
+- Use the project-local `finish-me` skill.
+- Review current evidence, validation state, residual risk, and missing blockers before recommending a closeout action.
+- Treat `continue execution`, `request HITL review`, `prepare PR`, `merge`, `keep`, or `discard` as recommendations, not automation.
+- Keep repo-state checks lightweight and bounded to the smallest signals that materially affect closeout judgment, such as dirty working tree, relevant workflow-artifact presence, or current branch context; if those signals are unavailable, downgrade the recommendation rather than inferring readiness.
+
+Prompt template:
+- Use `/finish [fokus-atau-klarifikasi-closeout]` to trigger the local closeout workflow via `.pi/prompts/finish.md`.
+
 ## Workflow invariants
 - Do not jump to implementation when the user is clearly in Phase 1, Phase 2, or Phase 3.
 - Do not write a PRD from multiple competing prototype directions.
 - If prototyping is used, exactly one prototype winner must feed the PRD.
 - Do not advance from Idea to PRD unless `docs/idea.md` says `Ready for next phase: yes` in `## Handoff to PRD`.
 - If `## Handoff to PRD` says `Ready for next phase: no`, it must name a `Primary blocker`.
+- Do not advance from Idea to PRD when the request still needs decomposition into smaller PRD-sized work.
 - `docs/prd.md` is the requirements source of truth.
-- Do not advance from PRD to Issues unless `docs/prd.md` says `Ready for next phase: yes` in `## Handoff to Issues`.
+- Do not advance from PRD to Issues unless `docs/prd.md` says `Ready for next phase: yes` in `## Handoff to Issues` and includes `Planning approval: approved for issues planning (correctness and scope)`.
 - If `## Handoff to Issues` says `Ready for next phase: no`, it must name a `Primary blocker`.
+- Do not advance from PRD to Issues when the current request still needs decomposition or when ambiguity, contradiction, or materially missing edge cases still block responsible planning.
 - `docs/issues.md` is the execution source of truth.
 - Phase 6 follows a Ralph-style pattern: one run, one ready `AFK` ticket, one validation cycle.
+- `/finish` is optional and recommendation-oriented; it must not silently turn into git automation or a required extra ceremony after every ticket, and it must not infer merge readiness from repo-state signals that were never actually checked.
+- The local assurance path for planning/closeout hardening stays intentionally narrow: readiness validation plus local guidance-anchor checks may improve confidence, but they do not replace live workflow judgment or broad release governance.
 - Do not overwrite useful existing docs without preserving important decisions already made.
 - Keep artifacts concise, structured, and reusable across fresh context windows.
 - When writing idea or research artifacts, record distilled outcomes rather than full transcripts.
@@ -225,6 +249,7 @@ Prompt template:
 - `docs/prd.md`
 - `docs/issues.md`
 - `docs/qa.md`
+- `docs/workflow-assurance-v3.md`
 - `docs/prototype/`
 - `.firecrawl/`
 
@@ -238,3 +263,4 @@ Prompt template:
 - `.pi/prompts/issues.md`
 - `.pi/prompts/execute.md`
 - `.pi/prompts/qa.md`
+- `.pi/prompts/finish.md`

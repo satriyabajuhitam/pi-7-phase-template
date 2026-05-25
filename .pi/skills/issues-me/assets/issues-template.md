@@ -45,6 +45,10 @@ Suggested lanes:
   - 
 - Scope:
   - 
+- Execution brief (optional):
+  - Use only when the ticket is non-trivial and at least one of these is true: multiple workflow surfaces/file areas make boundary drift likely, the validation path is not obvious, or one short out-of-scope guardrail would reduce ticket creep.
+  - Omit it when the ticket is already clear enough from goal, scope, and acceptance criteria alone, and delete this whole section rather than leaving an empty placeholder.
+  - Keep it brief: likely touchpoints, validation focus, or one explicit out-of-scope guardrail.
 - Acceptance criteria:
   - [ ]
   - [ ]

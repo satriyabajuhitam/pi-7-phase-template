@@ -33,6 +33,7 @@ description: Diagnose a bug, regression, flaky failure, or performance issue unt
 
 While this skill is active:
 - Do not jump straight into fixing the bug
+- Do not recommend fixes or execution handoff before a trusted loop and root-cause-oriented investigation exist
 - Focus on feedback loops, reproduction, hypotheses, and probes
 - You may update `docs/issues.md` or `docs/qa.md` when the diagnosis outcome needs to be recorded
 - Keep the diagnosis concise and execution-oriented
@@ -73,9 +74,9 @@ Preferred usage:
 - use `preset: "reviewer"` for a compact sanity check on the current best explanation or ranked hypotheses
 - use parallel `spawn` only for independent probes; the parent still owns reproduction status, hypothesis ranking, and the final artifact update
 
-### 2. Build a feedback loop before theorizing
+### 2. Build a feedback loop before theorizing or fixing
 
-Do not move into free-form speculation until you have the best feedback loop you can build.
+Do not move into free-form speculation or fix proposals until you have the best feedback loop you can build.
 
 Prefer the smallest trustworthy loop in roughly this order:
 1. a failing test through a public interface
@@ -104,7 +105,19 @@ Do not treat a nearby failure as success if it is not the same failure mode the 
 
 For flaky bugs, aim for a reproduction rate high enough to debug against rather than pretending the bug is deterministic.
 
-### 4. Generate ranked hypotheses
+### 4. Check recent changes before deeper theorizing
+
+Before ranking hypotheses, inspect the most relevant recent changes when practical.
+
+Examples:
+- recent commits or diffs in the affected area
+- new config or dependency changes
+- environment differences between working and failing runs
+- recently changed tests, fixtures, scripts, or prompts
+
+If recent changes reveal a likely trigger, use that evidence to improve the hypothesis ranking rather than guessing broadly.
+
+### 5. Generate ranked hypotheses
 
 Before making deeper changes, generate **3–5 ranked hypotheses**.
 
@@ -114,7 +127,7 @@ Each hypothesis must be falsifiable and should follow this shape:
 Avoid single-hypothesis tunnel vision.
 If the user is present, show the ranked list briefly before testing. If not, proceed with the best ranking you have.
 
-### 5. Probe and instrument carefully
+### 6. Probe and instrument carefully
 
 Use the smallest probes that distinguish between hypotheses.
 
@@ -129,7 +142,12 @@ Rules:
 - tag temporary debug logs with a unique prefix so cleanup is easy
 - measure performance regressions before fixing them
 
-### 6. Conclude the diagnosis and route the next step
+Technique cues when relevant:
+- **Backward tracing:** when the failure appears deep in a call stack, trace backward from the symptom to the immediate cause, then keep walking callers, inputs, and state until you find the original trigger
+- **Boundary instrumentation:** when the failure crosses multiple modules, services, or layers, add evidence at the boundaries to show what enters, what exits, and where the behavior first diverges
+- **Condition-based waiting:** for flaky or timing-sensitive failures, prefer waiting on the real condition with a timeout over arbitrary sleeps so the loop becomes more trustworthy
+
+### 7. Conclude the diagnosis and route the next step
 
 Close with one of these diagnosis outcomes:
 - `needs-info`
@@ -145,7 +163,7 @@ Typical routing:
 - environment access or human-only validation needed -> `hitl`
 - no reliable repro after disciplined attempts -> `not reproduced`
 
-### 7. Apply the minimum useful artifact update
+### 8. Apply the minimum useful artifact update
 
 If the diagnosis came from an existing ticket or QA finding, record the result in the smallest appropriate place.
 
@@ -156,7 +174,7 @@ Default artifact updates:
 
 Do not create a new default artifact such as `docs/diagnose.md`.
 
-### 8. Report the handoff clearly
+### 9. Report the handoff clearly
 
 End with a concise summary containing:
 - `Issue summary`
@@ -194,8 +212,10 @@ Use this order as a starting point:
 ## Gotchas
 
 - Do not start fixing a bug before you have a loop you trust.
+- Do not recommend fixes before root-cause-oriented investigation has made the failure meaningfully clearer.
 - Do not confuse a nearby error with the reported failure.
 - Do not jump from one vague intuition straight to code edits.
+- Do not skip recent-change inspection when it is likely to narrow the search quickly.
 - Do not stay buried in a tiny function if the real problem is understanding the surrounding module and caller path.
 - Do not create a giant transcript of every probe; keep the outcome distilled.
 - Do not leave temporary debug instrumentation behind.

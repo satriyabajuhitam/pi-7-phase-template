@@ -69,6 +69,20 @@ Example opening:
 >
 > I'll start with the most foundational question first.
 
+### 2.5 Check whether the request is too broad for one coherent PRD
+
+Before going deeper, decide whether the current request can responsibly become **one coherent PRD**.
+
+If the request actually bundles multiple subsystems, audiences, rollout tracks, or problem statements that would produce one muddy artifact, stop and say so clearly.
+
+In that case:
+- do not force everything into one broad `docs/idea.md` handoff
+- identify the smallest sensible decomposition boundary
+- recommend decomposing first before Phase 4
+- record the decomposition need in `docs/idea.md` when that artifact is active
+
+Do not force decomposition mechanically when one coherent PRD is still reasonable. The goal is to prevent weak scope, not add ceremony.
+
 ### 3. Ask one question at a time
 
 The first real turn after the decision map must contain **exactly one question**.
@@ -198,10 +212,13 @@ If `docs/idea.md` is the active session artifact, the closing summary must also 
 
 Before recommending PRD as the next phase, update `## Handoff to PRD` in `docs/idea.md` with:
 - a concise handoff checklist
+- confirmation that the request is narrow enough for one coherent PRD, or has been decomposed first
 - `Ready for next phase: yes/no`
 - `Primary blocker` whenever readiness is `no`
 
-Do not recommend PRD handoff when `## Handoff to PRD` is missing or still says `Ready for next phase: no`. In that case, route the user back to the blocker, the remaining question, or the earlier phase that best resolves it.
+Do not recommend PRD handoff when `## Handoff to PRD` is missing or still says `Ready for next phase: no`.
+Do not recommend PRD handoff when the current request still bundles too much scope for one coherent PRD.
+In those cases, route the user back to the blocker, the decomposition step, the remaining question, or the earlier phase that best resolves it.
 
 After grilling, suggest a concrete next step such as creating `docs/research.md`, building a prototype, writing `docs/prd.md`, or moving to implementation if the idea is already clear enough.
 
@@ -224,6 +241,7 @@ If the user wants a faster session ("just give me the top questions" or "I only 
 - If `CONTEXT.md` or relevant ADRs exist, do not ignore them or casually re-litigate already-settled terminology and decisions.
 - Do not let vague or overloaded domain terms pass without challenge when they affect real decisions.
 - Do not start implementing just because the user's wording sounds like a build request. If the skill is active, stay in grilling mode until the user explicitly asks to switch.
+- Do not force a broad multi-subsystem request into one coherent PRD path; stop and decompose first when the artifact would otherwise become muddy.
 - When maintaining `docs/idea.md`, record distilled conclusions rather than raw Q&A transcript dumps.
 
 ---
@@ -278,6 +296,7 @@ If the session writes notes:
 - verify the file path is exactly `docs/idea.md`
 - verify the structure matches the repo convention for idea artifacts
 - verify `## Handoff to PRD` is present when `docs/idea.md` is used as the session artifact
+- verify the handoff makes clear whether the request is narrow enough for one coherent PRD or still needs decomposition
 - verify `Ready for next phase: yes/no` is explicit in that handoff section
 - verify `Primary blocker` is present whenever readiness is `no`
 - verify only distilled decisions, questions, and next steps were recorded rather than a raw transcript dump

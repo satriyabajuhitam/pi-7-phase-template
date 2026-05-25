@@ -43,11 +43,13 @@ Implementation planning is justified when most of these are true:
 - `docs/prd.md` exists and is concrete enough to plan from
 - `## Handoff to Issues` exists in `docs/prd.md`
 - `docs/prd.md` says `Ready for next phase: yes` in that handoff section
+- the handoff includes the exact approval signal `Planning approval: approved for issues planning (correctness and scope)`, not just a structurally present handoff section
 - scope and non-goals are stable enough for ticket breakdown
 - major open questions no longer block planning
 - if prototyping was used, the PRD already reflects exactly one winning direction
 
 If the PRD handoff says `Ready for next phase: no`, stop and recommend returning to the named blocker or the earlier phase that best resolves it.
+If the PRD still lacks the exact approval signal `Planning approval: approved for issues planning (correctness and scope)` in `## Handoff to Issues`, or uses a malformed variant instead, stop and route back to Phase 4 rather than guessing approval.
 
 If the project is not ready, say so clearly and recommend returning to the earlier phase that needs work.
 
@@ -66,6 +68,7 @@ Use them to extract:
 - dependencies and constraints
 - unresolved questions that may affect planning
 - likely foundations or shared contracts
+- whether the PRD review/approval gate has actually been satisfied in `## Handoff to Issues`, specifically through `Planning approval: approved for issues planning (correctness and scope)`
 
 Do not ask the user for information that already exists in the repo.
 
@@ -139,6 +142,16 @@ Before finalizing the plan, check:
 
 If the breakdown is weak, refine it before writing the final artifact.
 
+### 7.5 Run a short planning self-review before handoff
+
+Before closing the planning pass, run a short self-review against the draft board:
+- granularity scan — is any ticket still too large, too blended, or too horizontal?
+- PRD coverage scan — do the tickets collectively cover the intended requirements and user-visible flows without obvious gaps?
+- avoidable-ambiguity scan — is any ticket worded loosely enough that different executors could take materially different paths?
+
+If the self-review finds a real blocker, do not bluff.
+Either tighten the ticket set, split the weak ticket, or route back to PRD refinement if planning is still premature.
+
 ### 8. Write or refine `docs/issues.md`
 
 Write the plan using `assets/issues-template.md` as the base structure.
@@ -160,8 +173,18 @@ For each ticket, include:
 - whether it is parallelizable using only `yes` or `no`
 - source requirements
 - scope
+- optional execution brief only when the ticket crosses the non-triviality threshold below, without turning the ticket into a giant plan
 - acceptance criteria
 - notes or risks
+
+Execution-brief threshold:
+- add an execution brief only when a ticket is non-trivial **and** at least one of these is true:
+  - the executor will likely touch multiple workflow surfaces or file areas where boundary drift is easy
+  - the validation path or acceptance focus is non-obvious enough that different executors could take materially different approaches
+  - one short out-of-scope or boundary guardrail would materially reduce ticket creep
+- omit the execution brief by default when the ticket is already straightforward enough to execute safely from its goal, scope, and acceptance criteria alone
+- when used, keep the brief short: likely touchpoints, validation focus, or one explicit out-of-scope guardrail
+- when omitted, remove the `Execution brief (optional)` section entirely rather than leaving an empty placeholder in trivial tickets
 
 When capturing QA fallout later, prefer reopening an existing ticket if the original scope still fits; otherwise add a new ticket.
 
@@ -197,9 +220,13 @@ Use this order as a starting point:
 
 - Do not turn tickets into horizontal technical layers.
 - Do not skip readiness checks and force planning from a weak PRD.
+- Do not skip the lightweight PRD review/approval gate and treat structural handoff text as equivalent to actual planning readiness.
+- Do not leave the approval format implicit; require the exact signal `Planning approval: approved for issues planning (correctness and scope)` to be visible in `## Handoff to Issues`.
 - Do not make tickets so large that a single ticket hides multiple outcomes.
 - Do not ignore blockers just to make the plan look parallel.
 - Do not omit acceptance criteria.
+- Do not add an execution brief just because a ticket touches multiple files if the outcome and validation path are already obvious.
+- Do not turn optional execution briefs into giant micro-step plans.
 - Do not assume every human decision can be delegated to an AFK ticket.
 - If the PRD still leaves critical ambiguity, say so clearly instead of bluffing.
 
@@ -250,9 +277,11 @@ If the session writes or refines the plan:
 - verify the file path is exactly `docs/issues.md`
 - verify the structure follows `assets/issues-template.md` unless a small justified adjustment was made
 - verify planning did not proceed when `docs/prd.md` handoff still said `Ready for next phase: no`
+- verify planning did not proceed when the PRD lacked the exact approval signal `Planning approval: approved for issues planning (correctness and scope)` in `## Handoff to Issues` or used a malformed variant
 - verify tickets are vertical slices rather than horizontal technical layers
 - verify each ticket uses only allowed values for `Status`, `Type`, `Depends on`, `Blocks`, and `Parallelizable`
 - verify dependencies, blockers, and parallel lanes are explicit
+- verify optional execution briefs appear only when the ticket crosses the stated non-triviality threshold and would reduce ambiguity without making trivial tickets heavy
 - verify acceptance criteria are present for each ticket
 - verify no unrelated implementation files were edited
 - verify the closing recommendation points to the correct next phase, usually `execute-me` for one ready `AFK` ticket when planning is solid

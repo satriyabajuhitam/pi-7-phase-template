@@ -43,11 +43,13 @@ Before drafting the PRD, check whether Phase 4 is justified.
 A PRD is justified when most of these are true:
 - the problem and desired outcome are already understandable
 - scope boundaries are mostly known
+- the request is narrow enough for one coherent PRD, or has already been decomposed to that level
 - major research unknowns are resolved or clearly non-blocking
 - exactly one prototype winner exists when prototyping was used
 - or prototyping was explicitly judged unnecessary
 
 If multiple prototype directions are still active, the project is not ready for a PRD. Say so clearly and recommend returning to Phase 3.
+If the request is too broad for one coherent PRD, stop and recommend decomposition before drafting rather than forcing one muddy artifact.
 
 If the project is not ready, say so clearly and recommend the earlier phase to revisit.
 
@@ -103,6 +105,14 @@ Before drafting in full, identify the decisions that must be clear in the PRD:
 
 If major ambiguity remains, do not bluff. Surface the uncertainty explicitly.
 
+### 4.5 Check whether decomposition is required first
+
+Before drafting, ask one structural question:
+- is this still one coherent PRD, or is it really multiple workstreams, subsystems, or audiences bundled together?
+
+If one PRD would become muddy, stop and recommend decomposition first.
+Do not solve over-broad scope by writing a vague umbrella PRD.
+
 ### 5. Ask only high-leverage clarifying questions when needed
 
 If the artifacts are not enough for a good PRD, ask targeted clarification questions.
@@ -135,6 +145,16 @@ When using earlier artifacts:
 - include only research findings that materially affect requirements or constraints
 - do not dump raw research notes or all prototype variants into the PRD
 
+### 7.5 Run a short PRD self-review before handoff
+
+Before recommending planning or closing the PRD session, run a short self-review against the written draft:
+- ambiguity scan — are any key requirements still vague enough to produce materially different implementations?
+- contradiction scan — do any sections conflict on scope, behavior, constraints, or acceptance expectations?
+- missing-edge-case scan — is any materially important failure mode or business rule still absent?
+
+If the self-review finds a real blocker, do not bluff.
+Either fix the draft, ask one targeted clarifying question, or mark the issue explicitly in `Open questions` or `## Handoff to Issues`.
+
 ### 8. Recommend the next phase
 
 Close by stating which next step is best:
@@ -146,10 +166,14 @@ Close by stating which next step is best:
 
 Before recommending planning, update `## Handoff to Issues` in `docs/prd.md` with:
 - a concise handoff checklist
+- confirmation that the draft survived ambiguity, contradiction, and missing-edge-case review well enough for planning
+- `Planning approval: approved for issues planning (correctness and scope)` once that review/approval pass is actually complete
 - `Ready for next phase: yes/no`
 - `Primary blocker` whenever readiness is `no`
 
-Do not recommend planning or `issues-me` when `## Handoff to Issues` is missing or still says `Ready for next phase: no`. In that case, route the user back to the blocker, the remaining gap, or the earlier phase that best resolves it.
+Do not recommend planning or `issues-me` when `## Handoff to Issues` is missing or still says `Ready for next phase: no`.
+Do not recommend planning when the request still needs decomposition into smaller PRD-sized work.
+In those cases, route the user back to the blocker, the decomposition step, the remaining gap, or the earlier phase that best resolves it.
 
 Prefer issue or kanban breakdown via `issues-me` as the default handoff after a solid PRD unless the user explicitly wants a different path.
 
@@ -176,6 +200,7 @@ Use this order as a starting point:
 - Do not anchor the document around modules, file paths, or code snippets.
 - Do not skip readiness checks and force a PRD too early.
 - Do not write a PRD from multiple competing prototype directions.
+- Do not force multiple workstreams or subsystems into one vague umbrella PRD when decomposition is the real need.
 - Do not ignore unresolved edge cases that materially change behavior.
 - Do not copy raw research or prototype notes into the PRD.
 - Do not leave scope and non-goals implicit.
@@ -229,7 +254,10 @@ If the session writes or refines the PRD:
 - verify the file path is exactly `docs/prd.md`
 - verify the structure follows `assets/prd-template.md` unless a small justified adjustment was made
 - verify the document focuses on user-visible behavior, scope, non-goals, requirements, edge cases, and acceptance criteria rather than implementation tasks
+- verify the session stopped for decomposition when the request was too broad for one coherent PRD
 - verify `## Handoff to Issues` is present when `docs/prd.md` is the active artifact
+- verify the handoff reflects ambiguity, contradiction, and missing-edge-case review before planning
+- verify `Planning approval: approved for issues planning (correctness and scope)` is present before the PRD is handed to planning
 - verify `Ready for next phase: yes/no` is explicit in that handoff section
 - verify `Primary blocker` is present whenever readiness is `no`
 - verify only zero or one prototype winner is promoted into the PRD
