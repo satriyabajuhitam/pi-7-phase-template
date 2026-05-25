@@ -1,189 +1,189 @@
 # PRD
 
 ## Overview
-Add one narrow operational-hardening follow-up for the repo-local `spawn` replacement on `exp/pi-spawn`. The goal is not to expand `spawn` with new delegation capabilities, but to make the current branch easier to validate, safer against regression, and more transparent when a successful result required the bounded internal completion-repair step.
+Add one narrow follow-up that determines whether the repo-local `spawn` experiment on `exp/pi-spawn` is actually ready to merge into `main`.
 
-This follow-up covers exactly three small improvements:
-- a one-command repo-local validation script for the current `spawn` reliability matrix
-- a deterministic local regression test for child-session `return_result` activation
-- clearer UI transparency for repaired success using existing result metadata
+This follow-up is not about adding more `spawn` capability. It is about producing a trustworthy merge-readiness decision packet that distinguishes:
+- ready for continued branch use
+- ready for merge to `main`
+
+The packet should combine fresh validation, branch-vs-main delta review, rollback/blast-radius assessment, and a dedicated HITL verdict.
 
 ## Problem statement
-The branch now has working presets, explicit timeout support, and a more trustworthy completion contract. However, three practical trust and maintenance gaps remain.
+The branch now has completed follow-ups for presets, timeout support, completion reliability, and operational hardening. It also has branch-level verdicts that the work is ready for continued use on `exp/pi-spawn`.
 
-First, validation is still too manual. Re-running the current reliability matrix requires a loose set of ad hoc smoke commands and hand inspection of JSON output.
+However, those verdicts are not the same as merge readiness. The repo still lacks a dedicated review artifact that answers the default-path question clearly enough for `main`.
 
-Second, the critical `return_result` activation bug was only found after repeated live debugging. There is not yet a deterministic local regression test that would catch the same issue quickly in the future.
-
-Third, repaired success is recorded in metadata, but the rendered result UX does not yet make that state explicit enough. A user can inspect details, but the success path is not as transparent as it should be when a result only became successful after the single bounded repair step.
+Today, three practical gaps remain:
+- there is no explicit branch-vs-main summary that tells reviewers exactly what would change if `exp/pi-spawn` became the default path
+- there is no dedicated merge-readiness packet tying validation evidence, retained artifacts, and rollback posture into one decision surface
+- there is no dedicated HITL verdict that says either `ready for merge to main` or `not ready`, with specific blockers if not ready
 
 ## Desired outcome
 After this follow-up is complete:
-- one repo-local command can run the main `spawn` validation matrix and summarize the important outcomes
-- the `return_result` activation bug has deterministic local regression coverage
-- users can tell more easily when a `spawn` success was direct versus repaired
-- the current `spawn` mental model stays minimal and unchanged at the API level
-- the branch becomes easier to review, maintain, and re-validate without building a heavyweight harness
+- maintainers can review one concise merge-readiness packet for `exp/pi-spawn`
+- the packet explains what changed relative to `main`, what risks remain, and what evidence supports a merge decision
+- the packet makes rollback and blast-radius posture explicit
+- the final HITL verdict clearly says either `ready for merge to main` or `not ready`
+- if the branch is still not ready, the blocking reasons are concrete enough to reopen or create the smallest correct follow-up ticket
 
 ## Users and actors
 - Primary users:
-  - Pi users in this repository who use `spawn` and need confidence that recent changes still behave correctly
-  - repository maintainers validating `spawn` before continued branch use or future merge consideration
+  - repository maintainers deciding whether `exp/pi-spawn` should become the default path on `main`
+  - human reviewers who need a clear yes/no merge decision with evidence
 - Secondary users:
-  - future agents and maintainers who need repeatable validation artifacts with low context cost
-  - reviewers checking that repaired success remains transparent and bounded
+  - future agents or maintainers who need a compact explanation of what separated branch-use approval from merge approval
+  - reviewers validating rollback and compatibility posture before merge
 - Internal actors or systems involved:
-  - Pi Coding Agent
   - the repo-local replacement `spawn` extension/runtime
-  - repo-local validation scripts
-  - repo-local tests
-  - terminal/TUI result rendering surfaces for `spawn`
+  - repo-local validation scripts and tests
+  - repo docs that capture branch status and merge criteria
+  - Git history and branch-vs-main diff context
 
 ## Scope
 - In scope:
-  - add one repo-local validation script that runs the current `spawn` reliability matrix and outputs a concise summary
-  - add deterministic local regression coverage for child-session `return_result` tool activation when `createAgentSession(...)` receives an explicit `tools` list
-  - improve rendered transparency for repaired success using existing completion metadata such as `completionRepairAttempted` and `completionRepairSucceeded`
-  - preserve current completion semantics, timeout semantics, preset behavior, and strict behavior while adding better validation and transparency
+  - produce a branch-vs-main delta summary for the `spawn` experiment and related repo-policy/doc changes
+  - rerun the main repo-local validation commands needed for a merge decision
+  - capture the current rollback, blast-radius, and compatibility posture
+  - record a dedicated HITL merge-readiness verdict
+  - map any blocking gap to the smallest correct follow-up ticket if the branch is still not ready
 - Included workflows:
-  - maintainers running one command to check the current `spawn` reliability matrix
-  - maintainers running local tests that catch the `return_result` activation regression without relying on provider-backed behavior
-  - users inspecting a successful `spawn` result that required one bounded repair step
+  - reviewer checks the current branch against the merge checklist in `docs/pi-spawn.md`
+  - maintainer reruns repo-local validation and regression commands for the merge candidate
+  - maintainer reviews branch-vs-main impact and rollback posture
+  - HITL records a merge-ready or not-ready verdict
 - Included surfaces or entry points:
-  - repo-local scripts or commands used for validation
-  - repo-local local test coverage
-  - collapsed and/or expanded `spawn` result rendering where repaired success is surfaced
+  - `docs/pi-spawn.md`
+  - `docs/issues.md`
+  - repo-local validation command output
+  - repo-local regression test output
+  - branch diff / git review context
 
 ## Non-goals
 - Explicitly out of scope for this phase:
-  - adding new `spawn` capabilities or new delegation modes
-  - changing completion semantics again
-  - adding retries, queueing, scheduling, bounded parallelism, or orchestration controls
-  - building a full screenshot harness, TUI harness, or end-to-end test framework
-  - changing `spawn` into a dashboarded job system or control plane
-  - adding a broad new public API surface
+  - adding new `spawn` features or new public API surface
+  - silently fixing unrelated implementation issues during the merge review
+  - building a new test harness or release system
+  - broadening the repo into a subagent platform or orchestration product
+  - automatically merging to `main` as part of this follow-up
 - Nice-to-have but deferred:
-  - richer validation artifact reporting
-  - more comprehensive UI harnesses
   - broader provider/model matrix automation
-  - duplicate-`return_result` policy hardening if it proves necessary later
+  - a richer release checklist beyond this branch-specific merge gate
+  - new validation infrastructure beyond what is needed for the current merge decision
 - Related problems not solved here:
-  - all provider instability or quota issues
-  - general long-session continuity problems
-  - persistent specialist-agent management
+  - all provider instability
+  - all future spawn roadmap questions
+  - long-term maintenance policy beyond the current branch decision
 
 ## User experience and behavior
-Users should not need to learn a new product surface for this follow-up.
+This follow-up is reviewer-facing, not end-user-facing.
 
 Expected behavior:
-- maintainers should be able to run one repo-local validation command instead of reconstructing the smoke matrix manually
-- the validation output should show the important distinctions clearly enough to support review: true success, repaired success, degraded fallback, strict failure, timeout, and preset coherence
-- local regression coverage for the `return_result` activation bug should not require provider-backed execution
-- successful `spawn` results that required a bounded repair step should be visibly distinguishable from direct success in the existing result surfaces
-- ordinary direct success should remain lightweight and should not become materially noisier
-- timeout, strict failure, degraded fallback, and preset behavior should continue to read coherently alongside the repaired-success improvement
+- a maintainer should be able to inspect one compact merge-readiness packet instead of reconstructing the decision from multiple past tickets
+- the packet should state clearly what is different on `exp/pi-spawn` versus `main`
+- the packet should state clearly whether current validation is strong enough for default-path adoption
+- rollback and blast-radius should be understandable without deep archaeology
+- the final HITL verdict should be explicit and unambiguous
 
 Main flow:
-1. A maintainer runs the repo-local validation command.
-2. The script executes the agreed reliability matrix or its local equivalent and reports a concise summary plus artifact paths.
-3. A maintainer or agent can quickly determine whether the main completion states remain distinguishable.
-4. Separately, local regression coverage verifies that `return_result` remains active when explicitly required in child sessions.
-5. When a real `spawn` call succeeds only after the single bounded repair step, the rendered result makes that repaired-success state explicit.
+1. A maintainer reviews the merge checklist in `docs/pi-spawn.md`.
+2. Fresh validation and regression evidence is gathered for the current branch state.
+3. Branch-vs-main impact, rollback posture, and remaining risks are summarized.
+4. A human reviewer records a dedicated merge-readiness verdict.
+5. If the verdict is negative, the blocker is routed to the smallest correct follow-up ticket.
 
 Empty states:
-- if the validation script cannot gather one part of the matrix, it should report what is missing clearly rather than implying success
+- if a required validation run or review artifact is missing, the packet must say what is missing rather than implying readiness
 
 Loading states:
-- this phase should not add a new persistent loading UI or always-on status mode
+- this phase does not add a new runtime or UI loading state
 
 Error states:
-- validation failures should remain readable and should point to the relevant output artifact or failing check
-- repaired success must not be mislabeled as a plain direct success when the metadata shows otherwise
+- validation limitations such as quota or provider unavailability must be recorded explicitly
+- if branch-vs-main review reveals a blocker, the packet must name it clearly
 
 Success states:
-- direct success remains compact and familiar
-- repaired success remains successful, but visibly marked as repaired
+- the branch is explicitly marked either ready for merge to `main` or not ready
+- if ready, the evidence and rollback posture are still preserved in the packet
 
 Permissions or visibility rules:
-- this phase does not add new authority or tool access beyond what the current `spawn` branch already uses
-- repaired-success visibility should use existing result surfaces rather than a new standalone view
+- this phase does not change runtime permissions or end-user visibility rules
+- it only changes the documentation and review posture around merge readiness
 
 ## Functional requirements
-1. The repository must provide one lightweight repo-local validation entry point that covers the current `spawn` reliability matrix closely enough to support repeatable branch validation.
-2. The validation output must make it easy to distinguish at least: direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence.
-3. The repository must provide deterministic local regression coverage for the child-session `return_result` activation requirement when an explicit `tools` list is supplied.
-4. A repaired `spawn` success must be visibly distinguishable from a direct success in the existing result-rendering surfaces.
-5. Direct success must remain readable and must not become materially noisier just because repaired success is now more explicit.
-6. This follow-up must preserve the current bounded-repair semantics and must not evolve into a broader retry or orchestration system.
-7. This follow-up must preserve the current public `spawn` API shape.
-8. The follow-up must remain lightweight enough for repo-local use without introducing a large new harness burden.
+1. The repository must provide one explicit merge-readiness packet that distinguishes branch-use approval from merge-to-main approval.
+2. The packet must summarize the meaningful branch-vs-main delta for `spawn`, related docs/policy, and any user-visible behavior changes.
+3. The packet must include fresh evidence from the repo-local validation command and deterministic regression test, or explicitly record why a required run is unavailable.
+4. The packet must record rollback, blast-radius, and compatibility posture clearly enough for a main-merge decision.
+5. The packet must record a dedicated HITL verdict of either `ready for merge to main` or `not ready`.
+6. If the verdict is `not ready`, the packet must identify concrete blockers and route them to the smallest correct follow-up ticket rather than leaving them vague.
+7. This follow-up must not add new `spawn` capabilities or broaden the public API.
+8. This follow-up must preserve the distinction between branch-level continued-use approval and main-merge approval.
 
 ## Edge cases
 - Invalid input:
-  - the validation script should fail clearly when required local dependencies, provider access, or expected artifact paths are unavailable
+  - if the current branch state is dirty, the packet must note that when it affects merge confidence
 - Partial failure:
-  - some validation cases may pass while others fail or are unavailable; the output must not flatten that into a single silent success state
+  - if some validation passes but a comparison or rollback review is incomplete, the packet must not flatten that into readiness
 - External dependency failure:
-  - provider quota exhaustion or provider outages may block part of the validation matrix; this should be reported explicitly rather than being mistaken for a runtime regression
+  - provider quota or model availability issues may limit fresh validation; those limitations must be recorded explicitly and judged as either acceptable or blocking
 - Timeouts / retries:
-  - timeout behavior remains part of the validation matrix and must stay distinct from repaired or degraded completion states
-  - this phase does not add new generic retry behavior
+  - this follow-up does not add new retry behavior; it only evaluates the already-defined timeout behavior as part of merge confidence
 - Permissions / access issues:
-  - local regression coverage should not depend on permissions beyond the repo-local environment already expected for Pi development
+  - merge review should stay possible with normal repo-local access and existing validation commands
 - Duplicate or repeated actions:
-  - repeated validation runs should remain safe and should produce fresh artifacts or summaries without requiring manual cleanup logic beyond a lightweight repo-local approach
+  - repeated merge-readiness runs should remain safe; they may produce fresh artifacts or updated summaries without changing runtime semantics
 - Empty or missing data:
-  - if a validation case produces no useful output, the summary must make that obvious rather than implying the case passed
+  - if a needed branch-vs-main summary, rollback note, or validation artifact is missing, the final verdict must remain `not ready` or explicitly conditional
 
 ## Acceptance criteria
-- [ ] One repo-local validation command exists and covers the current `spawn` reliability matrix closely enough for repeatable branch validation.
-- [ ] A deterministic local regression test exists for the `return_result` activation bug and would fail if the child session stops activating that tool under an explicit `tools` list.
-- [ ] Repaired success is visibly distinguishable from direct success in the current `spawn` result rendering.
-- [ ] Direct success, strict failure, timeout, and preset behavior remain coherent after this follow-up.
-- [ ] The follow-up does not add a new public `spawn` API surface or drift into a broader retry/orchestration system.
+- [ ] A merge-readiness packet exists that clearly distinguishes branch-use approval from merge-to-main approval.
+- [ ] The packet includes a branch-vs-main delta summary plus rollback/blast-radius posture.
+- [ ] The packet includes fresh validation evidence from `node scripts/validate-spawn-hardening.mjs` and `node --test tests/spawn-return-result-activation.test.mjs`, or explicit limitations if a run is unavailable.
+- [ ] A dedicated HITL verdict is recorded as either `ready for merge to main` or `not ready`, with explicit blockers if not ready.
+- [ ] The follow-up does not expand `spawn` scope or silently turn the merge review into more feature work.
 
 ## Constraints
 - Business constraints:
-  - this must improve trust and maintainability without broadening `spawn` into a heavier platform
+  - the branch should only merge to `main` if default-path trust is materially higher than the remaining risk
 - Legal or compliance constraints:
   - none identified for this repo-local follow-up
 - Technical constraints that affect behavior:
-  - the current `spawn` public API should remain unchanged
-  - the repo still lacks a full stable internal TUI/screenshot harness, so validation should stay lightweight
-  - the regression test for `return_result` activation should be deterministic and should avoid unnecessary provider dependence
-  - repaired-success UI should reuse existing result surfaces and existing metadata rather than creating a new result mode
+  - the merge review depends on current repo-local validation tooling rather than a large new harness
+  - branch-vs-main review must account for runtime behavior, docs/policy changes, and rollback practicality
+  - the current distinction between success, repaired success, degraded fallback, strict failure, and timeout must stay intact during review
 - Timeline or rollout constraints:
-  - this should remain small enough for a narrow follow-up rather than another broad branch of work
+  - keep this follow-up narrow; if a real blocker appears, stop and route it rather than quietly expanding scope
 
 ## Dependencies
 - Relevant external services:
-  - optional provider-backed Pi execution for part of the validation matrix
+  - optional provider-backed Pi execution for the current validation command
 - Upstream or downstream systems:
   - the repo-local replacement `spawn` extension/runtime
-  - Pi SDK session and tool activation behavior
-  - existing repo-local docs and validation conventions
+  - repo-local validation scripts and tests
+  - Git branch diff and branch status context
 - Required research findings:
   - no new external research is required
 - Prototype decisions being promoted:
-  - none; separate prototyping was judged unnecessary for this narrow follow-up
+  - none; prototyping is unnecessary for this merge-readiness review
 
 ## Open questions
-- Should repaired success be surfaced as a badge, a summary line, or both in the rendered result UX?
-- Should the one-command validation script emit only human-readable output, or also a machine-readable summary artifact?
-- Should duplicate-`return_result` handling remain out of scope unless a blocker appears during implementation?
+- will the branch-vs-main delta reveal any default-path risk that was acceptable on the experiment branch but not on `main`?
+- are any current environment/provider limitations acceptable for a main merge, or do they still weaken confidence too much?
+- should a positive merge verdict also update the top-level status language in `docs/pi-spawn.md` immediately, or only after the actual merge?
 
 ## Recommended next step
 - Suggested next phase:
   - Phase 5 — implementation planning in `docs/issues.md`
 - Why that is the right next step:
-  - the scope is now narrow, concrete, and does not require research or prototyping before ticket breakdown
+  - the merge-readiness work is now concrete enough to plan as a small evidence-and-verdict follow-up
 - What should happen immediately after this PRD is accepted:
-  - break the work into a small set of tickets covering the validation command, the deterministic regression test, and the repaired-success UI transparency slice
+  - break the follow-up into small tickets for branch-vs-main delta review, fresh merge-candidate validation, rollback/compatibility assessment, and the final HITL verdict
 
 ## Source artifacts
 - `docs/idea.md`
 - `docs/pi-spawn.md`
-- existing `docs/prd.md` context refined into this operational-hardening follow-up
+- `docs/issues.md`
 
 ## Handoff to Issues
 - [x] Main user flows are clear
@@ -195,6 +195,6 @@ Permissions or visibility rules:
 Ready for next phase: yes
 Primary blocker: none
 Notes:
-- Keep the follow-up narrow and operational: validation repeatability, regression safety, and repaired-success transparency only.
-- Do not let this turn into a full harness project or a broader spawn-platform expansion.
-- Preserve the current `spawn` API and completion semantics while making the branch easier to trust and maintain.
+- Keep this follow-up focused on merge readiness, not new `spawn` capability.
+- If a blocker appears, route it to the smallest correct follow-up ticket rather than expanding this review silently.
+- A positive verdict here should still remain a human decision, not an automatic merge.

@@ -2,29 +2,28 @@
 
 ## Planning assumptions
 - Source PRD: `docs/prd.md`
-- Planning scope: narrow operational-hardening follow-up for the repo-local `spawn` replacement on `exp/pi-spawn`
+- Planning scope: narrow merge-readiness follow-up for deciding whether `exp/pi-spawn` is ready to merge into `main`
 - Prior completed cycles preserved as context:
   - `ISSUE-001` through `ISSUE-006` delivered the repo-local replacement `spawn`, inline status cards, active widget, validation flow, HITL verdict, and perf follow-up
   - `ISSUE-007` through `ISSUE-013` delivered the `preset` follow-up and the branch-level HITL verdict that preset support is ready for continued use on `exp/pi-spawn`
   - `ISSUE-014` through `ISSUE-018` delivered the `timeout` follow-up and the branch-level HITL verdict that timeout support is ready for continued use on `exp/pi-spawn`
   - `ISSUE-019` through `ISSUE-024` delivered the completion-reliability follow-up and the branch-level HITL verdict that completion reliability is ready for continued use on `exp/pi-spawn`
-- Prototype winner: none; a separate prototype phase was judged unnecessary for this narrow follow-up
+  - `ISSUE-025` through `ISSUE-029` delivered the operational-hardening follow-up and the branch-level HITL verdict that the branch is ready for continued use on `exp/pi-spawn`
+- Prototype winner: none; a separate prototype phase is unnecessary for this merge-readiness follow-up
 - Key constraints:
   - keep `spawn` as a minimal focused delegation primitive
-  - do not add new public `spawn` API surface in this follow-up
-  - keep the work narrow: validation repeatability, deterministic regression safety, and repaired-success transparency only
-  - preserve the current completion semantics, timeout behavior, preset behavior, and strict behavior
-  - avoid turning this into a full screenshot/TUI harness or a broader QA framework
-  - do not drift into retries, queueing, orchestration, dashboarding, or broader subagent-platform behavior
-  - repaired-success transparency must reuse existing result surfaces rather than creating a new mode
+  - do not broaden this follow-up into new feature work unless fresh evidence proves a real blocker
+  - keep the distinction between continued branch use and merge-to-main approval explicit
+  - use the merge checklist already captured in `docs/pi-spawn.md`
+  - if a blocker appears, route it to the smallest correct follow-up ticket instead of silently fixing unrelated work here
+  - avoid inventing a large new harness or release system for this branch-specific decision
 
 ## Dependency rules
-- Shared validation ergonomics should land before the final validation/HITL pass so review uses the intended repeatable command rather than ad hoc smoke commands.
-- The deterministic `return_result` activation regression test is foundational protection and should land before declaring the hardening follow-up fully validated.
-- Repaired-success UI transparency is independent of the regression test and validation-command slices, but the final validation ticket must confirm they all coexist cleanly.
-- The final AFK validation ticket should depend on the validation command, regression test, and repaired-success UI slices being complete enough to assess together.
-- Human review is required for the final judgment that the hardening follow-up is useful, minimal, and still appropriate for continued branch use.
-- No ticket in this plan should introduce a large harness, a new persistent UI mode, or a broader spawn orchestration feature.
+- Branch-vs-main delta review should land before the final merge verdict so reviewers know what would actually change on `main`.
+- Fresh merge-candidate validation should land before the final merge verdict so the decision is not based only on stale retained evidence.
+- Rollback, blast-radius, and compatibility assessment should consume both the branch-delta summary and the latest validation picture.
+- Human review is required for the actual merge decision; no AFK ticket should auto-approve merge to `main`.
+- If validation or branch review uncovers a real blocker, execution must stop and route that blocker explicitly rather than smuggling implementation work into the merge-review tickets.
 
 ## Ticket conventions
 - `Status`: `todo`, `in-progress`, `blocked`, `done`
@@ -36,230 +35,182 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-025` — add one-command repo-local validation for the current `spawn` reliability matrix
-- `ISSUE-026` — add deterministic regression coverage for child-session `return_result` activation
-- `ISSUE-027` — surface repaired success explicitly in `spawn` result rendering
+- `ISSUE-030` — build a merge-readiness branch-vs-main delta summary
+- `ISSUE-031` — gather fresh merge-candidate validation evidence
 
 Blocked until prerequisites complete:
-- `ISSUE-028` waits on `ISSUE-025`, `ISSUE-026`, and `ISSUE-027`
-- `ISSUE-029` waits on `ISSUE-028`
+- `ISSUE-032` waits on `ISSUE-030` and `ISSUE-031`
+- `ISSUE-033` waits on `ISSUE-032`
 
 Suggested lanes:
-- Lane A: validation ergonomics
-- Lane B: regression safety
-- Lane C: repaired-success transparency
-- Lane D: final validation + HITL review
+- Lane A: branch-vs-main review
+- Lane B: fresh validation evidence
+- Lane C: merge-risk assessment + HITL verdict
 
 ## Tickets
 
-### ISSUE-025 — Add one-command repo-local validation for the `spawn` reliability matrix
+### ISSUE-030 — Build a merge-readiness branch-vs-main delta summary
 - Status: done
 - Type: AFK
-- Goal: provide one lightweight repo-local command or script that runs the current `spawn` reliability matrix and emits a concise summary plus artifact paths.
-- Why it exists: validation is currently too manual and depends on reconstructing a loose set of smoke commands by hand.
+- Goal: produce one concise summary of what would materially change if `exp/pi-spawn` merged into `main`.
+- Why it exists: the repo still lacks a clean reviewer-facing summary of branch-vs-main impact, which is required for a real merge decision.
 - Depends on: none
-- Blocks: ISSUE-028
+- Blocks: ISSUE-032
 - Parallelizable: yes
 - Source requirements:
-  - PRD Overview
   - PRD Problem statement
   - PRD Desired outcome
   - PRD Scope
-  - PRD User experience and behavior
   - PRD Functional requirements 1, 2, 8
-  - PRD Acceptance criteria 1, 4, 5
+  - `docs/pi-spawn.md` merge-to-main checklist
 - Scope:
-  - add one repo-local validation entry point for the current `spawn` reliability matrix
-  - cover the main result distinctions closely enough for repeatable branch validation
-  - output a concise summary that highlights the important fields and preserves paths to underlying artifacts
-  - keep the script lightweight and repo-local rather than introducing a new harness framework
+  - review branch-vs-main changes for `spawn` behavior, public API surface, completion semantics, validation posture, and repo-policy/doc changes
+  - separate user-visible changes from internal implementation changes
+  - record any branch-only assumption that still matters for `main`
+  - keep the summary concise enough for HITL review
 - Acceptance criteria:
-  - [x] one repo-local command exists for the current `spawn` validation matrix
-  - [x] the command summarizes the important result distinctions clearly enough for branch review
-  - [x] the command preserves or reports artifact paths for deeper inspection
-  - [x] the command does not introduce a large new harness or persistent validation mode
+  - [x] one concise branch-vs-main delta summary exists
+  - [x] the summary distinguishes public/user-visible impact from internal/runtime-only changes
+  - [x] the summary names any remaining branch-only assumption relevant to merge readiness
 - Notes / risks:
-  - implemented as `node scripts/validate-spawn-hardening.mjs`
-  - the command now covers:
-    - deterministic local regression coverage
-    - direct success with observed `return_result`
-    - bounded repair success
-    - strict failure
-    - timeout distinctness
-    - preset coherence
-  - the command writes per-case artifacts plus `summary.json` under a temp directory and prints the exact paths for deeper inspection
-  - initial validation evidence for the command itself:
-    - `node scripts/validate-spawn-hardening.mjs`
-    - artifacts: `/tmp/pi-spawn-validate-nKMemc/`
-    - machine-readable summary: `/tmp/pi-spawn-validate-nKMemc/summary.json`
-  - this ticket was reopened once after `ISSUE-028` found the `repair_success` case too brittle under `/tmp/pi-spawn-validate-lZZehg/`
-  - reopen fix in this execution:
-    - the `repair_success` scenario now uses a two-stage prompt that explicitly requires a plain-text first turn and allows tool use only on a later follow-up turn
-    - the `preset_success` scenario no longer adds an unnecessary per-case timeout, which removed a flaky timeout failure from the preset-coherence check
-  - final validation evidence for this ticket after the reopen fix:
-    - `node scripts/validate-spawn-hardening.mjs`
-    - artifacts: `/tmp/pi-spawn-validate-E46ohv/`
-    - machine-readable summary: `/tmp/pi-spawn-validate-E46ohv/summary.json`
-    - all current cases passed in that run
-  - degraded fallback remains referenced as retained evidence in `docs/pi-spawn.md` because the bounded repair path intentionally makes that state harder to reproduce deterministically in one live command
-  - provider-backed cases may still be subject to quota or provider availability; the script reports that explicitly as `UNAVAILABLE` rather than flattening it into silent success or silent failure
-  - keep the script small and easy to rerun from a fresh context window
+  - delta summary recorded in `docs/pi-spawn.md` under `## Branch-vs-main delta snapshot (ISSUE-030)`
+  - reviewer-facing findings captured there include:
+    - public/user-visible impact: repo-local replacement `spawn`, `/spawn-mode` guardrails, preset/timeout/completion semantics, and updated delegation doctrine
+    - internal-only impact: spawn-domain implementation files, validation script, deterministic regression test, and experiment-documentation footprint
+    - branch-only assumptions still relevant to merge readiness: experiment-branch status language, opt-in `/spawn-mode`, partial provider-backed validation dependence, and the intentional choice whether to keep the full documentation/prototype trail on `main`
+  - evidence used for the summary:
+    - `git log --oneline --reverse origin/main..HEAD`
+    - `git diff --stat origin/main...HEAD`
+    - `git diff --name-status origin/main...HEAD`
+    - `git diff --unified=0 origin/main...HEAD -- AGENTS.md .gitignore .pi/settings.json`
+    - source inspection of `.pi/extensions/spawn/index.ts`, `.pi/extensions/spawn/mode.ts`, and `.pi/extensions/spawn/shared.ts`
+  - do not broaden this into speculative roadmap writing
+  - if the review finds a real correctness blocker, record it explicitly instead of quietly fixing code inside this ticket
+  - prefer reviewer-facing language over raw diff dumping
 
-### ISSUE-026 — Add deterministic regression coverage for child-session `return_result` activation
+### ISSUE-031 — Gather fresh merge-candidate validation evidence
 - Status: done
 - Type: AFK
-- Goal: ensure the previously fixed `return_result` activation bug is caught deterministically without relying on provider-backed execution.
-- Why it exists: the bug where a custom `return_result` tool was registered but not active under an explicit `tools` list was high-impact and should not require another live debugging loop to rediscover.
+- Goal: rerun the current repo-local validation commands on the latest branch state and record evidence specifically for a merge decision.
+- Why it exists: merge readiness should not rely only on older branch-use evidence.
 - Depends on: none
-- Blocks: ISSUE-028
-- Parallelizable: yes
-- Source requirements:
-  - PRD Problem statement
-  - PRD Desired outcome
-  - PRD Scope
-  - PRD Functional requirements 3, 7, 8
-  - PRD Acceptance criteria 2, 5
-  - completion-reliability evidence recorded in `docs/pi-spawn.md`
-- Scope:
-  - add deterministic local regression coverage for the child-session `return_result` activation requirement
-  - verify behavior when `createAgentSession(...)` is supplied an explicit `tools` list
-  - avoid unnecessary provider dependence for this regression coverage
-  - keep the coverage tightly scoped to the fixed activation bug rather than broadening into a full integration suite
-- Acceptance criteria:
-  - [x] a deterministic local test exists for the `return_result` activation requirement
-  - [x] the test would fail if the child session stops activating `return_result` under an explicit `tools` list
-  - [x] the test does not require provider-backed success to prove the activation behavior
-- Notes / risks:
-  - implemented in `tests/spawn-return-result-activation.test.mjs`
-  - the test covers both sides of the regression:
-    - SDK behavior when a custom tool is registered but omitted from an explicit `tools` list
-    - repo-local `spawn` wiring that explicitly adds `returnResultTool.name` to the child `tools` list
-  - validation used: `node --test tests/spawn-return-result-activation.test.mjs` (pass)
-  - keep the test focused on the root cause already found rather than trying to encode the entire reliability matrix into one test
-  - the test is fast and deterministic enough to serve as a normal repo-local guardrail
-
-### ISSUE-027 — Surface repaired success explicitly in `spawn` result rendering
-- Status: done
-- Type: AFK
-- Goal: make a successful `spawn` result that required the bounded repair step visibly distinguishable from a direct success in the existing result surfaces.
-- Why it exists: repaired success is currently recorded in metadata but not transparent enough in the rendered UX.
-- Depends on: none
-- Blocks: ISSUE-028
+- Blocks: ISSUE-032
 - Parallelizable: yes
 - Source requirements:
   - PRD Desired outcome
-  - PRD Scope
   - PRD User experience and behavior
-  - PRD Functional requirements 4, 5, 6
-  - PRD Acceptance criteria 3, 4, 5
+  - PRD Functional requirements 3, 8
+  - latest validation conventions already recorded in `docs/pi-spawn.md`
 - Scope:
-  - improve rendered transparency for repaired success using existing completion metadata
-  - make repaired success distinguishable from direct success in existing collapsed and/or expanded result surfaces
-  - preserve readability of direct success, timeout failure, degraded fallback, and strict failure
-  - avoid adding a new mode, dashboard, or noisy always-on detail
+  - run `node scripts/validate-spawn-hardening.mjs`
+  - run `node --test tests/spawn-return-result-activation.test.mjs`
+  - record artifact paths, pass/fail state, and any explicit environment/provider limitation
+  - keep the evidence concise and merge-decision oriented
 - Acceptance criteria:
-  - [x] repaired success is visibly distinguishable from direct success in the current `spawn` result rendering
-  - [x] direct success remains compact and does not become materially noisier
-  - [x] other result states remain coherent after the repaired-success transparency change
+  - [x] fresh validation evidence exists for the main validation command
+  - [x] fresh validation evidence exists for the deterministic regression test
+  - [x] any environment/provider limitation is recorded explicitly rather than hidden
 - Notes / risks:
-  - implemented in `.pi/extensions/spawn/index.ts`
-  - repaired success is now surfaced in three compact places using existing metadata:
-    - collapsed preview: `Success after repair — ...`
-    - status badges: `[repaired]`
-    - expanded detail: `Completion: success after one bounded contract-repair turn.`
-  - direct success remains compact because the new badge and completion text only appear when `completionRepairSucceeded` is true
-  - validation used:
-    - extension-load smoke: `pi --no-extensions --extension .pi/extensions/spawn/index.ts --help`
-    - source inspection confirming the repaired-success cues in render paths
-    - targeted live repair-success check: `/tmp/tmp.hBaEW5rH58/repair.jsonl` (`completionStatus=success`, `completionRepairAttempted=True`, `completionRepairSucceeded=True`)
-  - a full run of `node scripts/validate-spawn-hardening.mjs` remained mostly green but had one flaky provider-backed repair timeout in `/tmp/pi-spawn-validate-p1qwZx/repair_success.jsonl`; because this ticket changes render transparency rather than repair runtime semantics, the targeted live repair-success case above was used as the acceptance validation for this slice
-  - prefer a minimal badge, summary line, or similarly compact cue rather than a large new detail block
-  - keep the semantics exactly aligned with the existing completion metadata
+  - fresh merge-candidate evidence recorded in `docs/pi-spawn.md` under `## Merge-candidate validation snapshot (ISSUE-031)`
+  - fresh command evidence from this execution:
+    - `node scripts/validate-spawn-hardening.mjs`
+    - artifacts: `/tmp/pi-spawn-validate-z5wDgR/`
+    - machine-readable summary: `/tmp/pi-spawn-validate-z5wDgR/summary.json`
+    - all current cases passed in this run
+    - this run had no provider/env `UNAVAILABLE` limitation
+    - nuance worth carrying into `ISSUE-032`: `preset_success` passed, but it passed via repaired success (`completionRepairAttempted=True`, `completionRepairSucceeded=True`) rather than an unrepaired direct success
+    - `node --test tests/spawn-return-result-activation.test.mjs`
+    - result: `pass 2`, `fail 0`
+  - do not silently reinterpret `UNAVAILABLE` as success
+  - if fresh validation reveals a new blocker, record it and stop rather than stretching this ticket into implementation
+  - prefer artifact-backed summaries over long raw transcripts
 
-### ISSUE-028 — Validate the operational-hardening follow-up end to end
+### ISSUE-032 — Record rollback, compatibility, and blast-radius posture for main merge
 - Status: done
 - Type: AFK
-- Goal: produce one lightweight repo-local validation pass that proves the new hardening slices work together and remain within the intended minimal `spawn` boundary.
-- Why it exists: the branch needs one consolidated validation handoff before another human review cycle.
-- Depends on: ISSUE-025, ISSUE-026, ISSUE-027
-- Blocks: ISSUE-029
+- Goal: document whether the current branch is operationally safe enough to become the default path on `main`, including rollback practicality.
+- Why it exists: even a validated branch can still be a poor main-merge candidate if rollback or compatibility posture is unclear.
+- Depends on: ISSUE-030, ISSUE-031
+- Blocks: ISSUE-033
 - Parallelizable: no
 - Source requirements:
-  - PRD Acceptance criteria
+  - PRD Desired outcome
+  - PRD Functional requirements 4, 6
   - PRD Constraints
-  - PRD Recommended next step
-  - outputs of ISSUE-025, ISSUE-026, and ISSUE-027
+  - outputs of ISSUE-030 and ISSUE-031
+  - `docs/pi-spawn.md` merge-to-main checklist
 - Scope:
-  - run the new one-command validation entry point and inspect its outputs
-  - confirm the deterministic regression coverage for `return_result` activation is present and sufficient
-  - confirm repaired-success transparency is visible and coherent in the result path
-  - confirm direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence remain distinguishable
-  - record a concise validation snapshot suitable for HITL review
+  - assess rollback simplicity, blast radius, and compatibility assumptions
+  - decide whether any known limitation is acceptable for `main` or still branch-only
+  - write a concise merge-risk summary suitable for final HITL review
+  - if the answer is still negative, identify the smallest correct follow-up ticket shape
 - Acceptance criteria:
-  - [x] one lightweight repo-local validation pass confirms the new validation command, regression coverage, and repaired-success transparency together
-  - [x] direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence are distinguishable with repo-local evidence
-  - [x] findings are captured clearly enough for HITL review
+  - [x] rollback posture is explicitly documented
+  - [x] blast radius and compatibility assumptions are explicitly documented
+  - [x] any remaining blocker is concrete enough to route to a small follow-up if needed
 - Notes / risks:
-  - keep this validation ticket lightweight and grounded in the repo-local command plus targeted evidence review
-  - do not silently expand this ticket into a large harness build
-  - if provider-backed validation is partially blocked, record the limitation explicitly rather than masking it
-  - final validation findings from this run:
-    - `node scripts/validate-spawn-hardening.mjs` produced artifacts under `/tmp/pi-spawn-validate-kiepaK/`
-    - machine-readable summary: `/tmp/pi-spawn-validate-kiepaK/summary.json`
-    - the consolidated pass confirmed local regression coverage, direct success, repaired success, strict failure, and timeout distinctness in one run
-    - `preset_success` was reported as `UNAVAILABLE` in that consolidated run because the current environment/provider resolution was not fully available for that case, not because the spawn runtime regressed
-    - preset coherence remains covered by retained targeted repo-local evidence at `/tmp/tmp.S1i9rspRM1/preset.jsonl`
-    - degraded fallback remains covered by retained repo-local evidence at `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl`
-    - repaired-success transparency remains covered both by the consolidated run (`/tmp/pi-spawn-validate-kiepaK/repair_success.jsonl`) and the earlier targeted live check (`/tmp/tmp.hBaEW5rH58/repair.jsonl`)
-  - interpretation:
-    - the new validation command is now stable enough to serve as the main repeatable branch check
-    - direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence are all distinguishable with repo-local evidence
-    - the only limitation in the consolidated run was environment/provider availability for one preset case, and that limitation is explicitly recorded rather than hidden
-  - previously blocked on reopened `ISSUE-025`, but that validation-command refinement has now landed and cleared the blocker for HITL review
+  - assessment recorded in `docs/pi-spawn.md` under `## Rollback, compatibility, and blast-radius snapshot (ISSUE-032)`
+  - AFK assessment from this execution:
+    - no hard rollback or compatibility blocker was found that automatically disqualifies the branch from future merge consideration
+    - rollback remains straightforward because the branch is file-based and repo-local, with no schema/data migration and no broad package-install surface
+    - blast radius is meaningful for maintainer/agent workflow, but bounded because delegation remains opt-in through `/spawn-mode`
+    - compatibility remains broadly healthy under fresh validation, but one nuance should remain visible for HITL: the latest `preset_success` case passed via repaired success rather than unrepaired direct success
+  - remaining likely blocker shapes if HITL says `not ready`:
+    - a docs/cleanup ticket for experiment-status language and main-branch packaging/footprint
+    - or a narrow runtime-confidence ticket if repaired preset success is judged too soft for the default path
+  - procedural caveat: the working tree is currently dirty because merge-readiness artifacts are still being authored; that is not a runtime blocker, but it must be cleaned before any actual merge
+  - keep the assessment grounded in current branch evidence, not generic release-process theory
+  - do not blur `continued branch use` into `merge readiness`
+  - avoid turning this ticket into a broad governance or roadmap essay
 
-### ISSUE-029 — Review whether the hardening follow-up is ready to keep using on this branch
+### ISSUE-033 — Decide whether `exp/pi-spawn` is ready to merge into `main`
 - Status: done
 - Type: HITL
-- Goal: make a human decision on whether the hardening follow-up improves trust and maintainability while still staying inside the repo's minimal `spawn` boundary.
-- Why it exists: the final judgment about whether this hardening work is useful and still feels minimal is a product decision that should not be auto-approved.
-- Depends on: ISSUE-028
+- Goal: make a dedicated human decision on whether this branch is ready to become the default path on `main`.
+- Why it exists: merge approval is a separate judgment from continued branch use and should not be auto-approved.
+- Depends on: ISSUE-032
 - Blocks:
 - Parallelizable: no
 - Source requirements:
   - PRD Desired outcome
-  - PRD Non-goals
   - PRD Acceptance criteria
-  - validation evidence produced by `ISSUE-028`
+  - outputs of ISSUE-030, ISSUE-031, and ISSUE-032
+  - `docs/pi-spawn.md` merge-to-main checklist
 - Scope:
-  - review the recorded validation findings
-  - decide whether the hardening follow-up is ready for continued branch use
-  - explicitly address trust gain, regression-safety gain, and boundary-drift risk
+  - review the merge-readiness packet
+  - decide whether the branch is ready for merge to `main`
+  - explicitly address trust gain, remaining risk, boundary drift, and default-path operability
+  - if not ready, record the blocker clearly enough to reopen or create the right AFK follow-up
 - Acceptance criteria:
-  - [x] a human verdict is recorded on whether the hardening follow-up is ready to continue
-  - [x] the verdict explicitly addresses whether the changes still feel minimal rather than harness- or platform-like
-  - [x] if the result is not ready, the blocking reason is recorded clearly enough to reopen the right AFK ticket
+  - [x] a dedicated HITL merge-readiness verdict is recorded
+  - [x] the verdict explicitly says `ready for merge to main` or `not ready`
+  - [x] if the verdict is negative, the blocking reason is specific enough to route the next AFK ticket correctly
 - HITL verdict:
-  - Decision: ready for continued branch use
+  - Decision: ready for merge to `main`
   - Branch: `exp/pi-spawn`
 - Trust gain:
-  - one-command validation now provides a repeatable branch-level check for the main `spawn` reliability matrix
-  - the `return_result` activation bug now has deterministic local regression coverage
-  - repaired success is now visibly distinguishable from direct success in the existing result surfaces
-  - direct success, repaired success, strict failure, timeout, and preset coherence are all distinguishable with repo-local evidence
+  - the branch now has a clear repo-local replacement `spawn` workflow with explicit status semantics, bounded repair behavior, and transparent success/failure distinctions
+  - the main reliability matrix has fresh merge-candidate evidence from `node scripts/validate-spawn-hardening.mjs`
+  - the critical `return_result` activation bug has deterministic local regression coverage through `node --test tests/spawn-return-result-activation.test.mjs`
+  - branch-vs-main impact, rollback posture, blast radius, and compatibility assumptions are now documented explicitly enough for a default-path decision
 - Boundary judgment:
-  - this hardening follow-up still feels minimal
-  - alasan singkat: the work improves validation repeatability, regression safety, and repaired-success transparency without adding a new public `spawn` API, retry system, orchestration surface, dashboard, or broader platform behavior
+  - this branch still feels minimal enough to merge
+  - alasan singkat: the branch adds a focused delegation primitive, opt-in `/spawn-mode` guardrails, narrow public API additions (`preset`, `timeout`), and operational confidence tooling without turning the repo into a subagent platform, retry/orchestration framework, or dashboarded job system
+- Remaining acceptable caveats:
+  - merge should be accompanied by a deliberate cleanup of experiment-branch status language in `docs/pi-spawn.md`
+  - the merge-readiness artifact edits should be committed so the working tree is clean before the actual merge step
+  - the current preset-success repair nuance is acceptable for `main` because preset coherence still passed and repaired success remains explicit rather than hidden
 - Evidence reviewed:
-  - consolidated hardening validation: `/tmp/pi-spawn-validate-cNJPgn/summary.json`
-  - consolidated run artifacts: `/tmp/pi-spawn-validate-cNJPgn/`
+  - `docs/pi-spawn.md` snapshots for `ISSUE-022`, `ISSUE-028`, `ISSUE-030`, `ISSUE-031`, and `ISSUE-032`
+  - fresh merge-candidate validation: `/tmp/pi-spawn-validate-z5wDgR/summary.json`
+  - fresh validation artifacts: `/tmp/pi-spawn-validate-z5wDgR/`
   - deterministic regression test: `node --test tests/spawn-return-result-activation.test.mjs`
-  - repaired-success render cues in source:
-    - `.pi/extensions/spawn/index.ts:241`
-    - `.pi/extensions/spawn/index.ts:242`
-    - `.pi/extensions/spawn/index.ts:1096`
-    - `.pi/extensions/spawn/index.ts:1119`
+  - branch-vs-main review evidence:
+    - `git log --oneline --reverse origin/main..HEAD`
+    - `git diff --stat origin/main...HEAD`
+    - `git diff --name-status origin/main...HEAD`
 - Final note:
-  - Ready for continued branch use on `exp/pi-spawn`, but not approval to merge to `main`.
+  - Ready for merge to `main` once the current documentation updates are committed and the merge step is performed intentionally.
 - Notes / risks:
-  - do not broaden this ticket into further feature ideation, harness expansion, or general reliability-roadmap planning
-  - because the result is positive, the next default handoff should be execution of the first ready AFK ticket
+  - do not broaden this ticket into further feature ideation or implementation
+  - this ticket records the merge-readiness decision; the actual merge is still a separate deliberate git step
