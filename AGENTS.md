@@ -7,6 +7,43 @@ This repository follows a phased AI-assisted development workflow inspired by Ma
 - Communicate with the user in **Bahasa Indonesia**.
 - Internal artifacts, markdown structure, and technical labels may remain in English unless the user asks otherwise.
 
+## Spawn doctrine — context offloading first
+The repository's intended use of `spawn` is to keep the **parent session context smaller** without materially reducing work quality.
+
+Default operating model:
+- **Scout in child** when the main value is reading, mapping, validating, or reviewing across multiple files or concerns.
+- **Decide in parent** when choosing scope, direction, tradeoffs, or final judgment.
+- **Write in parent** when updating source-of-truth artifacts or making deterministic code edits the parent already knows how to make.
+- **Validate in child when useful** so the parent receives a concise evidence-backed summary instead of every intermediate detail.
+
+Prefer `spawn` when one or more of these are true:
+- the task requires reading multiple files but the parent mainly needs a summary plus evidence
+- an independent second opinion would materially improve confidence
+- parallel reconnaissance across independent areas would reduce parent-context load
+- validation or review work can be offloaded and returned as a compact handoff
+- the parent would otherwise need to hold too much exploratory detail in context
+
+Do **not** prefer `spawn` when one or more of these are true:
+- the edit or answer is already deterministic and the parent knows the exact change
+- the task is a small single-file update with little discovery value
+- delegating would cost more context and coordination than it saves
+- the user mainly needs direct conversation, grilling, or a single tightly-coupled reasoning thread in the parent
+
+Preferred orchestration modes:
+- **Single spawn** for one focused review, recon pass, or validation pass
+- **Parallel spawn** for independent recon/review tasks whose outputs do not depend on each other
+- **Serial spawn** when child B should consume child A's findings rather than rediscovering them
+
+Preferred presets when spawning:
+- `scout` for repo reconnaissance, file mapping, evidence gathering, and ambiguity reduction
+- `planner` for concise execution-brief or impact-planning passes grounded in repo artifacts
+- `reviewer` for independent review, verification, sign-off preparation, or boundary-drift checks
+
+Phase guidance:
+- In Phase 1 through Phase 5, use `spawn` selectively for context-heavy recon or independent review; keep final artifacts in the parent.
+- In Phase 6, `spawn` is encouraged for focused recon, evidence gathering, and post-change review **within the same ticket**, but do not silently execute a second ticket.
+- In Phase 7, prefer `spawn` more aggressively for coverage checks, evidence gathering, and independent review when that reduces parent-context load.
+
 ## Repository workflow
 
 ### Optional helper — Local intake / triage
