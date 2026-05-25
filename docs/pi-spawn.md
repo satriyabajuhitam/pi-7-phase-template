@@ -369,6 +369,28 @@ This section records the first live validation pass for the completion-reliabili
   - preset compatibility remains coherent under the refined completion semantics
   - this is sufficient validation evidence for HITL review in `ISSUE-023`
 
+### Operational hardening validation snapshot (`ISSUE-028`)
+- The hardening follow-up now has a one-command validation entry point at `node scripts/validate-spawn-hardening.mjs`.
+- A final end-to-end validation run produced artifacts under `/tmp/pi-spawn-validate-kiepaK/` with machine-readable summary `/tmp/pi-spawn-validate-kiepaK/summary.json`.
+- What the consolidated run confirmed directly:
+  - deterministic local regression coverage
+  - direct success with observed `return_result`
+  - repaired success with `completionRepairAttempted=True` and `completionRepairSucceeded=True`
+  - strict failure
+  - timeout distinctness
+- Remaining consolidated-run limitation:
+  - `preset_success` was reported as `UNAVAILABLE` in that run because the current environment/provider resolution was not fully available for that case, not because the spawn runtime regressed
+- Retained targeted evidence still completes the matrix:
+  - preset coherence: `/tmp/tmp.S1i9rspRM1/preset.jsonl`
+  - degraded fallback retained evidence: `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl`
+  - earlier targeted repaired-success proof: `/tmp/tmp.hBaEW5rH58/repair.jsonl`
+- Interpretation:
+  - the validation-command refinement from the `ISSUE-025` reopen worked: the repaired-success scenario is now robust enough for the consolidated check
+  - the new validation command is now stable enough to serve as the main repeatable branch check
+  - direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence are all distinguishable with repo-local evidence
+  - the only limitation in the final consolidated run was explicit environment/provider availability for one preset case, and that limitation is now recorded transparently rather than hidden
+  - this is sufficient validation evidence for HITL review in `ISSUE-029`
+
 ## Where to look for deeper detail
 - `docs/prd.md`
 - `docs/issues.md`

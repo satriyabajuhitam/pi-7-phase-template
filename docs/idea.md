@@ -1,115 +1,97 @@
 # Idea
 
 ## Problem statement
-The repo-local `spawn` replacement on `exp/pi-spawn` now has improved UI/UX, guidance-only presets, and explicit per-call timeout support. The most visible remaining trust gap is completion reliability: child runs still sometimes finish without calling `return_result`, which forces the parent into the current degraded-success fallback path.
+The repo-local `spawn` replacement on `exp/pi-spawn` now has working presets, per-call timeout support, and a more trustworthy completion contract. The next remaining gap is not core behavior anymore, but **operability and regression safety**.
 
-That fallback is useful for debugging, but it weakens confidence because a run can appear operationally successful while still violating the intended completion contract.
+Today, three practical weaknesses remain:
+- validation still depends on manually re-running a loose matrix of smoke commands
+- the critical `return_result` activation bug was caught late and does not yet have a deterministic local regression test
+- repaired success is visible in metadata, but not yet transparent enough in the rendered UX
 
 ## Desired outcome
-Add one narrow follow-up that makes `spawn` completion more trustworthy by reducing or clarifying missing-`return_result` cases without changing the minimal mental model of one tool, one focused delegation task.
+Add one narrow follow-up that improves day-to-day confidence in `spawn` without changing its minimal product boundary.
 
 After this follow-up:
-- missing-`return_result` cases should happen less often, or be more clearly framed when they do happen
-- normal successful runs should still feel lightweight and compatible
-- the branch should preserve the distinction between true success, degraded-success fallback, and hard failure
-- `spawn` should still feel like a focused delegation primitive, not a workflow engine or job-control UI
+- one repo-local command should be able to run the main validation matrix and summarize the outcome
+- the `return_result` activation bug should have a deterministic local regression test
+- repaired success should be easier to distinguish from direct success in the UI
+- `spawn` should still feel like one focused delegation primitive, not a larger subagent platform or test harness product
 
 ## Scope
-- improve completion reliability around `return_result`
-- keep the current `spawn` public shape minimal unless a very small explicit surface change becomes clearly necessary
-- preserve the existing timeout behavior and preset behavior
-- improve trust in result classification and completion semantics
-- validate with lightweight repo-local evidence
+- add a lightweight one-command validation script for the current `spawn` reliability matrix
+- add a deterministic local regression test for child-session `return_result` tool activation
+- improve UI transparency for repaired success using existing completion metadata
+- keep the current `spawn` public API unchanged unless a very small internal-only support change is clearly necessary
+- keep validation and UX work grounded in the existing replacement extension, not a new framework
 
 ## Non-goals
-- turning `spawn` into a full subagent platform
-- adding retries, queueing, scheduling, bounded parallelism, or worker pools
-- adding chain, fan-in, aggregator, or multi-step orchestration behavior
-- adding a persistent completion dashboard, task history, or job-control mode
-- solving broader long-session memory or compaction continuity problems
-- introducing implementation-oriented presets or specialist-agent catalogs
+- building a large automated screenshot or TUI harness
+- adding retries, queueing, orchestration, dashboards, or job-control surfaces
+- expanding presets into implementation-agent behavior
+- changing the meaning of success, degraded fallback, strict failure, or timeout again in this follow-up
+- adding broad new public API surface to `spawn`
+- solving general provider instability or all model-variance issues
 
 ## Constraints
 - preserve the minimal `spawn` mental model
-- preserve compatibility for ordinary successful calls
-- keep the feature narrow enough for a small PRD follow-up
-- avoid hidden global runtime-policy changes unless explicitly justified
-- keep validation lightweight; this repo still has no stable harness for full internal `spawn`/TUI assertions
+- keep the follow-up small and execution-friendly
+- prefer deterministic local validation where possible
+- avoid introducing a large harness that costs more to maintain than the feature itself
+- UI transparency for repaired success should reuse existing result surfaces rather than adding a new mode
 
 ## Assumptions
-- the biggest remaining user-trust problem is degraded-success caused by missing `return_result`, not lack of another orchestration feature
-- improving completion reliability is higher value than adding new delegation modes right now
-- this can likely be improved without adding a second major public API knob
-- timeout support already covers the main "run too long/hung" reliability case, so the next best step is completion-discipline reliability
+- the highest-value next step is confidence and regression safety, not more capability
+- the `return_result` activation bug is important enough to deserve a direct local regression test
+- repaired success is useful, but should be more visible to users reviewing results
+- a small validation script can improve repeatability without forcing the repo into heavyweight QA infrastructure
 
 ## Decision map
-- Contract posture: improve behavior only vs add a tiny explicit contract/control surface
-- Runtime posture: stronger completion discipline vs permissive fallback-first behavior
-- UX posture: clarify degraded-success more vs try to hide it
-- Validation posture: lightweight smoke/source evidence vs new harness investment
-- Scope boundary: completion reliability only vs broader reliability/platform expansion
+- Validation posture: one-command repo-local matrix vs continued manual ad hoc smoke runs
+- Test posture: deterministic local regression coverage vs provider-only confidence
+- UX posture: expose repaired success explicitly vs leave it implicit in metadata
+- Scope posture: operational hardening only vs new behavior/features
 
 ## Questions asked
-- After presets and timeout, what is the highest-value next improvement that still fits the minimal `spawn` boundary?
-- Is the remaining pain primarily timeout-related, orchestration-related, or completion-contract-related?
-- Should the next version focus on adding more capabilities or making current success semantics more trustworthy?
-- Does fixing missing-`return_result` behavior stay within the intended product boundary?
+- What is the smallest next step that improves trust after the completion-reliability follow-up is done?
+- Which missing guardrail would most reduce future regressions?
+- Should repaired success become more explicit in the UI?
+- Can we improve validation repeatability without building a full harness?
 
 ## Decisions made
-- the next version should focus on completion reliability rather than new orchestration features
-- the main target is missing-`return_result` degraded-success behavior
-- preserving the distinction between true success, degraded-success fallback, and hard failure is important for user trust
-- this follow-up should stay narrow and should not expand into retries, queueing, bounded parallelism, or chain/fan-in behavior
-- the repo should stay with lightweight validation rather than building a large new harness for this step
-- the next phase should be PRD once the narrow boundary is captured clearly enough
+- the next follow-up should focus on operational hardening, not new `spawn` capabilities
+- the three selected slices are:
+  - one-command validation script
+  - deterministic regression test for `return_result` activation
+  - repaired-success UI transparency
+- this should stay repo-local and lightweight
+- no prototype is needed before PRD
+- no external research is needed before PRD
 
 ## Open questions
-- should the follow-up remain fully behavior-only, or is one tiny explicit user-facing control justified if fallback handling needs sharper caller intent?
-- is the better path to reduce missing-`return_result` incidence, tighten result classification, improve prompting discipline, or some combination of the three?
-- should strictness remain opt-in only, or does the current degraded-success default need a narrower refinement?
+- should the validation script live under `scripts/` or another repo-local validation path?
+- should repaired success be shown as a badge, a summary line, or both?
+- should duplicate `return_result` handling be explicitly covered in this same follow-up, or deferred?
 
 ## Need research?
-No external research is currently needed. The problem is local to the repo's current `spawn` behavior and can be specified from existing branch artifacts plus targeted code inspection.
+No external research is currently needed. The problem is repo-local and can be specified from current branch artifacts and source inspection.
 
 ## Need prototype?
-No. This follow-up is narrow enough to go directly to PRD once the behavior boundary is written clearly.
+No. This follow-up is narrow enough to go directly to PRD.
 
 ## Biggest risk
-The project could overreact to degraded-success pain by adding heavier reliability controls that push `spawn` toward platform-like workflow management instead of simply making completion semantics more trustworthy.
+The main risk is overbuilding: turning a small hardening follow-up into a full validation framework or expanding UI/state handling beyond the minimal `spawn` boundary.
 
 ## Recommended next step
-Move to PRD follow-up for a narrow completion-reliability improvement centered on missing-`return_result` behavior.
-
-## V3 follow-up seed — completion reliability
-- Selected direction: improve completion reliability next, ahead of bounded parallelism or any broader orchestration idea.
-- Why this one: it addresses the most visible remaining trust gap while still fitting the repo's minimal `spawn` boundary.
-- Refined problem statement: child runs still sometimes finish without calling `return_result`, which forces the parent into a degraded-success fallback path that is useful for debugging but weakens confidence in result semantics.
-- Refined desired outcome: `spawn` results should more reliably reflect whether the child actually completed the intended contract, while still preserving a small, practical debugging fallback when appropriate.
-- Constraints:
-  - keep `spawn` minimal rather than platform-like
-  - preserve compatibility for normal successful calls
-  - do not bundle this with retries, queueing, concurrency controls, or orchestration work
-  - avoid inventing a broad new public control surface unless clearly necessary
-- Decision map:
-  - runtime discipline: stronger prompt/contract enforcement vs current permissive fallback posture
-  - result semantics: when degraded-success is still acceptable vs when failure should be explicit
-  - caller control: no new control surface vs one tiny explicit strictness refinement
-  - UX: how clearly fallback state should be shown without making all results heavier
-- Initial decisions:
-  - keep the focus on missing-`return_result` reliability, not on new delegation modes
-  - preserve the distinction between degraded-success fallback and true success
-  - keep any solution narrow enough to validate with repo-local smoke evidence and source inspection
-  - treat bigger orchestration or concurrency ideas as separate future work, not as part of this follow-up
-- Open questions:
-  - what is the smallest safe behavior change that improves trust without breaking normal usage expectations?
-  - should the default degraded-success posture stay as-is, become narrower, or become easier for callers to opt out of?
-- Current status: Phase 1 idea refinement for the completion-reliability follow-up is ready for PRD drafting.
+Move to PRD for a narrow operational-hardening follow-up centered on:
+- validation repeatability
+- regression safety for `return_result` activation
+- repaired-success transparency
 
 ## Handoff to PRD
 - [x] The next problem focus is explicit
 - [x] The desired outcome is explicit
 - [x] Scope boundaries are explicit
-- [x] Non-goals prevent drift into orchestration or job-control behavior
+- [x] Non-goals prevent drift into orchestration or harness overbuild
 - [x] Constraints are visible enough to shape a narrow PRD
 - [x] Research is not required before PRD
 - [x] Prototyping is not required before PRD

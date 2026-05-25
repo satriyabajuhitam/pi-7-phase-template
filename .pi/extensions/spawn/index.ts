@@ -237,6 +237,10 @@ function getResultPreview(r: TaskResult): string {
 		if (firstLine) return truncatePreviewLine(`Degraded fallback — child did not call return_result. ${firstLine}`);
 		return "Degraded fallback — child did not call return_result.";
 	}
+	if (r.completionRepairSucceeded) {
+		if (firstLine) return truncatePreviewLine(`Success after repair — ${firstLine}`);
+		return "Success after repair.";
+	}
 	if (r.warning) {
 		if (firstLine) return truncatePreviewLine(firstLine);
 		return truncatePreviewLine(r.warning);
@@ -1055,18 +1059,21 @@ export default function (pi: ExtensionAPI) {
 			const hasOutput = getMeaningfulLines(r.output).length > 0;
 			const isFallback = completionStatus === "degraded";
 			const isTimedOut = r.completionReason === "timeout" || !!r.timedOut;
+			const isRepairedSuccess = completionStatus === "success" && !!r.completionRepairSucceeded;
 			const isEmpty = !hasOutput && !r.error;
 			const statusText = r.error
 				? "error"
 				: completionStatus === "degraded"
 					? "fallback"
-					: hasWarning
-						? "warning"
-						: hasTruncation
-							? "truncated"
-							: isEmpty
-								? "empty"
-								: "done";
+					: isRepairedSuccess
+						? "repaired"
+						: hasWarning
+							? "warning"
+							: hasTruncation
+								? "truncated"
+								: isEmpty
+									? "empty"
+									: "done";
 			const statusTone = r.error
 				? "error"
 				: completionStatus === "degraded" || hasWarning || hasTruncation
@@ -1086,6 +1093,7 @@ export default function (pi: ExtensionAPI) {
 			const badges: string[] = [];
 			if (r.preset) badges.push(theme.fg("accent", `[preset: ${r.preset}]`));
 			if (isTimedOut) badges.push(theme.fg("warning", "[timeout]"));
+			if (isRepairedSuccess) badges.push(theme.fg("accent", "[repaired]"));
 			if (isFallback) badges.push(theme.fg("warning", "[no return_result]"));
 			if (hasWarning && !isFallback) badges.push(theme.fg("warning", "[warning]"));
 			if (hasTruncation) badges.push(theme.fg("warning", "[truncated]"));
@@ -1107,6 +1115,10 @@ export default function (pi: ExtensionAPI) {
 				container.addChild(new Text(theme.fg("muted", "─── Task ───"), 0, 0));
 				container.addChild(new Text(theme.fg("dim", r.prompt), 0, 0));
 				container.addChild(new Spacer(1));
+				if (isRepairedSuccess) {
+					container.addChild(new Text(theme.fg("accent", "Completion: success after one bounded contract-repair turn."), 0, 0));
+					container.addChild(new Spacer(1));
+				}
 				if (r.missingReturnResult) {
 					const completionText = r.error
 						? "Completion: child finished without calling return_result. Any fallback output shown here is for debugging only."

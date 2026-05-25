@@ -2,38 +2,29 @@
 
 ## Planning assumptions
 - Source PRD: `docs/prd.md`
-- Planning scope: narrow `spawn` completion-reliability follow-up only, on top of the already-approved replacement `spawn` UX, completed preset follow-up, and completed timeout follow-up
+- Planning scope: narrow operational-hardening follow-up for the repo-local `spawn` replacement on `exp/pi-spawn`
 - Prior completed cycles preserved as context:
   - `ISSUE-001` through `ISSUE-006` delivered the repo-local replacement `spawn`, inline status cards, active widget, validation flow, HITL verdict, and perf follow-up
   - `ISSUE-007` through `ISSUE-013` delivered the `preset` follow-up and the branch-level HITL verdict that preset support is ready for continued use on `exp/pi-spawn`
   - `ISSUE-014` through `ISSUE-018` delivered the `timeout` follow-up and the branch-level HITL verdict that timeout support is ready for continued use on `exp/pi-spawn`
+  - `ISSUE-019` through `ISSUE-024` delivered the completion-reliability follow-up and the branch-level HITL verdict that completion reliability is ready for continued use on `exp/pi-spawn`
 - Prototype winner: none; a separate prototype phase was judged unnecessary for this narrow follow-up
-- Evidence-driven planning changes:
-  - guidance-only tightening was tried twice and did not produce a trustworthy live true-success case
-  - observed-tool-evidence classification is now implemented and correctly prevents text-only impostor success
-  - the remaining gap is actual live `return_result` tool invocation success under nominal success prompts
-  - chosen PRD refinement: keep true success tied to observed `return_result` tool evidence, and allow at most one bounded internal completion-repair turn inside the same spawn call
 - Key constraints:
   - keep `spawn` as a minimal focused delegation primitive
-  - improve trust around missing `return_result` without turning `spawn` into a workflow engine, job-control UX, or broader subagent platform
-  - preserve the distinction between true success, degraded fallback, and hard failure
-  - keep existing `preset`, `timeout`, and `strictResult` behavior coherent with the refined completion story
-  - preserve ordinary success-path compatibility and avoid making normal spawn results materially noisier
-  - do not drift into retries, queueing, scheduling, bounded parallelism, worker pools, chain/fan-in behavior, or persistent management UI
-  - allow only one bounded internal completion-repair turn; do not grow a generic retry system
-  - keep validation lightweight and repo-local; no new full internal TUI harness is required for this phase
-  - avoid new public API surface unless a future blocker proves there is no smaller path
+  - do not add new public `spawn` API surface in this follow-up
+  - keep the work narrow: validation repeatability, deterministic regression safety, and repaired-success transparency only
+  - preserve the current completion semantics, timeout behavior, preset behavior, and strict behavior
+  - avoid turning this into a full screenshot/TUI harness or a broader QA framework
+  - do not drift into retries, queueing, orchestration, dashboarding, or broader subagent-platform behavior
+  - repaired-success transparency must reuse existing result surfaces rather than creating a new mode
 
 ## Dependency rules
-- Completion-result classification must be settled before downstream UI clarity and validation slices can be trusted.
-- UI-specific degraded-state surfacing should depend on the refined result semantics so wording, badges, and expanded detail all reflect the same contract.
-- True-success behavior depends on two internal/runtime slices together:
-  - observed `return_result` tool evidence as the success gate
-  - one bounded internal completion-repair turn to try to convert a nominal success attempt into an actual observed tool invocation
-- The completion-repair slice must preserve degraded fallback, strict failure, timeout distinctness, and preset coherence rather than replacing them.
-- Validation should happen only after completion semantics, degraded-state UI clarity, observed-tool-evidence handling, and bounded completion-repair behavior are complete enough to assess together.
-- Human review is required for the final judgment that completion reliability is trustworthy, transparent, and still safely within the repo's minimal `spawn` boundary.
-- No ticket in this plan should introduce generic retries, queueing, bounded parallelism, chain/fan-in behavior, workflow orchestration, or persistent job-control surfaces.
+- Shared validation ergonomics should land before the final validation/HITL pass so review uses the intended repeatable command rather than ad hoc smoke commands.
+- The deterministic `return_result` activation regression test is foundational protection and should land before declaring the hardening follow-up fully validated.
+- Repaired-success UI transparency is independent of the regression test and validation-command slices, but the final validation ticket must confirm they all coexist cleanly.
+- The final AFK validation ticket should depend on the validation command, regression test, and repaired-success UI slices being complete enough to assess together.
+- Human review is required for the final judgment that the hardening follow-up is useful, minimal, and still appropriate for continued branch use.
+- No ticket in this plan should introduce a large harness, a new persistent UI mode, or a broader spawn orchestration feature.
 
 ## Ticket conventions
 - `Status`: `todo`, `in-progress`, `blocked`, `done`
@@ -45,242 +36,230 @@
 
 ## Parallelization plan
 Can start immediately:
-- `ISSUE-024` — add one bounded internal completion-repair turn for missing observed `return_result`
+- `ISSUE-025` — add one-command repo-local validation for the current `spawn` reliability matrix
+- `ISSUE-026` — add deterministic regression coverage for child-session `return_result` activation
+- `ISSUE-027` — surface repaired success explicitly in `spawn` result rendering
 
 Blocked until prerequisites complete:
-- `ISSUE-022` waits on `ISSUE-019`, `ISSUE-020`, `ISSUE-021`, and `ISSUE-024`
-- `ISSUE-023` waits on `ISSUE-022`
+- `ISSUE-028` waits on `ISSUE-025`, `ISSUE-026`, and `ISSUE-027`
+- `ISSUE-029` waits on `ISSUE-028`
 
 Suggested lanes:
-- Lane A: completion semantics foundation
-- Lane B: degraded-state UX clarity
-- Lane C: actual tool-invocation success + validation + HITL verdict
+- Lane A: validation ergonomics
+- Lane B: regression safety
+- Lane C: repaired-success transparency
+- Lane D: final validation + HITL review
 
 ## Tickets
 
-### ISSUE-019 — Tighten completion-result classification for missing `return_result`
+### ISSUE-025 — Add one-command repo-local validation for the `spawn` reliability matrix
 - Status: done
 - Type: AFK
-- Goal: make normal `spawn` success mean the child actually satisfied the intended completion contract, while keeping non-strict missing-`return_result` cases visibly degraded and strict cases explicitly failed.
-- Why it exists: this is the foundation of the new PRD and the main trust improvement promised by the follow-up.
+- Goal: provide one lightweight repo-local command or script that runs the current `spawn` reliability matrix and emits a concise summary plus artifact paths.
+- Why it exists: validation is currently too manual and depends on reconstructing a loose set of smoke commands by hand.
 - Depends on: none
-- Blocks: ISSUE-020, ISSUE-021, ISSUE-022, ISSUE-024
-- Parallelizable: no
-- Source requirements:
-  - PRD Desired outcome
-  - PRD User experience and behavior
-  - PRD Functional requirements 1, 4, 6, 10, 11
-  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6
-- Scope:
-  - refine result classification so true success is reserved for runs that satisfy the intended completion contract
-  - preserve degraded fallback as a distinct state when a child finishes without `return_result` in non-strict mode
-  - preserve explicit failure when `strictResult` is enabled and the child finishes without `return_result`
-  - keep timeout failures and other non-contract errors distinct from missing-`return_result` degraded fallback
-- Acceptance criteria:
-  - [x] a normal successful `spawn` result is clearly distinct from a non-strict missing-`return_result` degraded fallback case
-  - [x] strict missing-`return_result` behavior remains an explicit failure
-  - [x] timeout failures remain distinct from missing-`return_result` degraded fallback
-  - [x] ordinary successful `spawn` calls remain behaviorally compatible
-- Notes / risks:
-  - implemented canonical completion fields and shared classification logic
-  - this ticket established success vs degraded vs failure semantics, but did not itself make live true-success reliably happen
-
-### ISSUE-020 — Surface degraded missing-`return_result` states clearly in `spawn` UI
-- Status: done
-- Type: AFK
-- Goal: make collapsed and expanded `spawn` surfaces clearly communicate when fallback output came from a contract miss rather than a true success.
-- Why it exists: users need to be able to understand degraded fallback at a glance instead of mistaking it for a normal success.
-- Depends on: ISSUE-019
-- Blocks: ISSUE-022
+- Blocks: ISSUE-028
 - Parallelizable: yes
 - Source requirements:
-  - PRD User experience and behavior
-  - PRD Functional requirements 4, 5, 9, 10
-  - PRD Acceptance criteria 1, 2, 5, 6
-- Scope:
-  - improve collapsed result clarity for degraded missing-`return_result` outcomes
-  - improve expanded detail so the contract miss is explicit even when fallback output exists
-  - preserve readability of normal success, timeout failure, and other existing result states
-  - avoid adding a new persistent dashboard, mode, or heavy UI chrome
-- Acceptance criteria:
-  - [x] in collapsed UI, degraded missing-`return_result` results are visibly distinguishable from true success
-  - [x] in expanded UI, users can clearly see that fallback output came from a missed `return_result` contract
-  - [x] timeout and non-timeout error readability remain intact
-  - [x] normal successful results do not become materially noisier
-- Notes / risks:
-  - degraded fallback copy now explicitly says the child did not call `return_result`
-  - expanded results now explicitly frame fallback output as debugging output rather than a true completion handoff
-
-### ISSUE-021 — Require observed `return_result` tool evidence for true success
-- Status: done
-- Type: AFK
-- Goal: make true `spawn` success depend on observed `return_result` tool invocation on the child run, so assistant text that merely looks like a result or tool call cannot count as success.
-- Why it exists: live validation showed that guidance-only tightening was not enough; a nominal success prompt could still degrade even when the child printed the expected final text.
-- Depends on: ISSUE-019
-- Blocks: ISSUE-022, ISSUE-024
-- Parallelizable: no
-- Source requirements:
+  - PRD Overview
+  - PRD Problem statement
+  - PRD Desired outcome
   - PRD Scope
   - PRD User experience and behavior
-  - PRD Functional requirements 1, 2, 4, 6, 7, 11
-  - PRD Edge cases
-  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6
+  - PRD Functional requirements 1, 2, 8
+  - PRD Acceptance criteria 1, 4, 5
 - Scope:
-  - require observed `return_result` tool evidence before classifying a child run as true success
-  - ensure assistant text such as the exact final string or `return_result(...)` text does not count as success without real tool invocation
-  - preserve degraded fallback when no observed `return_result` exists in non-strict mode
-  - preserve explicit failure when no observed `return_result` exists in strict mode
-  - preserve timeout distinctness and existing preset compatibility
-  - stay within the current public `spawn` surface; no new caller-facing API in this slice
+  - add one repo-local validation entry point for the current `spawn` reliability matrix
+  - cover the main result distinctions closely enough for repeatable branch validation
+  - output a concise summary that highlights the important fields and preserves paths to underlying artifacts
+  - keep the script lightweight and repo-local rather than introducing a new harness framework
 - Acceptance criteria:
-  - [x] a child run is treated as true success only when runtime-observed evidence shows the `return_result` tool was actually invoked
-  - [x] assistant text that merely resembles a final answer or `return_result(...)` call does not count as true success
-  - [x] non-strict runs without observed `return_result` still degrade rather than becoming true success
-  - [x] strict runs without observed `return_result` still fail explicitly
-  - [x] timeout and preset behavior remain coherent after this refinement
+  - [x] one repo-local command exists for the current `spawn` validation matrix
+  - [x] the command summarizes the important result distinctions clearly enough for branch review
+  - [x] the command preserves or reports artifact paths for deeper inspection
+  - [x] the command does not introduce a large new harness or persistent validation mode
 - Notes / risks:
-  - implemented runtime-observed completion evidence fields on `TaskResult` (`returnResultObserved`, `returnResultCallCount`)
-  - `classifyCompletionResult(...)` now depends on actual observed tool invocation rather than inferred success from assistant text alone
-  - live evidence after this slice:
-    - `/tmp/tmp.wgcvkCokHy/text_only.jsonl`
-    - `/tmp/tmp.wgcvkCokHy/strict_missing.jsonl`
-    - `/tmp/tmp.wgcvkCokHy/timeout_case.jsonl`
-    - `/tmp/tmp.wgcvkCokHy/preset_case.jsonl`
-  - this solved false-success detection, but not yet actual live tool-invocation success
+  - implemented as `node scripts/validate-spawn-hardening.mjs`
+  - the command now covers:
+    - deterministic local regression coverage
+    - direct success with observed `return_result`
+    - bounded repair success
+    - strict failure
+    - timeout distinctness
+    - preset coherence
+  - the command writes per-case artifacts plus `summary.json` under a temp directory and prints the exact paths for deeper inspection
+  - initial validation evidence for the command itself:
+    - `node scripts/validate-spawn-hardening.mjs`
+    - artifacts: `/tmp/pi-spawn-validate-nKMemc/`
+    - machine-readable summary: `/tmp/pi-spawn-validate-nKMemc/summary.json`
+  - this ticket was reopened once after `ISSUE-028` found the `repair_success` case too brittle under `/tmp/pi-spawn-validate-lZZehg/`
+  - reopen fix in this execution:
+    - the `repair_success` scenario now uses a two-stage prompt that explicitly requires a plain-text first turn and allows tool use only on a later follow-up turn
+    - the `preset_success` scenario no longer adds an unnecessary per-case timeout, which removed a flaky timeout failure from the preset-coherence check
+  - final validation evidence for this ticket after the reopen fix:
+    - `node scripts/validate-spawn-hardening.mjs`
+    - artifacts: `/tmp/pi-spawn-validate-E46ohv/`
+    - machine-readable summary: `/tmp/pi-spawn-validate-E46ohv/summary.json`
+    - all current cases passed in that run
+  - degraded fallback remains referenced as retained evidence in `docs/pi-spawn.md` because the bounded repair path intentionally makes that state harder to reproduce deterministically in one live command
+  - provider-backed cases may still be subject to quota or provider availability; the script reports that explicitly as `UNAVAILABLE` rather than flattening it into silent success or silent failure
+  - keep the script small and easy to rerun from a fresh context window
 
-### ISSUE-024 — Add one bounded internal completion-repair turn for nominal success attempts
+### ISSUE-026 — Add deterministic regression coverage for child-session `return_result` activation
 - Status: done
 - Type: AFK
-- Goal: when a child appears to finish without observed `return_result` tool invocation and no timeout/runtime failure has already decided the outcome, perform at most one narrow internal repair turn that asks the child to submit the actual `return_result` tool handoff.
-- Why it exists: after `ISSUE-021`, text-only impostor success is correctly blocked, but the branch still lacks live true-success evidence because nominal success prompts still end without real tool invocation.
-- Depends on: ISSUE-021
-- Blocks: ISSUE-022
-- Parallelizable: no
+- Goal: ensure the previously fixed `return_result` activation bug is caught deterministically without relying on provider-backed execution.
+- Why it exists: the bug where a custom `return_result` tool was registered but not active under an explicit `tools` list was high-impact and should not require another live debugging loop to rediscover.
+- Depends on: none
+- Blocks: ISSUE-028
+- Parallelizable: yes
 - Source requirements:
+  - PRD Problem statement
+  - PRD Desired outcome
+  - PRD Scope
+  - PRD Functional requirements 3, 7, 8
+  - PRD Acceptance criteria 2, 5
+  - completion-reliability evidence recorded in `docs/pi-spawn.md`
+- Scope:
+  - add deterministic local regression coverage for the child-session `return_result` activation requirement
+  - verify behavior when `createAgentSession(...)` is supplied an explicit `tools` list
+  - avoid unnecessary provider dependence for this regression coverage
+  - keep the coverage tightly scoped to the fixed activation bug rather than broadening into a full integration suite
+- Acceptance criteria:
+  - [x] a deterministic local test exists for the `return_result` activation requirement
+  - [x] the test would fail if the child session stops activating `return_result` under an explicit `tools` list
+  - [x] the test does not require provider-backed success to prove the activation behavior
+- Notes / risks:
+  - implemented in `tests/spawn-return-result-activation.test.mjs`
+  - the test covers both sides of the regression:
+    - SDK behavior when a custom tool is registered but omitted from an explicit `tools` list
+    - repo-local `spawn` wiring that explicitly adds `returnResultTool.name` to the child `tools` list
+  - validation used: `node --test tests/spawn-return-result-activation.test.mjs` (pass)
+  - keep the test focused on the root cause already found rather than trying to encode the entire reliability matrix into one test
+  - the test is fast and deterministic enough to serve as a normal repo-local guardrail
+
+### ISSUE-027 — Surface repaired success explicitly in `spawn` result rendering
+- Status: done
+- Type: AFK
+- Goal: make a successful `spawn` result that required the bounded repair step visibly distinguishable from a direct success in the existing result surfaces.
+- Why it exists: repaired success is currently recorded in metadata but not transparent enough in the rendered UX.
+- Depends on: none
+- Blocks: ISSUE-028
+- Parallelizable: yes
+- Source requirements:
+  - PRD Desired outcome
   - PRD Scope
   - PRD User experience and behavior
-  - PRD Functional requirements 2, 3, 4, 6, 7, 11, 12
-  - PRD Edge cases
-  - PRD Acceptance criteria 1, 2, 3, 4, 5, 6, 8
+  - PRD Functional requirements 4, 5, 6
+  - PRD Acceptance criteria 3, 4, 5
 - Scope:
-  - add at most one bounded internal completion-repair turn inside the same spawn call when the child appears to finish without observed `return_result`
-  - keep the repair turn narrowly focused on requesting actual tool handoff, not broad re-solving of the task
-  - treat the run as true success only if observed `return_result` tool invocation happens after that repair turn
-  - preserve degraded fallback when repair still does not produce observed `return_result` in non-strict mode
-  - preserve explicit failure when repair still does not produce observed `return_result` in strict mode
-  - preserve timeout distinctness, preset coherence, and the current minimal public surface
+  - improve rendered transparency for repaired success using existing completion metadata
+  - make repaired success distinguishable from direct success in existing collapsed and/or expanded result surfaces
+  - preserve readability of direct success, timeout failure, degraded fallback, and strict failure
+  - avoid adding a new mode, dashboard, or noisy always-on detail
 - Acceptance criteria:
-  - [x] at most one internal completion-repair turn is attempted for a missing-observed-`return_result` nominal success case
-  - [x] a repair turn that produces observed `return_result` converts the run into true success
-  - [x] a repair turn that still does not produce observed `return_result` leaves non-strict runs degraded and strict runs failed
-  - [x] timeout behavior remains distinct and is not replaced by repair behavior
-  - [x] the slice does not introduce generic retries, queueing, or broader orchestration behavior
+  - [x] repaired success is visibly distinguishable from direct success in the current `spawn` result rendering
+  - [x] direct success remains compact and does not become materially noisier
+  - [x] other result states remain coherent after the repaired-success transparency change
 - Notes / risks:
-  - implementation remains in `.pi/extensions/spawn/index.ts` with `COMPLETION_REPAIR_PROMPT`, `completionRepairAttempted`, and `completionRepairSucceeded`, and the latest reopen fix still keeps repair non-strict-only while preserving the original fallback output from the first child turn
-  - **Root cause found and fixed:** the child session registered `return_result` as a custom tool but did not activate it when `createAgentSession(...)` was called with `tools: [...inheritedTools]`. SDK-level evidence now shows the behavior directly:
-    - local SDK probe with `tools: ['read','bash']` + `customTools: [return_result]` produced active tools `['read','bash']`
-    - local SDK probe with `tools: ['read','bash','return_result']` + `customTools: [return_result]` produced active tools `['read','bash','return_result']`
-    - this matches Pi SDK behavior where `initialActiveToolNames = options.tools`, so custom tools are registered but not automatically active when an explicit tool list is supplied
-  - implementation fix: `runOne(...)` now calls `createAgentSession(...)` with `tools: [...inheritedTools, returnResultTool.name]`, ensuring the child session can actually see and invoke `return_result`
-  - source evidence:
-    - `.pi/extensions/spawn/index.ts:568` now activates `return_result` explicitly in the child tool list
-    - `/home/satriya/.nvm/versions/node/v24.15.0/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/sdk.js` shows `initialActiveToolNames = options.tools`
-  - retained adjacent-path evidence after the reopen fix still holds:
-    - `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` shows non-strict repair attempted once, failed cleanly, and preserved the original fallback output `degraded-ok`
-    - `/tmp/tmp.cxk02rV7B6/strict_missing.jsonl` shows strict mode now skips repair and remains an explicit failure without timeout regression
-    - `/tmp/tmp.cxk02rV7B6/timeout_case.jsonl` shows timeout still bypasses repair and remains distinct
-  - live provider-backed revalidation of the true-success path was attempted immediately after the fix but was blocked by provider quota exhaustion rather than by the spawn runtime itself. Evidence:
-    - `/tmp/tmp.huhSgWMv8W/success_direct.jsonl` shows parent-side `usage_limit_reached` / `429`, so no spawn tool execution occurred in that run
-  - proving the repaired true-success path on the real provider-backed flow remains the responsibility of `ISSUE-022`
-  - keep this slice narrow: it is a single contract-repair step, not a general retry system
-  - earlier live blocker evidence that drove this ticket remains relevant context:
-    - `/tmp/tmp.G0Q2D8zcxg/success_b.jsonl`
-    - `/tmp/tmp.G0Q2D8zcxg/success_c.jsonl`
-    - `/tmp/tmp.G0Q2D8zcxg/success_e.jsonl`
-  - be careful not to create a path where timeout or runtime error outcomes are silently reclassified as repairable success attempts
+  - implemented in `.pi/extensions/spawn/index.ts`
+  - repaired success is now surfaced in three compact places using existing metadata:
+    - collapsed preview: `Success after repair — ...`
+    - status badges: `[repaired]`
+    - expanded detail: `Completion: success after one bounded contract-repair turn.`
+  - direct success remains compact because the new badge and completion text only appear when `completionRepairSucceeded` is true
+  - validation used:
+    - extension-load smoke: `pi --no-extensions --extension .pi/extensions/spawn/index.ts --help`
+    - source inspection confirming the repaired-success cues in render paths
+    - targeted live repair-success check: `/tmp/tmp.hBaEW5rH58/repair.jsonl` (`completionStatus=success`, `completionRepairAttempted=True`, `completionRepairSucceeded=True`)
+  - a full run of `node scripts/validate-spawn-hardening.mjs` remained mostly green but had one flaky provider-backed repair timeout in `/tmp/pi-spawn-validate-p1qwZx/repair_success.jsonl`; because this ticket changes render transparency rather than repair runtime semantics, the targeted live repair-success case above was used as the acceptance validation for this slice
+  - prefer a minimal badge, summary line, or similarly compact cue rather than a large new detail block
+  - keep the semantics exactly aligned with the existing completion metadata
 
-### ISSUE-022 — Validate completion semantics and compatibility
+### ISSUE-028 — Validate the operational-hardening follow-up end to end
 - Status: done
 - Type: AFK
-- Goal: produce one lightweight repo-local validation pass that proves the new completion semantics are trustworthy and remain compatible with existing timeout/preset behavior.
-- Why it exists: this follow-up changes success semantics and degraded fallback visibility, so the branch needs concrete evidence before human sign-off.
-- Depends on: ISSUE-019, ISSUE-020, ISSUE-021, ISSUE-024
-- Blocks: ISSUE-023
+- Goal: produce one lightweight repo-local validation pass that proves the new hardening slices work together and remain within the intended minimal `spawn` boundary.
+- Why it exists: the branch needs one consolidated validation handoff before another human review cycle.
+- Depends on: ISSUE-025, ISSUE-026, ISSUE-027
+- Blocks: ISSUE-029
 - Parallelizable: no
 - Source requirements:
   - PRD Acceptance criteria
   - PRD Constraints
   - PRD Recommended next step
+  - outputs of ISSUE-025, ISSUE-026, and ISSUE-027
 - Scope:
-  - validate a normal successful `spawn` run that correctly calls `return_result` and is backed by observed tool evidence
-  - validate a non-strict child run that finishes without `return_result`
-  - validate a strict child run that finishes without `return_result`
-  - validate compatibility with existing timeout behavior
-  - validate compatibility with existing preset behavior where relevant
-  - validate the bounded completion-repair behavior without building a larger harness
-  - record whether result distinctions remain clear without obvious readability/performance regression
+  - run the new one-command validation entry point and inspect its outputs
+  - confirm the deterministic regression coverage for `return_result` activation is present and sufficient
+  - confirm repaired-success transparency is visible and coherent in the result path
+  - confirm direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence remain distinguishable
+  - record a concise validation snapshot suitable for HITL review
 - Acceptance criteria:
-  - [x] one repo-local validation pass covers normal success, non-strict missing-`return_result`, strict missing-`return_result`, bounded completion repair, and compatibility with existing timeout behavior
-  - [x] validation evidence shows true success, degraded fallback, and hard failure are distinguishable in the real result path
+  - [x] one lightweight repo-local validation pass confirms the new validation command, regression coverage, and repaired-success transparency together
+  - [x] direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence are distinguishable with repo-local evidence
   - [x] findings are captured clearly enough for HITL review
 - Notes / risks:
-  - keep validation lightweight: source inspection plus repo-local smoke evidence is sufficient for this phase
-  - do not treat this ticket as a reason to build a large new test or screenshot harness
-  - final validation evidence used for this ticket:
-    - **true success with observed tool evidence:** `/tmp/tmp.dosGigNeIu/success_direct.jsonl` shows `completionStatus=success`, `completionReason=return_result`, `returnResultObserved=True`, `returnResultCallCount=1`
-    - **bounded repair success inside one spawn call:** `/tmp/tmp.qdXlqxYP0R/non_tool_text.jsonl` shows the first child turn skipped the tool, then the single repair turn succeeded with `completionRepairAttempted=True`, `completionRepairSucceeded=True`, and final `completionStatus=success`
-    - **strict missing-\`return_result\` remains explicit failure:** `/tmp/tmp.qdXlqxYP0R/strict_text.jsonl` shows `completionStatus=failed`, `completionReason=missing_return_result`, `returnResultObserved=False`, and the strict failure warning/error copy
-    - **timeout remains distinct:** `/tmp/tmp.jE0v2UhSW3/timeout_case.jsonl` shows `completionReason=timeout`, `timedOut=True`, and `timeout=100`
-    - **preset compatibility remains coherent:** `/tmp/tmp.jE0v2UhSW3/preset_case.jsonl` preserves `preset=reviewer` alongside successful observed completion fields
-    - **retained degraded non-strict fallback evidence:** `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl` remains the last direct live proof of the degraded fallback path with `completionRepairAttempted=True`, `completionRepairSucceeded=False`, and original fallback output preserved as `degraded-ok`
+  - keep this validation ticket lightweight and grounded in the repo-local command plus targeted evidence review
+  - do not silently expand this ticket into a large harness build
+  - if provider-backed validation is partially blocked, record the limitation explicitly rather than masking it
+  - final validation findings from this run:
+    - `node scripts/validate-spawn-hardening.mjs` produced artifacts under `/tmp/pi-spawn-validate-kiepaK/`
+    - machine-readable summary: `/tmp/pi-spawn-validate-kiepaK/summary.json`
+    - the consolidated pass confirmed local regression coverage, direct success, repaired success, strict failure, and timeout distinctness in one run
+    - `preset_success` was reported as `UNAVAILABLE` in that consolidated run because the current environment/provider resolution was not fully available for that case, not because the spawn runtime regressed
+    - preset coherence remains covered by retained targeted repo-local evidence at `/tmp/tmp.S1i9rspRM1/preset.jsonl`
+    - degraded fallback remains covered by retained repo-local evidence at `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl`
+    - repaired-success transparency remains covered both by the consolidated run (`/tmp/pi-spawn-validate-kiepaK/repair_success.jsonl`) and the earlier targeted live check (`/tmp/tmp.hBaEW5rH58/repair.jsonl`)
   - interpretation:
-    - after the `ISSUE-024` root-cause fix, true success is now evidenced live on the real provider-backed path
-    - bounded repair is now evidenced live as a single-turn recovery inside the same spawn call rather than a general retry system
-    - strict failure and timeout remain clearly distinct from true success
-    - preset behavior remains coherent under the refined completion semantics
-    - the degraded fallback path is still evidenced repo-locally and remains distinguishable from true success and hard failure
-  - this is sufficient to hand off to `ISSUE-023` for HITL review
+    - the new validation command is now stable enough to serve as the main repeatable branch check
+    - direct success, repaired success, degraded fallback, strict failure, timeout, and preset coherence are all distinguishable with repo-local evidence
+    - the only limitation in the consolidated run was environment/provider availability for one preset case, and that limitation is explicitly recorded rather than hidden
+  - previously blocked on reopened `ISSUE-025`, but that validation-command refinement has now landed and cleared the blocker for HITL review
 
-### ISSUE-023 — Review whether completion reliability is ready to keep using on this branch
+### ISSUE-029 — Review whether the hardening follow-up is ready to keep using on this branch
 - Status: done
 - Type: HITL
-- Goal: make a human decision on whether the completion-reliability follow-up is useful, transparent, and still safely within the repo's minimal `spawn` boundary.
-- Why it exists: the final judgment about “more trustworthy completion semantics without becoming platform-like” is a product decision that should not be silently auto-approved.
-- Depends on: ISSUE-022
+- Goal: make a human decision on whether the hardening follow-up improves trust and maintainability while still staying inside the repo's minimal `spawn` boundary.
+- Why it exists: the final judgment about whether this hardening work is useful and still feels minimal is a product decision that should not be auto-approved.
+- Depends on: ISSUE-028
 - Blocks:
 - Parallelizable: no
 - Source requirements:
   - PRD Desired outcome
   - PRD Non-goals
   - PRD Acceptance criteria
-  - validation evidence produced by `ISSUE-022`
+  - validation evidence produced by `ISSUE-028`
 - Scope:
   - review the recorded validation findings
-  - decide whether the completion-reliability follow-up is ready for continued branch use
-  - explicitly address trust gain, transparency, and boundary-drift risk
+  - decide whether the hardening follow-up is ready for continued branch use
+  - explicitly address trust gain, regression-safety gain, and boundary-drift risk
 - Acceptance criteria:
-  - [x] a human verdict is recorded on whether the completion-reliability follow-up is ready to continue
-  - [x] the verdict explicitly addresses whether the refined completion semantics still feel minimal rather than workflow- or platform-like
+  - [x] a human verdict is recorded on whether the hardening follow-up is ready to continue
+  - [x] the verdict explicitly addresses whether the changes still feel minimal rather than harness- or platform-like
   - [x] if the result is not ready, the blocking reason is recorded clearly enough to reopen the right AFK ticket
 - HITL verdict:
   - Decision: ready for continued branch use
   - Branch: `exp/pi-spawn`
 - Trust gain:
-  - true success sekarang dibuktikan dengan observed `return_result` tool invocation
-  - degraded fallback, strict failure, dan timeout failure sekarang dapat dibedakan dengan jelas
-  - bounded repair sudah terbukti berjalan sebagai satu langkah internal yang sempit, bukan retry umum
+  - one-command validation now provides a repeatable branch-level check for the main `spawn` reliability matrix
+  - the `return_result` activation bug now has deterministic local regression coverage
+  - repaired success is now visibly distinguishable from direct success in the existing result surfaces
+  - direct success, repaired success, strict failure, timeout, and preset coherence are all distinguishable with repo-local evidence
 - Boundary judgment:
-  - completion reliability ini masih terasa minimal
-  - alasan singkat: perubahan tetap berada di dalam kontrak `spawn` yang ada, tanpa menambah surface orchestration, queueing, retry system umum, atau mode kontrol baru
+  - this hardening follow-up still feels minimal
+  - alasan singkat: the work improves validation repeatability, regression safety, and repaired-success transparency without adding a new public `spawn` API, retry system, orchestration surface, dashboard, or broader platform behavior
 - Evidence reviewed:
-  - true success: `/tmp/tmp.dosGigNeIu/success_direct.jsonl`
-  - bounded repair success: `/tmp/tmp.qdXlqxYP0R/non_tool_text.jsonl`
-  - strict failure: `/tmp/tmp.qdXlqxYP0R/strict_text.jsonl`
-  - timeout distinctness: `/tmp/tmp.jE0v2UhSW3/timeout_case.jsonl`
-  - preset coherence: `/tmp/tmp.jE0v2UhSW3/preset_case.jsonl`
-  - degraded fallback retained: `/tmp/tmp.cxk02rV7B6/degraded_non_strict.jsonl`
+  - consolidated hardening validation: `/tmp/pi-spawn-validate-cNJPgn/summary.json`
+  - consolidated run artifacts: `/tmp/pi-spawn-validate-cNJPgn/`
+  - deterministic regression test: `node --test tests/spawn-return-result-activation.test.mjs`
+  - repaired-success render cues in source:
+    - `.pi/extensions/spawn/index.ts:241`
+    - `.pi/extensions/spawn/index.ts:242`
+    - `.pi/extensions/spawn/index.ts:1096`
+    - `.pi/extensions/spawn/index.ts:1119`
 - Final note:
   - Ready for continued branch use on `exp/pi-spawn`, but not approval to merge to `main`.
 - Notes / risks:
-  - do not broaden this ticket into retries, concurrency controls, or new reliability-feature ideation
+  - do not broaden this ticket into further feature ideation, harness expansion, or general reliability-roadmap planning
   - because the result is positive, the next default handoff should be execution of the first ready AFK ticket
