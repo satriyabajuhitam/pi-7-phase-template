@@ -302,8 +302,6 @@ function renderSummary(results, options, artifactsDir) {
     console.log('');
   }
 
-  console.log('Retained degraded-fallback reference:');
-  console.log('  docs/pi-spawn.md — final completion reliability validation snapshot and earlier degraded-fallback evidence');
 }
 
 function computeExitCode(results, options) {
@@ -316,7 +314,7 @@ function computeExitCode(results, options) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const artifactsDir = mkdtempSync(join(tmpdir(), 'pi-spawn-validate-'));
+  const artifactsDir = mkdtempSync(join(tmpdir(), 'spawn-validate-'));
   mkdirSync(artifactsDir, { recursive: true });
 
   const results = [runLocalRegressionCase(artifactsDir)];

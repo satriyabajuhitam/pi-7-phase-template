@@ -42,11 +42,10 @@ Before doing anything else:
 - inspect `.pi/extensions/spawn-mode.ts` when relevant so you follow the real local gate behavior
 - treat local `spawn-mode` as the operational source of truth for whether delegation is allowed
 - if `spawn-mode` is off, stop and tell the user to enable it first with `/spawn-mode`
-- if the `spawn` tool is unavailable, stop and tell the user to reload or verify the project-local `pi-spawn` package
+- if the `spawn` tool is unavailable, stop and tell the user to reload or verify the local spawn backend is loaded
 
-Use the current branch policy and wording from:
+Use the current policy and wording from:
 - `.pi/extensions/spawn-mode.ts`
-- `docs/prototype/spawn-mode-spec.md`
 
 If delegation is unavailable, return a **no-spawn verdict** instead of pretending the workflow can continue.
 
@@ -96,7 +95,6 @@ Before constructing a recommendation or spawn prompt, read:
 
 If local policy behavior matters for the current task, also read:
 - `.pi/extensions/spawn-mode.ts`
-- `docs/prototype/spawn-mode-spec.md`
 
 Use them as the default operating baseline.
 

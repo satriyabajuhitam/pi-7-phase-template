@@ -324,7 +324,7 @@ async function truncateFinalOutput(
 	let fullOutputPath: string | undefined;
 
 	if (truncation.truncated) {
-		const tempDir = await mkdtemp(join(tmpdir(), "pi-spawn-"));
+		const tempDir = await mkdtemp(join(tmpdir(), "spawn-"));
 		fullOutputPath = join(tempDir, "output.md");
 		await withFileMutationQueue(fullOutputPath, async () => {
 			await writeFile(fullOutputPath!, output, "utf8");

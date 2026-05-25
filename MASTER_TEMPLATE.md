@@ -42,6 +42,7 @@ If you want to **maintain or republish** the template itself, this file is the r
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
+- `delegate-me`
 - `firecrawl-cli`
 - `research-me`
 - `prototype-me`

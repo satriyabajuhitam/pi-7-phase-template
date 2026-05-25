@@ -29,7 +29,6 @@ All notable changes to this repository will be documented in this file.
 
 ### Notes
 - Current hardening scope now covers `idea -> PRD`, `PRD -> issues`, Phase 6 execution hardening, diagnosis hardening, QA/operator evidence-posture alignment, planning/handoff hardening, and lightweight closeout guidance
-- Reliability hardening v1 is marked ready for template use through `ISSUE-038`, reliability hardening v2 through `ISSUE-044`, and reliability hardening v3 through `ISSUE-051`
 - The current validation is stronger than pure reviewer memory alone, but still does not include live end-to-end `/prd`, `/issues`, `/execute`, `/diagnose`, `/qa`, and `/finish` workflow simulation
 - The workflow remains intentionally Pi-native and lightweight: no mandatory worktrees, no subagent-per-task execution model, no multi-step approval chain, and no broad `spawn` expansion into a full orchestration runtime
 - Remaining watchpoints for future refinement include wording drift across many guidance surfaces, the anchor-string/advisory nature of the new planning/closeout audit, the blocking-CI ceremony level of the readiness validator, and keeping `/finish` bounded so repo-state checks do not grow into release-management scope

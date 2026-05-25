@@ -13,7 +13,7 @@ Use this as the default phase-aware delegation guide.
 | Phase 7 — QA | keep sign-off parent/HITL-led | scenario derivation, edge-case discovery, independent risk reads | single or parallel | replacing final human judgment |
 
 ## Strongest current fit in this repo
-Based on the branch experiment, spawn has the strongest proven fit in:
+In this template, spawn is typically the strongest fit for:
 - Phase 2 — Research
 - Phase 5 — planning-readiness / blocker detection
 - Phase 6 — execution preparation for one ready ticket
