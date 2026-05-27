@@ -61,18 +61,6 @@ Use them to extract:
 
 Do not ask the user for information that already exists in the repo.
 
-Use `spawn` proactively for **research context offloading** when gathering or distilling evidence would otherwise overload the parent with too many source details.
-
-Good triggers:
-- the topic spans multiple source clusters, docs sections, or local research artifacts that can be reviewed independently
-- the parent mainly needs a concise evidence-backed handoff rather than every intermediate note from source inspection
-- an independent caveat or gap-check would improve confidence before writing `docs/research.md`
-
-Preferred usage:
-- use `preset: "scout"` for source mapping, evidence gathering, and ambiguity reduction
-- use `preset: "reviewer"` for a compact check on caveats, missing answers, or overconfident conclusions
-- use parallel `spawn` only for independent source buckets; keep final distillation and `docs/research.md` authoring in the parent
-
 ### 3. Define the research objective
 
 Open with a short restatement of what needs to be learned.

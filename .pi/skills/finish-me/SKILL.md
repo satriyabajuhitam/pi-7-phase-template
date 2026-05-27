@@ -68,18 +68,6 @@ Use them to extract:
 
 Do not ask the user for information that already exists in the repo.
 
-Use `spawn` selectively for **closeout context offloading** when evidence gathering or independent sign-off prep would materially reduce parent-context load.
-
-Good triggers:
-- multiple completed tickets or QA findings need a compact evidence summary first
-- an independent review of requirement fit versus residual risk would improve confidence
-- the parent mainly needs a concise evidence-backed verdict rather than every intermediate note
-
-Preferred usage:
-- use `preset: "scout"` for evidence gathering across multiple artifacts
-- use `preset: "reviewer"` for compact closeout or readiness review
-- keep final judgment and recommendations in the parent
-
 ### 3. Separate implementation state from readiness state
 
 Do not confuse these states:

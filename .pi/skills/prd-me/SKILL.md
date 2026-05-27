@@ -73,18 +73,6 @@ Use them to extract:
 
 Do not ask the user for information that already exists in the repo.
 
-Use `spawn` selectively for **PRD context offloading** when artifact review or independent gap-checking would materially reduce parent-context load.
-
-Good triggers:
-- the idea, research, and prototype artifacts together are large enough that a compact recon summary would help before drafting
-- an independent boundary-drift or missing-edge-case review would improve confidence
-- the parent mainly needs a concise evidence-backed handoff rather than every intermediate note from artifact inspection
-
-Preferred usage:
-- use `preset: "scout"` for artifact mapping, repo recon, and evidence gathering
-- use `preset: "reviewer"` for a compact check on scope boundaries, edge cases, or requirement gaps
-- keep drafting and final PRD decisions in the parent; `spawn` may inform the PRD, but `docs/prd.md` remains parent-authored
-
 ### 3. Read the PRD template asset
 
 Read `assets/prd-template.md` before writing or restructuring `docs/prd.md`.

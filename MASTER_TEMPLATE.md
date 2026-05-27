@@ -40,7 +40,6 @@ This template is now **skill-first**:
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
-- `delegate-me`
 - `firecrawl-cli`
 - `research-me`
 - `prototype-me`

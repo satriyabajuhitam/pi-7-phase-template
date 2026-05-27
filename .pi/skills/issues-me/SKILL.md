@@ -72,18 +72,6 @@ Use them to extract:
 
 Do not ask the user for information that already exists in the repo.
 
-Use `spawn` selectively for **planning context offloading** when the PRD is broad enough that a second pass would reduce parent-context load without taking over final planning.
-
-Good triggers:
-- the PRD spans multiple user flows or cross-cutting constraints and needs a compact recon summary first
-- a second opinion on slice boundaries, blockers, or parallel lanes would materially improve confidence
-- the parent mainly needs a concise artifact-grounded handoff rather than every exploratory planning note
-
-Preferred usage:
-- use `preset: "scout"` for repo/artifact mapping when the likely implementation surface is still fuzzy
-- use `preset: "planner"` for a compact second opinion on ticket slicing, blockers, or likely files
-- keep final ticket structure in the parent; `spawn` may inform planning, but `docs/issues.md` remains parent-authored
-
 ### 3. Read the issues template asset
 
 Read `assets/issues-template.md` before writing or restructuring `docs/issues.md`.

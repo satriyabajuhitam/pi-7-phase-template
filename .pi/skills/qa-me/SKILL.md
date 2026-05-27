@@ -66,18 +66,6 @@ Use them to extract:
 
 Do not ask the user for information that already exists in the repo.
 
-Use `spawn` proactively for **QA context offloading** when verification would otherwise force the parent to hold too much cross-file or cross-ticket detail.
-
-Good triggers:
-- the QA pass needs coverage mapping across multiple flows, files, or completed tickets
-- an independent acceptance-criteria audit would improve confidence before sign-off
-- scenario reviews can be split into separate evidence-gathering passes without sharing state
-
-Preferred usage:
-- use `preset: "scout"` for coverage mapping, evidence gathering, and gap finding
-- use `preset: "reviewer"` for acceptance-criteria audits, sign-off prep, and compact independent review
-- use parallel `spawn` only for independent scenario reviews; the parent still owns `docs/qa.md`, final findings, and any `docs/issues.md` follow-up updates
-
 ### 3. Read the QA template asset
 
 Read `assets/qa-template.md` before writing or restructuring `docs/qa.md`.

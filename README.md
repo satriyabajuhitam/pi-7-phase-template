@@ -27,7 +27,6 @@ Bundled project-local skills include:
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
-- `delegate-me`
 - `firecrawl-cli`
 - `research-me`
 - `prototype-me`

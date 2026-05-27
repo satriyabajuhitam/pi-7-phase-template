@@ -102,18 +102,6 @@ If the area is unfamiliar, zoom out before editing:
 
 Prefer minimal, targeted changes over broad refactors.
 
-Use `spawn` selectively for **context offloading** when it materially reduces parent-context load inside the selected ticket.
-
-Good triggers:
-- the ticket requires reading multiple files or tracing multiple callers before editing safely
-- the impact surface is ambiguous enough that one focused recon pass would reduce parent-context clutter
-- a post-change independent review or validation pass would improve confidence without pulling all evidence into the parent
-
-Preferred usage:
-- use `preset: "scout"` for multi-file recon and evidence gathering
-- use `preset: "reviewer"` for a compact independent validation or boundary check
-- keep `spawn` work inside the same selected ticket; the parent still owns final edits, validation judgment, and `docs/issues.md` updates
-
 ### 6. Implement only that ticket
 
 Make only the changes required to satisfy the selected ticket.

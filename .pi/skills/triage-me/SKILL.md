@@ -55,18 +55,6 @@ Use them to determine:
 
 Do not ask the user for information that is already in the repo.
 
-Use `spawn` selectively for **triage context offloading** when intake routing would otherwise force the parent to hold too much cross-artifact detail.
-
-Good triggers:
-- the intake item must be compared against multiple local artifacts before routing confidently
-- a bug needs a quick evidence-gathering pass across multiple files before deciding `needs-repro` vs `ready-for-execution`
-- an independent scope check would help decide whether the item is new scope or fallout from existing scope
-
-Preferred usage:
-- use `preset: "scout"` for multi-artifact mapping, evidence gathering, and ambiguity reduction
-- use `preset: "reviewer"` for a compact second opinion on scope fit or routing risk
-- keep the final classification, triage state, and artifact update in the parent
-
 ### 2. Classify the intake item
 
 Classify the item as one of:
