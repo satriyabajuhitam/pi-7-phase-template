@@ -25,20 +25,6 @@ const CHECKS = [
   },
   {
     category: 'execution-brief threshold',
-    path: '.pi/prompts/issues.md',
-    checks: [
-      {
-        label: 'teaches the explicit threshold in the operator prompt',
-        includes: 'melewati threshold ini',
-      },
-      {
-        label: 'tells planners to delete the section when omitted',
-        includes: 'omit execution brief, hapus section-nya sekalian',
-      },
-    ],
-  },
-  {
-    category: 'execution-brief threshold',
     path: '.pi/skills/issues-me/assets/issues-template.md',
     checks: [
       {
@@ -81,20 +67,6 @@ const CHECKS = [
   },
   {
     category: 'finish bounded repo-state posture',
-    path: '.pi/prompts/finish.md',
-    checks: [
-      {
-        label: 'limits the prompt to a bounded default repo-state set',
-        includes: 'batasi default-nya ke sinyal kecil berikut:',
-      },
-      {
-        label: 'requires downgrade when relevant repo-state signals are unavailable',
-        includes: 'jika repo-state signal yang relevan tidak tersedia, tidak terverifikasi, atau tidak bisa diinspeksi',
-      },
-    ],
-  },
-  {
-    category: 'finish bounded repo-state posture',
     path: 'AGENTS.md',
     checks: [
       {
@@ -112,13 +84,13 @@ const CHECKS = [
 function summarizeMachineChecks() {
   return [
     '- `node scripts/validate-readiness-gates.mjs` checks active `docs/idea.md` / `docs/prd.md` handoff structure, blocker semantics, checklist readiness, and the exact PRD planning-approval signal when `docs/prd.md` is ready for planning.',
-    '- `node scripts/validate-planning-closeout-guidance.mjs` checks that the hardened execution-brief and `/finish` guidance anchors still exist across the core skill, prompt, template, and repo-policy surfaces.',
+    '- `node scripts/validate-planning-closeout-guidance.mjs` checks that the hardened execution-brief and `finish-me` guidance anchors still exist across the core skill, template, and repo-policy surfaces.',
   ];
 }
 
 function summarizeManualChecks() {
   return [
-    '- This script does not prove live `/issues` or `/finish` behavior end-to-end.',
+    '- This script does not prove live issues-planning or finish-review behavior end-to-end.',
     '- It does not judge whether the wording is the best possible wording; it only checks that the current bounded rules still exist on the expected surfaces.',
     '- Human review is still needed for broader workflow fit, over-ceremony risk, and any future change that intentionally alters the rule wording or semantics.',
   ];

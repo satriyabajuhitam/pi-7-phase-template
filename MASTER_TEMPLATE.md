@@ -2,23 +2,21 @@
 
 ## Purpose
 
-This file is primarily for the **maintainer of the template**, not the end user of a project created from the template.
+This file is for the **maintainer of the template**, not the end user of a generated project.
 
-This repository is intended to serve as a **clean master template** for the local 7-phase AI-assisted development workflow used in this project.
+This repository is intended to stay a **clean master template** for a local 7-phase AI-assisted development workflow.
 
-It is not a product app by itself.
 It is a reusable workflow starter that provides:
 - `AGENTS.md`
 - phase skills under `.pi/skills/`
-- prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
-- a local readiness validator under `scripts/validate-readiness-gates.mjs`
-- a local planning/closeout guidance audit under `scripts/validate-planning-closeout-guidance.mjs`
-- a CI readiness-check workflow under `.github/workflows/readiness-gates.yml`
-- `GUIDE.md` as the usage guide
+- local validators under `scripts/`
+- `README.md` and `GUIDE.md` for consumer-facing usage
 
-If you want to **use** the template for a new project, start with `README.md` and `GUIDE.md`.
-If you want to **maintain or republish** the template itself, this file is the right reference.
+This template is now **skill-first**:
+- project-local prompt templates are intentionally removed
+- end users should interact with the agent in natural language
+- the agent is expected to infer and load the relevant local skill directly
 
 ---
 
@@ -34,9 +32,9 @@ If you want to **maintain or republish** the template itself, this file is the r
 - Phase 7 — QA
 
 ### Optional helpers
-- Local intake / triage via `/triage`
-- Local diagnosis via `/diagnose`
-- Local closeout recommendation via `/finish`
+- Local intake / triage
+- Local diagnosis
+- Local closeout recommendation
 
 ### Project-local skills
 - `triage-me`
@@ -52,18 +50,6 @@ If you want to **maintain or republish** the template itself, this file is the r
 - `qa-me`
 - `finish-me`
 
-### Prompt templates
-- `/triage` (optional helper)
-- `/diagnose` (optional helper)
-- `/idea`
-- `/research`
-- `/prototype`
-- `/prd`
-- `/issues`
-- `/execute`
-- `/qa`
-- `/finish` (optional helper)
-
 ### Artifact files
 - `docs/idea.md`
 - `docs/research.md`
@@ -77,34 +63,14 @@ If you want to **maintain or republish** the template itself, this file is the r
 
 ## Maintainer workflow
 
-Use this repo as the source template when you want to maintain, improve, or republish the workflow for future projects.
-
 Recommended maintainer flow:
 1. keep the repo clean and generic
 2. publish it as a **GitHub template repository**
 3. direct end users to click **Use this template**
 4. keep `README.md` and `GUIDE.md` consumer-facing
-5. keep `MASTER_TEMPLATE.md` focused on template maintenance
-
----
-
-## How end users should create projects
-
-Preferred path for end users:
-
-1. Open the template repo on GitHub
-2. Click **Use this template**
-3. Create a new repository
-4. Clone the new repository locally
-
-Example:
-
-```bash
-git clone git@github.com:YOUR_USERNAME/my-new-project.git
-cd my-new-project
-```
-
-If you need a manual local copy instead, you can still copy the repo contents yourself, but the primary recommended path is the GitHub template flow above.
+5. keep `MASTER_TEMPLATE.md` maintainer-focused
+6. keep skills as the executable workflow layer
+7. keep `docs/` as the artifact layer
 
 ---
 
@@ -114,29 +80,41 @@ This master template should stay clean:
 - keep `docs/` artifacts empty by default
 - do not leave project-specific prototype outputs in the template
 - do not leave `.firecrawl/` retrieval cache in the template
-- avoid adding app-specific sample code unless it is clearly marked as disposable example material
-- keep maintainer-only notes out of `README.md` unless they are also useful to end users
-- prefer project-local skills and prompts so the template stays portable
+- avoid adding app-specific sample code unless it is clearly disposable example material
+- keep maintainer-only notes out of `README.md` unless they also help end users
 - keep readiness validation compatible with empty template-state artifacts
 - keep the planning/closeout assurance path narrow and advisory unless there is a deliberate decision to add more ceremony
 
-Current readiness-validation scope for this template:
+### Skill-first expectations
+
+- do not reintroduce `.pi/prompts/` unless there is a deliberate product decision to support dual entrypoints again
+- prefer updating skills and `AGENTS.md` over adding thin command wrappers
+- document workflow examples as natural-language requests, not slash-command dependencies
+- treat prompt-like wording in docs as examples only, not required invocation syntax
+
+---
+
+## Assurance scope
+
+Current readiness-validation scope:
 - covered now: `idea -> PRD` and `PRD -> issues`, including the exact PRD planning-approval signal when an active PRD is ready for planning
 - not covered yet: downstream handoffs such as `issues -> execute`, `execute -> QA`, or `QA -> release`
 
-Current planning/closeout-assurance scope for this template:
-- covered now: execution-brief threshold anchors and bounded `/finish` posture anchors across the core skill/prompt/template/policy surfaces
-- still manual: live `/issues` behavior, live `/finish` behavior, and broader workflow-fit judgment
+Current planning/closeout-assurance scope:
+- covered now: execution-brief threshold anchors and bounded `finish-me` posture anchors across the core skill/template/policy surfaces
+- still manual: live planning behavior, live closeout behavior, and broader workflow-fit judgment
 
-### Maintainer checklist before publish
+---
+
+## Maintainer checklist before publish
 
 - confirm `docs/` artifacts are empty
 - confirm `.firecrawl/` is empty or ignored
 - confirm no disposable sandbox/example output remains
 - confirm readiness validator still skips empty template-state artifacts
-- confirm `.github/workflows/readiness-gates.yml` and `scripts/validate-readiness-gates.mjs` still match the documented behavior
+- confirm `.github/workflows/readiness-gates.yml` and `scripts/validate-readiness-gates.mjs` still match documented behavior
 - confirm `scripts/validate-planning-closeout-guidance.mjs` and `docs/workflow-assurance-v3.md` still match the documented bounded assurance behavior
-- confirm new skills and prompts are documented in `README.md`, `GUIDE.md`, and `AGENTS.md` when relevant
+- confirm new skills are documented in `README.md`, `GUIDE.md`, and `AGENTS.md` when relevant
 - confirm template instructions still point to the GitHub template flow as the default path
 
 ---
@@ -149,17 +127,17 @@ After an end user opens the generated project in Pi:
 /reload
 ```
 
-Then begin with:
+Then they can begin with a natural-language request such as:
 
 ```txt
-/idea [your new project idea]
+Saya ingin membuat app baru untuk [tujuan saya]. Tolong mulai dari fase idea dan pertajam scope v1-nya.
 ```
 
 ---
 
 ## Notes
 
-- `README.md` should stay optimized for first-time visitors to the GitHub repo.
-- `GUIDE.md` explains how to use the workflow with a simple from-scratch app example.
-- `AGENTS.md` defines the repo rules and workflow invariants.
+- `README.md` should stay optimized for first-time visitors.
+- `GUIDE.md` explains how to use the workflow with a simple from-scratch example.
+- `AGENTS.md` defines repo rules and workflow invariants.
 - The source of truth during project execution should live under `docs/`.

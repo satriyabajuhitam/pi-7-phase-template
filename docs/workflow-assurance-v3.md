@@ -22,7 +22,7 @@ node scripts/validate-planning-closeout-guidance.mjs
 
 Purpose:
 - checks that the hardened execution-brief rule still exists across the core planning surfaces
-- checks that the bounded `/finish` repo-state posture still exists across the core closeout surfaces
+- checks that the bounded `finish-me` repo-state posture still exists across the core closeout surfaces
 - helps detect wording-anchor drift without pretending to simulate the full workflow
 
 ## What is machine-checked
@@ -32,18 +32,16 @@ Purpose:
 - exact `Planning approval: approved for issues planning (correctness and scope)` signal when an active PRD is marked ready for planning
 - presence of the current execution-brief threshold anchors across:
   - `.pi/skills/issues-me/SKILL.md`
-  - `.pi/prompts/issues.md`
   - `.pi/skills/issues-me/assets/issues-template.md`
   - `AGENTS.md`
-- presence of the current bounded `/finish` posture anchors across:
+- presence of the current bounded `finish-me` posture anchors across:
   - `.pi/skills/finish-me/SKILL.md`
-  - `.pi/prompts/finish.md`
   - `AGENTS.md`
 
 ## What is still manual
 
-- live `/issues` behavior from a real planning run
-- live `/finish` behavior from a real closeout run
+- live issues-planning behavior from a real planning run
+- live closeout behavior from a real finish review
 - whether the wording is still the best wording, not just present wording
 - broader workflow-fit judgment, over-ceremony risk, and any intentional semantic change
 

@@ -16,12 +16,12 @@ This repo is designed to be used as a **GitHub template repository** for startin
 
 ## What this template includes
 
-- `AGENTS.md` with project workflow rules
+- `AGENTS.md` with repository workflow rules
 - project-local skills under `.pi/skills/`
-- prompt templates under `.pi/prompts/`
 - empty artifact files under `docs/`
-- `GUIDE.md` with a practical usage walkthrough
-- `MASTER_TEMPLATE.md` explaining how to use this repo as a reusable master template
+- `GUIDE.md` with a practical step-by-step walkthrough
+- `MASTER_TEMPLATE.md` with maintainer notes
+- local validators under `scripts/`
 
 Bundled project-local skills include:
 - `triage-me`
@@ -39,23 +39,22 @@ Bundled project-local skills include:
 
 ---
 
-## Included prompts
+## Skill-first workflow
 
-After opening the project in Pi and running `/reload`, these prompts are available:
+This template no longer depends on project-local prompt templates.
 
-Core 7-phase flow:
-- `/idea`
-- `/research`
-- `/prototype`
-- `/prd`
-- `/issues`
-- `/execute`
-- `/qa`
+Expected operating model:
+- the user speaks in natural language
+- the agent infers the right phase from intent
+- the agent loads the matching local skill directly
+- workflow state is persisted in `docs/` artifacts
 
-Optional helpers:
-- `/triage`
-- `/diagnose`
-- `/finish`
+Examples:
+- “Bantu pertajam ide ini sebelum research.” → `grill-me`
+- “Tulis PRD dari artifact yang sudah ada.” → `prd-me`
+- “Pecah PRD ini jadi ticket.” → `issues-me`
+- “Eksekusi ticket AFK berikutnya.” → `execute-me`
+- “Siapkan QA checklist dan findings.” → `qa-me`
 
 ---
 
@@ -71,37 +70,11 @@ Optional helpers:
 /reload
 ```
 
-6. Start with:
+6. Start with a natural-language request, for example:
 
 ```txt
-/idea [your new project idea]
+Saya ingin membuat app baru untuk [tujuan Anda]. Tolong mulai dari fase idea dan pertajam dulu scope v1-nya.
 ```
-
-## Recommended usage
-
-### Best path: use as a GitHub template
-
-Example:
-
-```bash
-git clone git@github.com:YOUR_USERNAME/your-new-project.git
-cd your-new-project
-```
-
-If you are not using SSH yet:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/your-new-project.git
-cd your-new-project
-```
-
-### Maintainer notes
-
-If you are maintaining or republishing this workflow as your own master template, see:
-- `MASTER_TEMPLATE.md`
-- `GUIDE.md`
-
-for template-management and usage details.
 
 ---
 
@@ -131,13 +104,13 @@ The workflow uses these files as source of truth:
 - `docs/prd.md` should not hand off to Issues until `## Handoff to Issues` says `Ready for next phase: yes`
 - planning should not proceed from `docs/prd.md` unless `## Handoff to Issues` also records the exact approval signal `Planning approval: approved for issues planning (correctness and scope)`
 - non-trivial tickets should use an optional execution brief only when it actually reduces ambiguity: likely multi-surface boundary drift, non-obvious validation focus, or one short out-of-scope guardrail; otherwise omit the brief and keep the board light
-- `/finish` is a lightweight closeout helper for recommending the next action after execution and/or QA; repo-state checks stay bounded to small relevant signals such as dirty working tree, relevant workflow-artifact presence, or current branch context when PR/merge judgment is the actual question
+- `finish-me` is a lightweight closeout helper for recommending the next action after execution and/or QA; repo-state checks stay bounded to small relevant signals such as dirty working tree, relevant workflow-artifact presence, or current branch context when PR/merge judgment is the actual question
 
 ---
 
 ## Readiness gate validation
 
-This template now includes a lightweight readiness-gate validator for the currently hardened handoffs:
+This template includes a lightweight readiness-gate validator for the currently hardened handoffs:
 - `idea -> PRD` via `docs/idea.md`
 - `PRD -> issues` via `docs/prd.md`
 
@@ -172,12 +145,12 @@ node scripts/validate-planning-closeout-guidance.mjs
 ```
 
 What it machine-checks:
-- the current execution-brief threshold anchors across `issues-me`, `/issues`, the issues template, and `AGENTS.md`
-- the current bounded `/finish` posture anchors across `finish-me`, `/finish`, and `AGENTS.md`
+- the current execution-brief threshold anchors across `issues-me`, the issues template, and `AGENTS.md`
+- the current bounded `finish-me` posture anchors across `finish-me` and `AGENTS.md`
 
 What it does **not** prove:
-- live `/issues` behavior from a real planning run
-- live `/finish` behavior from a real closeout run
+- live issues-planning behavior from a real planning run
+- live closeout behavior from a real finish review
 - whether the wording is the best possible wording rather than just the current expected wording
 
 Use the assurance path as narrow drift detection, not as a full workflow simulation or release-management system.

@@ -46,6 +46,11 @@ Phase guidance:
 
 ## Repository workflow
 
+### Skill-first operation
+- This repository no longer relies on project-local prompt templates under `.pi/prompts/`.
+- Agents should infer the right phase from the user's natural-language request, load the matching local skill directly, and follow that skill's instructions.
+- Treat skills as the executable workflow layer and `docs/` artifacts as the cross-session source of truth.
+
 ### Optional helper — Local intake / triage
 When the user brings a new bug report, feature request, refactor proposal, QA finding, or vague work item and the right next phase is not yet obvious:
 - Use the project-local `triage-me` skill.
@@ -55,8 +60,6 @@ When the user brings a new bug report, feature request, refactor proposal, QA fi
 - Route the work to the smallest correct local artifact, usually `docs/idea.md`, `docs/research.md`, `docs/prd.md`, or `docs/issues.md`.
 - For QA fallout, reopen an existing ticket when the original scope is still correct; add a new ticket only when the finding is truly new scope.
 
-Prompt template:
-- Use `/triage [laporan-atau-permintaan-yang-perlu-ditriage]` to trigger the local intake workflow via `.pi/prompts/triage.md`.
 
 ### Optional helper — Diagnosis
 When a bug, regression, flaky failure, or QA finding is too ambiguous for direct execution:
@@ -68,8 +71,6 @@ When a bug, regression, flaky failure, or QA finding is too ambiguous for direct
 - Route the outcome to the smallest useful artifact, usually `docs/issues.md` or `docs/qa.md`.
 - Recommend a concrete handoff such as `ready-for-execution`, `needs-info`, `needs-research`, `hitl`, or `not reproduced`.
 
-Prompt template:
-- Use `/diagnose [bug-report-atau-finding-yang-perlu-didiagnosis]` to trigger the local diagnosis workflow via `.pi/prompts/diagnose.md`.
 
 ### Phase 1 — Idea
 When the user wants to refine an idea before research, prototyping, or implementation:
@@ -97,8 +98,6 @@ Preferred `docs/idea.md` structure:
 - `## Recommended next step`
 - `## Handoff to PRD`
 
-Prompt template:
-- Use `/idea [fokus-atau-ide-awal]` to trigger the Phase 1 idea-refinement workflow via `.pi/prompts/idea.md`.
 
 ### Phase 2 — Research (optional)
 Use a dedicated research workflow when the idea depends on external APIs, third-party services, hard-to-access documentation, or difficult exploration.
@@ -133,9 +132,6 @@ If web retrieval is needed:
 - Save raw retrieval output under `.firecrawl/`.
 - Summarize only the distilled conclusions into `docs/research.md`.
 
-Prompt template:
-- Use `/research [fokus-tambahan]` to trigger the Phase 2 research workflow via `.pi/prompts/research.md`.
-
 ### Phase 3 — Prototype (optional)
 When the user wants exploratory variations before PRD writing or implementation:
 - Use the project-local `prototype-me` skill.
@@ -146,8 +142,6 @@ When the user wants exploratory variations before PRD writing or implementation:
 - If prototyping is used, select exactly **one** prototype winner before moving to the PRD.
 - A PRD may be based on **zero or one** prototype winner: zero if prototyping was unnecessary, one if prototyping was used.
 
-Prompt template:
-- Use `/prototype [target-atau-fokus-prototype]` to trigger the Phase 3 prototyping workflow via `.pi/prompts/prototype.md`.
 
 ### Phase 4 — PRD
 When the user wants to define the destination clearly before planning or implementation:
@@ -160,8 +154,6 @@ When the user wants to define the destination clearly before planning or impleme
 - Before recommending Phase 5 planning, run a short PRD self-review for ambiguity, contradiction, and materially missing edge cases.
 - Before recommending Phase 5 planning, update `## Handoff to Issues` in `docs/prd.md` with checklist status, `Planning approval: approved for issues planning (correctness and scope)` once that review is actually complete, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
-Prompt template:
-- Use `/prd [fokus-atau-klarifikasi-prd]` to trigger the Phase 4 PRD workflow via `.pi/prompts/prd.md`.
 
 ### Phase 5 — Implementation Planning (Kanban Board)
 When the user wants to break a PRD into execution-ready tickets:
@@ -182,8 +174,6 @@ When the user wants to break a PRD into execution-ready tickets:
 - `Parallelizable`: `yes` or `no`
 - QA follow-up should reopen an existing ticket when the original scope is still correct, or add a new ticket when the QA finding is truly new scope.
 
-Prompt template:
-- Use `/issues [fokus-atau-klarifikasi-planning]` to trigger the Phase 5 planning workflow via `.pi/prompts/issues.md`.
 
 ### Phase 6 — Execution
 When the user wants to execute planned work Ralph-style:
@@ -199,8 +189,6 @@ When the user wants to execute planned work Ralph-style:
 - Update `docs/issues.md` with `in-progress`, `done`, or `blocked` status as appropriate.
 - Do not silently execute a second ticket in the same run.
 
-Prompt template:
-- Use `/execute [fokus-atau-klarifikasi-eksekusi]` to trigger the Phase 6 execution workflow via `.pi/prompts/execute.md`.
 
 ### Phase 7 — QA
 When the user wants structured verification before release or the next execution loop:
@@ -210,8 +198,6 @@ When the user wants structured verification before release or the next execution
 - Distinguish automated checks from human review needs.
 - Feed clear follow-up work back into the execution loop when needed.
 
-Prompt template:
-- Use `/qa [fokus-atau-klarifikasi-qa]` to trigger the Phase 7 QA workflow via `.pi/prompts/qa.md`.
 
 ### Optional helper — Finish / closeout
 When the main question is what should happen next with the current execution or QA state rather than what to build next:
@@ -220,8 +206,6 @@ When the main question is what should happen next with the current execution or 
 - Treat `continue execution`, `request HITL review`, `prepare PR`, `merge`, `keep`, or `discard` as recommendations, not automation.
 - Keep repo-state checks lightweight and bounded to the smallest signals that materially affect closeout judgment, such as dirty working tree, relevant workflow-artifact presence, or current branch context; if those signals are unavailable, downgrade the recommendation rather than inferring readiness.
 
-Prompt template:
-- Use `/finish [fokus-atau-klarifikasi-closeout]` to trigger the local closeout workflow via `.pi/prompts/finish.md`.
 
 ## Workflow invariants
 - Do not jump to implementation when the user is clearly in Phase 1, Phase 2, or Phase 3.
@@ -236,7 +220,7 @@ Prompt template:
 - Do not advance from PRD to Issues when the current request still needs decomposition or when ambiguity, contradiction, or materially missing edge cases still block responsible planning.
 - `docs/issues.md` is the execution source of truth.
 - Phase 6 follows a Ralph-style pattern: one run, one ready `AFK` ticket, one validation cycle.
-- `/finish` is optional and recommendation-oriented; it must not silently turn into git automation or a required extra ceremony after every ticket, and it must not infer merge readiness from repo-state signals that were never actually checked.
+- `finish-me` is optional and recommendation-oriented; it must not silently turn into git automation or a required extra ceremony after every ticket, and it must not infer merge readiness from repo-state signals that were never actually checked.
 - The local assurance path for planning/closeout hardening stays intentionally narrow: readiness validation plus local guidance-anchor checks may improve confidence, but they do not replace live workflow judgment or broad release governance.
 - Do not overwrite useful existing docs without preserving important decisions already made.
 - Keep artifacts concise, structured, and reusable across fresh context windows.
@@ -253,14 +237,14 @@ Prompt template:
 - `docs/prototype/`
 - `.firecrawl/`
 
-## Current project prompt templates
-- `.pi/prompts/triage.md`
-- `.pi/prompts/diagnose.md`
-- `.pi/prompts/idea.md`
-- `.pi/prompts/research.md`
-- `.pi/prompts/prototype.md`
-- `.pi/prompts/prd.md`
-- `.pi/prompts/issues.md`
-- `.pi/prompts/execute.md`
-- `.pi/prompts/qa.md`
-- `.pi/prompts/finish.md`
+## Current project workflow assets
+- `.pi/skills/triage-me/`
+- `.pi/skills/diagnose-me/`
+- `.pi/skills/grill-me/`
+- `.pi/skills/research-me/`
+- `.pi/skills/prototype-me/`
+- `.pi/skills/prd-me/`
+- `.pi/skills/issues-me/`
+- `.pi/skills/execute-me/`
+- `.pi/skills/qa-me/`
+- `.pi/skills/finish-me/`
