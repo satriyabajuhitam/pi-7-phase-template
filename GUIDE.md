@@ -31,11 +31,13 @@ Urutan fasenya tetap sama:
 7. QA
 
 Optional helper:
+- absorb
 - triage
 - diagnose
 - finish
 
 Skill yang biasanya terlibat:
+- Pre-idea (existing codebase) → `absorb-me`
 - Idea → `grill-me`
 - Research → `research-me`
 - Prototype → `prototype-me`
@@ -48,12 +50,17 @@ Skill yang biasanya terlibat:
 - Closeout → `finish-me`
 
 Artifact utama:
+- `docs/absorb.md`
 - `docs/idea.md`
 - `docs/research.md`
 - `docs/prototype/`
 - `docs/prd.md`
 - `docs/issues.md`
 - `docs/qa.md`
+
+Catatan penting untuk project existing:
+- `absorb-me` adalah gate default sebelum sesi `grill-me` pertama pada scope terkait
+- jika `docs/absorb.md` missing/stale dan tidak ada skip valid, `grill-me` harus hard-stop
 
 ---
 
@@ -119,8 +126,74 @@ Agent memakai `grill-me` untuk memperjelas:
 - apakah perlu research
 - apakah perlu prototype
 
+Khusus project existing:
+- sebelum grilling, agent memeriksa `docs/absorb.md`
+- jika absorb tidak valid, agent harus minta `absorb-me` dulu kecuali ada skip valid yang terdokumentasi
+
 ### Artifact
 - `docs/idea.md`
+
+### Template cepat `docs/idea.md` (project existing)
+Gunakan blok ini agar gate absorb terdokumentasi rapi sejak awal:
+
+```md
+# Idea
+## Problem statement
+...
+
+## Desired outcome
+...
+
+## Scope
+...
+
+## Non-goals
+...
+
+## Constraints
+...
+
+## Assumptions
+...
+
+## Decision map
+...
+
+## Questions asked
+...
+
+## Decisions made
+...
+
+## Open questions
+...
+
+## Need research?
+...
+
+## Need prototype?
+...
+
+## Biggest risk
+...
+
+## Recommended next step
+...
+
+## Absorb gate decision
+Absorb required: yes/no
+Skip reason: ...
+Scope justification: ...
+Compensating action: ...
+HITL approval required: yes/no
+Approved by: ...
+Approval timestamp: ...
+
+## Handoff to PRD
+- [ ] ...
+Ready for next phase: yes/no
+Primary blocker: none / ...
+```
 
 ### Kapan boleh lanjut?
 Sebelum lanjut ke PRD, pastikan `docs/idea.md` punya `## Handoff to PRD` dengan:
@@ -269,6 +342,33 @@ QA yang baik:
 
 ---
 
+## Optional helper — Absorb
+
+Pakai saat project sudah existing, belum pernah dijalankan dengan workflow 7 fase ini, dan Anda ingin agent memahami codebase secara teliti sebelum ideation.
+
+Aturan gate absorb untuk project existing:
+- Default: wajib jalankan `absorb-me` sebelum `grill-me` pertama pada scope tersebut
+- Skip hanya valid jika:
+  - P0 hotfix (wajib HITL approval + compensating absorb), atau
+  - perubahan benar-benar kecil + terisolasi dan `docs/absorb.md` masih fresh
+- Freshness baseline: 14 hari
+- Langsung stale jika ada perubahan besar pada shared contract/interface, boundary arsitektur/modul, atau critical flow target
+- Jika skip karena P0 hotfix, compensating absorb maksimal 24 jam setelah hotfix stabil atau sebelum perubahan non-hotfix berikutnya (mana yang lebih dulu)
+- Hotfix stabil berarti monitoring normal, tidak ada regression kritikal, dan verifikasi minimum sudah lulus
+
+### Contoh request
+
+```txt
+Project ini sudah berjalan lama. Tolong absorb codebase dulu secara detail dan simpan konteksnya ke docs/absorb.md sebelum kita mulai grilling fitur baru.
+```
+
+Skill yang relevan:
+- `absorb-me`
+
+Jejak keputusan gate wajib dicatat di `docs/idea.md` pada `## Absorb gate decision`.
+
+---
+
 ## Optional helper — Triage
 
 Pakai saat request masih kabur dan fase yang tepat belum jelas.
@@ -344,6 +444,19 @@ Catatan:
 
 ---
 
+## Alur singkat untuk project existing
+
+Untuk project yang sudah ada sebelumnya, alur minimal yang disarankan:
+
+```txt
+Project ini existing. Tolong absorb dulu codebase-nya dan simpan ke docs/absorb.md.
+Lanjut grill ide perubahan fitur X berdasarkan docs/absorb.md.
+Jika absorb perlu di-skip, catat Absorb gate decision di docs/idea.md dengan alasan + approval (jika P0).
+Tulis PRD dari artifact yang sudah siap.
+Pecah PRD jadi ticket.
+Eksekusi ticket AFK berikutnya.
+```
+
 ## Alur minimal paling umum
 
 Untuk project kecil, alur paling umum biasanya cukup seperti ini:
@@ -381,4 +494,4 @@ Inti repo ini sederhana:
 - artifact di `docs/` menyimpan keputusan dan state workflow
 - validator lokal membantu menjaga handoff tetap rapi
 
-Jika Anda baru mulai, cukup minta agent memulai dari **idea** dengan bahasa biasa. Itu sudah cukup.
+Jika Anda baru mulai dari project greenfield, cukup minta agent memulai dari **idea** dengan bahasa biasa. Untuk project existing, mulai dari **absorb** dulu sebelum idea.

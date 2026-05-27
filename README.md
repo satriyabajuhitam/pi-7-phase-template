@@ -24,6 +24,7 @@ This repo is designed to be used as a **GitHub template repository** for startin
 - local validators under `scripts/`
 
 Bundled project-local skills include:
+- `absorb-me`
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
@@ -47,6 +48,7 @@ Expected operating model:
 - workflow state is persisted in `docs/` artifacts
 
 Examples:
+- “Ini project existing, bantu pahami codebase dulu sebelum ideation.” → `absorb-me`
 - “Bantu pertajam ide ini sebelum research.” → `grill-me`
 - “Tulis PRD dari artifact yang sudah ada.” → `prd-me`
 - “Pecah PRD ini jadi ticket.” → `issues-me`
@@ -73,12 +75,23 @@ Examples:
 Saya ingin membuat app baru untuk [tujuan Anda]. Tolong mulai dari fase idea dan pertajam dulu scope v1-nya.
 ```
 
+### Existing project quick path
+
+For existing repositories entering this workflow:
+
+```txt
+Project ini existing. Tolong absorb codebase dulu ke docs/absorb.md.
+Setelah itu, grill ide perubahan berdasarkan absorb context.
+Kalau absorb di-skip, catat alasan dan approval (jika P0) di docs/idea.md pada ## Absorb gate decision.
+```
+
 ---
 
 ## Core artifacts
 
 The workflow uses these files as source of truth:
 
+- `docs/absorb.md`
 - `docs/idea.md`
 - `docs/research.md`
 - `docs/prototype/`
@@ -91,6 +104,11 @@ The workflow uses these files as source of truth:
 ## Workflow principles
 
 - Do not jump straight to implementation when the problem is still unclear
+- for existing codebases, treat `absorb-me` as the default required gate before the first `grill-me` pass for a scope
+- `grill-me` should hard-stop for existing codebases when `docs/absorb.md` is missing/stale and no valid skip condition is documented
+- valid absorb-skip conditions are limited to: (a) P0 hotfix with HITL approval plus compensating absorb, or (b) truly small + isolated scope with still-fresh absorb context
+- absorb freshness baseline is 14 days and becomes stale immediately when shared contracts, architecture boundaries, or critical target flows change
+- for existing codebases, document `## Absorb gate decision` in `docs/idea.md` during Phase 1
 - If prototyping is used, select exactly **one** prototype winner before PRD
 - `docs/prd.md` is the requirements source of truth
 - `docs/issues.md` is the execution source of truth

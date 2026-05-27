@@ -19,6 +19,7 @@ description: Refine an idea, feature, bug fix, refactor, plan, architecture, mig
 - User wants direct implementation without a discovery phase
 - The task is already obvious and low-ambiguity, with no meaningful decision to refine
 - The user only wants factual lookup or broad brainstorming rather than narrowing decisions
+- The main need is first-pass deep understanding of an existing codebase before ideation; use `absorb-me`
 - The main need is to route a new work item to the right phase or artifact rather than pressure-test the idea itself; use `triage-me`
 - A bug, regression, or flaky issue still needs reproduction, isolation, or hypothesis testing before decisions can be challenged; use `diagnose-me`
 - The requirements are already clear enough that the next step is to formalize the destination in `docs/prd.md`; use `prd-me`
@@ -49,6 +50,26 @@ One of:
 - Technical design or architecture
 - Migration or rollout plan
 - Process or strategy
+
+### 1.5 Enforce absorb gate first for existing codebases
+
+Before opening the grilling session, check `docs/absorb.md`.
+
+- If `docs/absorb.md` exists and is non-empty, use it as pre-ideation context.
+- Prioritize `## Questions to seed grill-me` from that artifact for the first questioning branch.
+- Freshness baseline is 14 days for the same scope, unless stale triggers fire earlier.
+- Treat absorb as stale immediately when any one is true:
+  - shared contract/interface changed across modules,
+  - architecture/module boundary changed,
+  - critical target flow changed.
+
+If this is an existing codebase and absorb is missing/stale, **hard-stop** unless one valid skip condition is explicitly documented:
+- P0 hotfix with HITL approval and compensating absorb action, or
+- truly small + isolated change with fresh absorb context still valid for that scope.
+
+For P0 hotfix skip:
+- compensating absorb is due within 24 hours after hotfix stability, or before the next non-hotfix change, whichever comes first
+- hotfix stability means monitoring is normal, no critical regression is observed, and minimum verification has passed
 
 ### 2. Open with a brief restatement + decision map
 
@@ -102,6 +123,7 @@ After each question, provide your **recommended answer**:
 If a question can be answered from local files, inspect first. Use findings to sharpen the next question. Prefer checking the repository over asking for information the user shouldn't need to repeat.
 
 When the topic touches domain language, product concepts, or existing design decisions:
+- read `docs/absorb.md` first when available, then reconcile with newer repo evidence
 - read `CONTEXT.md` first if it exists
 - read relevant files under `docs/adr/` if they exist
 - use those files as constraints during grilling rather than re-asking already settled decisions
@@ -131,6 +153,7 @@ Default structure:
 - `## Need prototype?`
 - `## Biggest risk`
 - `## Recommended next step`
+- `## Absorb gate decision` (required for existing codebases)
 - `## Handoff to PRD`
 
 Update the file at these checkpoints:
@@ -139,6 +162,15 @@ Update the file at these checkpoints:
 - at the final closing summary
 
 Keep the file concise and decision-oriented. Do not dump the entire transcript; record the distilled outcomes.
+
+For existing codebases, `## Absorb gate decision` should explicitly include:
+- `Absorb required: yes/no`
+- `Skip reason: ...`
+- `Scope justification: ...`
+- `Compensating action: ...`
+- `HITL approval required: yes/no`
+- `Approved by: ...`
+- `Approval timestamp: ...`
 
 ### 6. Summary cadence
 
@@ -242,6 +274,9 @@ If the user wants a faster session ("just give me the top questions" or "I only 
 - Do not let vague or overloaded domain terms pass without challenge when they affect real decisions.
 - Do not start implementing just because the user's wording sounds like a build request. If the skill is active, stay in grilling mode until the user explicitly asks to switch.
 - Do not force a broad multi-subsystem request into one coherent PRD path; stop and decompose first when the artifact would otherwise become muddy.
+- Do not ignore `docs/absorb.md` for existing codebases when it already contains relevant architecture and risk context.
+- Do not bypass absorb-gate hard-stop for existing codebases when absorb is missing/stale and no valid skip condition is documented.
+- Do not allow P0 hotfix absorb-skip without explicit HITL approval details.
 - When maintaining `docs/idea.md`, record distilled conclusions rather than raw Q&A transcript dumps.
 
 ---
@@ -284,6 +319,7 @@ A good run of this skill produces:
 
 **Should not trigger:**
 - "Route this vague request to the right phase and artifact." → use `triage-me`
+- "Absorb this existing codebase dulu sebelum kita ideation." → use `absorb-me`
 - "Help me reproduce and isolate this flaky test failure." → use `diagnose-me`
 - "Turn this finalized idea into `docs/prd.md`." → use `prd-me`
 
@@ -295,6 +331,7 @@ A good run of this skill produces:
 If the session writes notes:
 - verify the file path is exactly `docs/idea.md`
 - verify the structure matches the repo convention for idea artifacts
+- verify `## Absorb gate decision` is present for existing codebases before advancing
 - verify `## Handoff to PRD` is present when `docs/idea.md` is used as the session artifact
 - verify the handoff makes clear whether the request is narrow enough for one coherent PRD or still needs decomposition
 - verify `Ready for next phase: yes/no` is explicit in that handoff section

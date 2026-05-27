@@ -13,6 +13,20 @@ This repository follows a phased AI-assisted development workflow inspired by Ma
 - Agents should infer the right phase from the user's natural-language request, load the matching local skill directly, and follow that skill's instructions.
 - Treat skills as the executable workflow layer and `docs/` artifacts as the cross-session source of truth.
 
+### Optional helper — Codebase absorb / orientation
+When the user wants to apply this workflow to an existing project that was not originally run with 7-phase artifacts:
+- Use the project-local `absorb-me` skill.
+- Build a trustworthy repository baseline before ideation: product/domain understanding, architecture map, critical flows, constraints/contracts, validation entry points, and hotspot risks.
+- Maintain `docs/absorb.md` as the reusable pre-ideation context artifact.
+- Treat `absorb-me` as the default required pre-ideation step for existing codebases before `grill-me`.
+- Allow absorb-skip only when one of these is true:
+  - P0 hotfix (requires HITL approval and compensating absorb action), or
+  - change is truly small + isolated and `docs/absorb.md` is still fresh for that scope.
+- Freshness baseline for `docs/absorb.md` is 14 days, and it is stale immediately when any major-boundary trigger is true (shared contract/interface change, architecture/module-boundary change, or critical target-flow change).
+- For P0 hotfix skip, compensating absorb is due within 24 hours after the hotfix is stable, or before the next non-hotfix change, whichever comes first.
+- Treat a hotfix as stable only when monitoring is normal, no critical regression is observed, and minimum verification has passed.
+- Route to exactly one next step, usually `grill-me`, or `diagnose-me` / `research-me` when those are the real blockers.
+
 ### Optional helper — Local intake / triage
 When the user brings a new bug report, feature request, refactor proposal, QA finding, or vague work item and the right next phase is not yet obvious:
 - Use the project-local `triage-me` skill.
@@ -39,6 +53,8 @@ When the user wants to refine an idea before research, prototyping, or implement
 - Use the project-local `grill-me` skill.
 - Maintain `docs/idea.md` as the running artifact when requested, or when it is the obvious destination.
 - Keep the artifact concise and decision-oriented.
+- For existing codebases, enforce the absorb gate first: if `docs/absorb.md` is missing or stale and no valid skip condition is documented, hard-stop and run `absorb-me` before grilling.
+- For existing codebases, always record `## Absorb gate decision` in `docs/idea.md` before or during the first grilling pass for that scope.
 - If the request is too broad for one coherent PRD, stop and decompose it before recommending Phase 4.
 - Before recommending Phase 4 PRD, update `## Handoff to PRD` in `docs/idea.md` with checklist status, `Ready for next phase: yes/no`, and a `Primary blocker` whenever readiness is `no`.
 
@@ -58,6 +74,7 @@ Preferred `docs/idea.md` structure:
 - `## Need prototype?`
 - `## Biggest risk`
 - `## Recommended next step`
+- `## Absorb gate decision`
 - `## Handoff to PRD`
 
 
@@ -171,6 +188,10 @@ When the main question is what should happen next with the current execution or 
 
 ## Workflow invariants
 - Do not jump to implementation when the user is clearly in Phase 1, Phase 2, or Phase 3.
+- For existing codebases, `absorb-me` is the default required gate before the first Phase 1 grilling pass for a scope.
+- If `docs/absorb.md` is missing or stale for that scope and no valid skip condition is explicitly documented, do not proceed with grilling.
+- Valid absorb-skip conditions are limited to: (a) P0 hotfix with HITL approval and compensating absorb action, or (b) truly small + isolated scope with fresh absorb context.
+- For existing codebases, `docs/idea.md` must include `## Absorb gate decision` with explicit gate/skip rationale before Idea-to-PRD handoff.
 - Do not write a PRD from multiple competing prototype directions.
 - If prototyping is used, exactly one prototype winner must feed the PRD.
 - Do not advance from Idea to PRD unless `docs/idea.md` says `Ready for next phase: yes` in `## Handoff to PRD`.
@@ -190,6 +211,7 @@ When the main question is what should happen next with the current execution or 
 - Be explicit about uncertainty, stale-information risk, and anything that still needs validation.
 
 ## Current repository artifact paths
+- `docs/absorb.md`
 - `docs/idea.md`
 - `docs/research.md`
 - `docs/prd.md`
@@ -200,9 +222,11 @@ When the main question is what should happen next with the current execution or 
 - `.firecrawl/`
 
 ## Current project workflow assets
+- `.pi/skills/absorb-me/`
 - `.pi/skills/triage-me/`
 - `.pi/skills/diagnose-me/`
 - `.pi/skills/grill-me/`
+- `.pi/skills/firecrawl-cli/`
 - `.pi/skills/research-me/`
 - `.pi/skills/prototype-me/`
 - `.pi/skills/prd-me/`

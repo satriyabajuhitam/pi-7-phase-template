@@ -5,6 +5,8 @@ All notable changes to this repository will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- New `absorb-me` helper skill for pre-ideation codebase orientation on existing projects
+- New `docs/absorb.md` artifact as reusable pre-Phase-1 context
 - Readiness-gate validator for active `docs/idea.md` and `docs/prd.md`
 - GitHub Actions workflow to run readiness validation in blocking CI mode
 - QA artifact covering local validation, CI smoke testing, and release-signoff evidence
@@ -13,6 +15,10 @@ All notable changes to this repository will be documented in this file.
 - Compact assurance reference at `docs/workflow-assurance-v3.md`
 
 ### Changed
+- Hardened existing-codebase absorb gate policy across workflow surfaces: `absorb-me` default requirement before first `grill-me` pass, constrained skip conditions, freshness/stale rules, and explicit skip evidence expectations
+- Updated `grill-me` to enforce absorb-gate hard-stop behavior when absorb context is missing/stale without a valid skip condition, and to require `## Absorb gate decision` fields in `docs/idea.md` for existing codebases
+- Aligned `README.md`, `GUIDE.md`, and `MASTER_TEMPLATE.md` with absorb-gate behavior, including skip constraints and documentation expectations
+- Added an existing-project quick path and a ready-to-copy `docs/idea.md` absorb-gate snippet in docs so Phase 1 starts with explicit gate evidence
 - Hardened `idea -> PRD` handoff parity across Phase 1 skill, prompt, and guidance surfaces
 - Hardened `PRD -> issues` handoff parity across Phase 4 and 5 skill, prompt, and guidance surfaces
 - Documented validator usage, advisory vs blocking behavior, and clean template-state handling in `README.md`, `GUIDE.md`, and `MASTER_TEMPLATE.md`

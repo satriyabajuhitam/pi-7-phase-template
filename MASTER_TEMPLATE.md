@@ -31,11 +31,13 @@ This template is **skill-first**:
 - Phase 7 — QA
 
 ### Optional helpers
+- Local codebase absorb / orientation
 - Local intake / triage
 - Local diagnosis
 - Local closeout recommendation
 
 ### Project-local skills
+- `absorb-me`
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
@@ -49,6 +51,7 @@ This template is **skill-first**:
 - `finish-me`
 
 ### Artifact files
+- `docs/absorb.md`
 - `docs/idea.md`
 - `docs/research.md`
 - `docs/prd.md`
@@ -88,6 +91,7 @@ This master template should stay clean:
 - prefer updating skills and `AGENTS.md` over adding thin command wrappers
 - document workflow examples as natural-language requests, not slash-command dependencies
 - treat prompt-like wording in docs as examples only, not required invocation syntax
+- keep existing-codebase absorb-gate wording aligned across `AGENTS.md`, `absorb-me`, `grill-me`, `README.md`, and `GUIDE.md`
 
 ---
 
@@ -111,6 +115,7 @@ Current planning/closeout-assurance scope:
 - confirm readiness validator still skips empty template-state artifacts
 - confirm `.github/workflows/readiness-gates.yml` and `scripts/validate-readiness-gates.mjs` still match documented behavior
 - confirm `scripts/validate-planning-closeout-guidance.mjs` and `docs/workflow-assurance-v3.md` still match the documented bounded assurance behavior
+- confirm existing-codebase absorb-gate policy is consistent across `AGENTS.md`, `.pi/skills/absorb-me/SKILL.md`, `.pi/skills/grill-me/SKILL.md`, `README.md`, and `GUIDE.md`
 - confirm new skills are documented in `README.md`, `GUIDE.md`, and `AGENTS.md` when relevant
 - confirm template instructions still point to the GitHub template flow as the default path
 
