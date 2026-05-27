@@ -13,8 +13,7 @@ It is a reusable workflow starter that provides:
 - local validators under `scripts/`
 - `README.md` and `GUIDE.md` for consumer-facing usage
 
-This template is now **skill-first**:
-- project-local prompt templates are intentionally removed
+This template is **skill-first**:
 - end users should interact with the agent in natural language
 - the agent is expected to infer and load the relevant local skill directly
 
@@ -86,7 +85,6 @@ This master template should stay clean:
 
 ### Skill-first expectations
 
-- do not reintroduce `.pi/prompts/` unless there is a deliberate product decision to support dual entrypoints again
 - prefer updating skills and `AGENTS.md` over adding thin command wrappers
 - document workflow examples as natural-language requests, not slash-command dependencies
 - treat prompt-like wording in docs as examples only, not required invocation syntax

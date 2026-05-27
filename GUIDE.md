@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Panduan ini menjelaskan cara memakai workflow 7 fase di repo ini untuk **membuat app sederhana dari nol** tanpa bergantung pada prompt template lokal.
+Panduan ini menjelaskan cara memakai workflow 7 fase di repo ini untuk **membuat app sederhana dari nol** dengan skill lokal dan artifact `docs/` sebagai penggerak workflow.
 
 Contoh studi kasus yang dipakai:
 - app Todo sederhana

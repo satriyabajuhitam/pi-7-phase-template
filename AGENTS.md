@@ -10,7 +10,6 @@ This repository follows a phased AI-assisted development workflow inspired by Ma
 ## Repository workflow
 
 ### Skill-first operation
-- This repository no longer relies on project-local prompt templates under `.pi/prompts/`.
 - Agents should infer the right phase from the user's natural-language request, load the matching local skill directly, and follow that skill's instructions.
 - Treat skills as the executable workflow layer and `docs/` artifacts as the cross-session source of truth.
 

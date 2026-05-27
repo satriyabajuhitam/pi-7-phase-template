@@ -40,8 +40,6 @@ Bundled project-local skills include:
 
 ## Skill-first workflow
 
-This template no longer depends on project-local prompt templates.
-
 Expected operating model:
 - the user speaks in natural language
 - the agent infers the right phase from intent
