@@ -10,7 +10,7 @@ Use this skill when a project idea needs targeted external research before proto
 
 - you mainly need to route a vague request to the right phase or artifact → `triage-me`
 - you still need to pressure-test the idea before deciding what to research → `grill-me`
-- you want direct Firecrawl operations such as crawl, scrape, parse, or agent extraction → `firecrawl-cli`
+- you want direct Firecrawl operations such as crawl, scrape, parse, or agent extraction → gunakan `pi-firecrawler` extension/tooling secara langsung
 
 ## Usage
 
@@ -29,7 +29,7 @@ Example prompts:
 - decides whether research is actually needed
 - defines a tight research objective and questions to answer
 - prefers official docs and authoritative sources
-- may use the local `firecrawl-cli` skill for web retrieval
+- may use `pi-firecrawler` extension/tooling directly for web retrieval
 - stores raw retrieval output under `.firecrawl/`
 - writes concise, sprint-scoped findings to `docs/research.md`
 - includes sources, caveats, open questions, a freshness note, and a recommended next step

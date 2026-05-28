@@ -107,9 +107,8 @@ Preferred `docs/research.md` structure:
 - `## Next step`
 
 If web retrieval is needed:
-- Use the local `firecrawl-cli` skill.
-- Save raw retrieval output under `.firecrawl/`.
-- Summarize only the distilled conclusions into `docs/research.md`.
+- Use the `pi-firecrawler` extension/tooling.
+- Keep `docs/research.md` focused on distilled conclusions only.
 
 ### Phase 3 — Prototype (optional)
 When the user wants exploratory variations before PRD writing or implementation:
@@ -219,14 +218,12 @@ When the main question is what should happen next with the current execution or 
 - `docs/qa.md`
 - `docs/workflow-assurance-v3.md`
 - `docs/prototype/`
-- `.firecrawl/`
 
 ## Current project workflow assets
 - `.pi/skills/absorb-me/`
 - `.pi/skills/triage-me/`
 - `.pi/skills/diagnose-me/`
 - `.pi/skills/grill-me/`
-- `.pi/skills/firecrawl-cli/`
 - `.pi/skills/research-me/`
 - `.pi/skills/prototype-me/`
 - `.pi/skills/prd-me/`

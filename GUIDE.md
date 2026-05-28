@@ -225,6 +225,7 @@ Tolong riset batasan dan pola terbaik untuk menyimpan todo di local-first app se
 
 ### Catatan
 Kalau tidak perlu research, jangan dipaksa.
+Jika perlu retrieval web, gunakan `pi-firecrawler` extension/tooling.
 
 ---
 

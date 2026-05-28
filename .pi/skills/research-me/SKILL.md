@@ -20,7 +20,7 @@ description: Research external dependencies or hard-to-explore topics for the cu
 - The user wants direct implementation and the missing information is not material
 - The main need is to route a vague request to the right phase or artifact rather than gather evidence; use `triage-me`
 - The main need is to pressure-test or sharpen the idea before deciding what to research; use `grill-me`
-- The user explicitly wants to operate Firecrawl tooling directly for search, crawl, scrape, parse, or agent extraction rather than run a project research workflow; use `firecrawl-cli`
+- The user explicitly wants to operate Firecrawl tooling directly for search, crawl, scrape, parse, or agent extraction rather than run a project research workflow; use the `pi-firecrawler` extension/tooling directly
 
 ---
 
@@ -82,8 +82,8 @@ Prefer sources in this order:
 4. high-signal third-party references only when needed
 
 If web retrieval is needed in this repo:
-- load and follow the local `firecrawl-cli` skill
-- store raw retrieval output under `.firecrawl/`
+- use the `pi-firecrawler` extension/tooling directly
+- optionally store raw retrieval output under `.firecrawl/` when it materially helps traceability
 - keep `docs/research.md` for distilled conclusions only
 
 For each important finding, capture:
@@ -199,7 +199,7 @@ A good run of this skill produces:
 **Should not trigger:**
 - "Route this half-specified feature request to the right phase and artifact." → use `triage-me`
 - "Grill me on this product idea before we decide what to research." → use `grill-me`
-- "Use Firecrawl to crawl these docs URLs and save the raw output under `.firecrawl/`." → use `firecrawl-cli`
+- "Use Firecrawl to crawl these docs URLs and save the raw output under `.firecrawl/`." → use the `pi-firecrawler` extension/tooling directly
 
 **Borderline:**
 - "I think we need outside research for this integration, but the problem statement is still fuzzy." → use `research-me` only if the research objective can already be made concrete; otherwise use `grill-me` first

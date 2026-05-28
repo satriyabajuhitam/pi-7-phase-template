@@ -41,7 +41,6 @@ This template is **skill-first**:
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
-- `firecrawl-cli`
 - `research-me`
 - `prototype-me`
 - `prd-me`
@@ -49,6 +48,9 @@ This template is **skill-first**:
 - `execute-me`
 - `qa-me`
 - `finish-me`
+
+### Web retrieval tooling
+- `pi-firecrawler` extension/tooling for web retrieval
 
 ### Artifact files
 - `docs/absorb.md`

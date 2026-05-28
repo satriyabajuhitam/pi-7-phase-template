@@ -28,7 +28,6 @@ Bundled project-local skills include:
 - `triage-me`
 - `diagnose-me`
 - `grill-me`
-- `firecrawl-cli`
 - `research-me`
 - `prototype-me`
 - `prd-me`
@@ -36,6 +35,9 @@ Bundled project-local skills include:
 - `execute-me`
 - `qa-me`
 - `finish-me`
+
+Web retrieval tooling used by research flows:
+- `pi-firecrawler` extension/tooling
 
 ---
 
